@@ -1,0 +1,69 @@
+#!/usr/bin/python
+
+import rospy
+from rpi_ws281x import PixelStrip
+from interbotix_rpi_modules.msg import PixelCommands
+
+class RpiPixels(object):
+    def __init__(self):
+        self.num_pixels = rospy.get_param("~num_pixels")
+        gpio_pin = rospy.get_param("~gpio_pin")
+        self.pixels = PixelStrip(self.num_pixels, gpio_pin)
+        self.pixels.begin()
+        self.sub_pixels = rospy.Subscriber("commands/pixels", PixelCommands, self.pixel_cb)
+
+    def set_color(self, pixel=0, color=0x000000, set_all_leds=False):
+        if set_all_leds:
+            for i in range(self.num_pixels):
+                self.pixels.setPixelColor(i, color)
+        else:
+            self.pixels.setPixelColor(pixel, color)
+        self.pixels.show()
+
+    def set_brightness(self, brightness):
+        self.pixels.setBrightness(brightness)
+        self.pixels.show()
+
+    def brightness_fade_in(self, period=10):
+        for i in range(256):
+            self.set_brightness(i)
+            rospy.sleep(period/1000.0)
+
+    def brightness_fade_out(self, period=10):
+        for i in range(255, -1, -1):
+            self.set_brightness(i)
+            rospy.sleep(period/1000.0)
+
+    def pulse(self, iterations=5, period=10):
+        for i in range(iterations):
+            self.brightness_fade_out(period)
+            self.brightness_fade_in(period)
+
+    def blink(self, pixel=0, set_all_leds=False, period=500, iterations=3):
+        original_color = self.pixels.getPixelColor(pixel)
+        original_brightness = self.pixels.getBrightness()
+        for i in range(iterations):
+            if set_all_leds: self.set_brightness(0)
+            else: self.set_color(pixel)
+            rospy.sleep(period/1000.0)
+            if set_all_leds: self.set_brightness(original_brightness)
+            else: self.set_color(pixel, original_color)
+            rospy.sleep(period/1000.0)
+
+    def pixel_cb(self, msg):
+        if (msg.cmd_type == 'color'):
+            self.set_color(msg.pixel, msg.color, msg.set_all_leds)
+        elif (msg.cmd_type == 'brightness'):
+            self.set_brightness(msg.brightness)
+        elif (msg.cmd_type == 'pulse'):
+            self.pulse(msg.iterations, msg.period)
+        elif (msg.cmd_type == 'blink'):
+            self.blink(msg.pixel, msg.set_all_leds, msg.period, msg.iterations)
+
+def main():
+    rospy.init_node('rpi_pixels')
+    rpi_pixels = RpiPixels()
+    rospy.spin()
+
+if __name__ == '__main__':
+    main()
