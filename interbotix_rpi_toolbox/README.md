@@ -5,7 +5,7 @@ This tutorial will walk you through how to get Ubuntu Linux and ROS working on a
 
 Now, as the name suggests, these are *Server* images, so they do not come with desktops. Similar to the operating systems, there a quite a number of desktop experiences one can choose from - like *ubuntu-desktop*, *kubuntu-deskto*, *xubuntu-desktop* to name a few. After doing some experimenting, I've found that the *ubuntu-mate-desktop* experience provided a pretty nice desktop experience and took up the least amount of RAM.
 
- Since we're using the Pi 4, and the 64-bit option apparently makes things faster, you should select one of those options. Currently, we use the 18.04.5 64-bit option for the Rpi4 as that supports ROS Melodic. While at the time of this writing, ROS Noetic does exist and is compatible with the 20.04.1 option, there are still some ROS packages it does not support (most notably [realsense-ros](https://github.com/IntelRealSense/realsense-ros)). Perhaps, when Intel includes support for ROS Noetic, we will upgrade our images to ROS Noetic.
+ Since we're using the Pi 4, and the 64-bit option apparently makes things faster, you should select one of those options. Both the 18.04.5 64-bit option and the 20.04.1 64-bit option for the Rpi4 have been tested.
 
  ## Hardware
  Instead of purchasing components separately, it's much easier to get a Raspberry Pi 4B Kit (from Amazon or wherever) that comes with all necessary components. This includes a power cable, mini-to-full-size HDMI cable, case, fan, heatsinks, a class 10 microSD card (at least 32GB), and of course, the Pi itself (4GB RAM option seems to be pretty good, and is what we use at Interbotix).
@@ -18,7 +18,7 @@ Now, as the name suggests, these are *Server* images, so they do not come with d
  ## Setup
 
  #### Flashing Ubuntu
- - First, download the [Ubuntu 18.04.5 64-bit Server Image](https://ubuntu.com/download/raspberry-pi/thank-you?version=18.04.5&architecture=arm64+raspi4) for the Raspberry Pi 4.
+ - First, download the [Ubuntu 18.04.5 64-bit Server Image](https://ubuntu.com/download/raspberry-pi/thank-you?version=18.04.5&architecture=arm64+raspi4) or the [Ubuntu 20.04.1 64-bit Server Image](https://ubuntu.com/download/raspberry-pi/thank-you?version=20.04.1&architecture=server-arm64+raspi) for the Raspberry Pi 4.
  - Using a tool like [balenaEtcher](https://www.balena.io/etcher/), flash the OS image to the 32GB microSD card using your laptop or desktop computer. The process will take a few minutes.
  - When done, eject the SD card and insert it into the Pi 4. Then connect the HDMI monitor, mouse, keyboard, and Ethernet cable to the Pi. Finally, connect the power cable, and turn the Pi on. *Note that you must plug in the Ethernet and HDMI cables into the Pi before turning the Pi on!!*
  - After waiting a minute or so (in which time, some debugging messages will appear on the screen), you will be prompted to login. The default computer and user name is *ubuntu*, so just type *ubuntu*. At this point, you will be prompted to create a password which you should do.
@@ -98,7 +98,7 @@ As with any Linux system, some operations will require the `sudo` command (with 
     pibot ALL=(ALL) NOPASSWD:ALL
 
 #### Fix Bluetooth Issue
-For whatever reason, the Bluetooth module on the Pi 4 is unhelpfully disabled. To get it enabled, open a terminal and type the following...
+For whatever reason, the Bluetooth module on the Pi 4 is by default disabled. To enable on Ubuntu 20.04, just type `sudo apt install pi-bluetooth` in a terminal. For Ubuntu 18.04, it's a bit more complicated. Just open a terminal and type the following...
 
     # The repo below contains the pi-bluetooth package that's necessary to enable Bluetooth on the Pi
     $ sudo add-apt-repository ppa:ubuntu-pi-flavour-makers/ppa
@@ -118,7 +118,7 @@ For whatever reason, the Bluetooth module on the Pi 4 is unhelpfully disabled. T
 The Bluetooth fix mentioned above can be found [here](https://ubuntu-mate.community/t/error-updating-ubuntu-mate-18-04-on-pi-3b/20001/5).
 
 #### Install ROS
-At this point, you can follow the instructions on the [ROS Wiki](http://wiki.ros.org/melodic/Installation/Ubuntu) to install ROS Melodic.
+At this point, you can follow the instructions on the ROS Wiki to install [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu) (Ubuntu 18.04) or [ROS Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu) (Ubuntu 20.04).
 
 #### PS4 Controller Setup
 Getting a PS4 controller connected via Bluetooth to the Raspberry Pi is pretty straightforward. Once the Pi boots, click the *Bluetooth* icon on the top right of your Desktop, followed by *Setup New Device...*. A window should pop up welcoming you to the ‘Bluetooth device setup assistant.’ Click the *Next* button. Then, press and hold the *Share* button on the PS4 controller. While holding the *Share* button, press and hold the *PS* button. After a few seconds, the triangular shaped LED located between the *L2* and *R2* buttons should start rapidly flashing white (about twice a second) at which point you can let go.
