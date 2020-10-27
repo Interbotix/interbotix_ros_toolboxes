@@ -43,3 +43,14 @@ generate_messages(
 catkin_package(
    CATKIN_DEPENDS message_runtime rospy std_msgs
 )
+
+#############
+## Install ##
+#############
+
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+catkin_install_python(PROGRAMS
+  scripts/rpi_pixels
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
