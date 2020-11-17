@@ -39,18 +39,20 @@ from interbotix_rpi_modules.neopixels import InterbotixRpiPixelInterface
 ### @brief Standalone Module to control an Interbotix Hexapod
 ### @param robot_model - Interbotix Hexapod model (ex. 'mark4')
 ### @param robot_name - defaults to value given to 'robot_model'; this can be customized to best suit the user's needs
+### @param position_p_gain - passthrough to the Position_P_Gain register on all hexapod servos - sets the desired Proportional gain
 ### @param init_node - set to True if the InterbotixRobotXSCore class should initialize the ROS node - this is the most Pythonic approach; to incorporate a robot into an existing ROS node though, set to False
 class InterbotixHexapodXS(object):
-    def __init__(self, robot_model, robot_name=None, init_node=True):
+    def __init__(self, robot_model, robot_name=None, position_p_gain=800, init_node=True):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node)
-        self.hex = InterbotixHexapodXSInterface(self.dxl)
+        self.hex = InterbotixHexapodXSInterface(self.dxl, position_p_gain)
         self.pixels = InterbotixRpiPixelInterface(self.dxl.robot_name)
 
 ### @brief Definition of the Interbotix Hexapod Module
 ### @param core - reference to the InterbotixRobotXSCore class containing the internal ROS plumbing that drives the Python API
 class InterbotixHexapodXSInterface(object):
-    def __init__(self, core):
-        self.core = core                                                        # reference to the InterbotixRobotXSCore object
+    def __init__(self, core, position_p_gain):
+        self.core = core                                                        # Reference to the InterbotixRobotXSCore object
+        self.position_p_gain = position_p_gain                                  # Desired Proportional gain for all servos
         self.inc_prev = 0                                                       # Latest increment during the gait cycle
         self.period_cntr = 0                                                    # Used to count a period (self.num_steps/2.0) during the wave or ripple gait cycles
         self.num_steps = 20.0                                                   # Number of steps in one wave of the first sinusoid cycle
@@ -150,6 +152,7 @@ class InterbotixHexapodXSInterface(object):
             self.sleep_foot_points[leg][2] = 0
         self.home_foot_points = copy.deepcopy(self.sleep_foot_points)
         self.foot_points = copy.deepcopy(self.home_foot_points)
+        self.core.srv_set_reg("group", "all", "Position_P_Gain", self.position_p_gain)
         self.reset_hexapod("home")
         self.move_in_world()
 
@@ -369,7 +372,7 @@ class InterbotixHexapodXSInterface(object):
     ### @param num_steps - number of steps to complete one wave in the first sinusoid function
     ### @param gait_type - desired gait to use
     ### @param mp - time [sec] that each joint should spend moving per step
-    ### @param ap - time [sec] that each joint should spend moving per step
+    ### @param ap - time [sec] that each joint should spend accelerating per step
     ### @param num_cycles - number of gait cycles to complete before exiting
     ### @param cycle_freq - frequency at which the gait cycle should run; defaults to 'num_steps'
     ### @return <bool> - True if function completed successfully; False otherwise
