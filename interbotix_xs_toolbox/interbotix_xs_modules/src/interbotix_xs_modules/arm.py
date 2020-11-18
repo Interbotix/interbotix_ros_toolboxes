@@ -47,7 +47,7 @@ class InterbotixArmXSInterface(object):
         if (robot_model is None):
             robot_model = robot_name
         self.robot_des = getattr(mrd, robot_model)
-        self.initial_guesses = [[0.0] * self.group_info.num_joints for i in range(3)]                                                 # Guesses made up of joint values to seed the IK function
+        self.initial_guesses = [[0.0] * self.group_info.num_joints for i in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
         self.moving_time = moving_time

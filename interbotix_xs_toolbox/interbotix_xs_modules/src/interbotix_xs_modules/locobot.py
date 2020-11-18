@@ -1,16 +1,24 @@
 import rospy
 from std_msgs.msg import Empty
 from kobuki_msgs.msg import Sound
-from geometry_msgs.msg import Twist, Vector3
+from geometry_msgs.msg import Twist, Vector3, PoseStamped, Quaternion
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
-from tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 from interbotix_xs_modules.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.turret import InterbotixTurretXSInterface
 from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 
-
+### @brief Standalone Module to control an Interbotix Locobot
+### @param robot_model - Interbotix Locobot model (ex. 'locobot_px100' or 'locobot_base')
+### @param arm_group_name - joint group name that contains the 'arm' joints as defined in the 'motor_config' yaml file
+### @param gripper_name - name of the gripper joint as defined in the 'motor_config' yaml file; typically, this is 'gripper'
+### @param turret_group_name - joint group name that contains the 'turret' joints as defined in the 'motor_config' yaml file; typically, this is 'camera'
+### @param robot_name - defaults to the value given to 'robot_model' if unspecified; this can be customied if controlling two of the same locobots from one computer (like 'locobot1' and 'locobot2')
+### @param init_node - set to True if the InterbotixRobotXSCore class should initialize the ROS node - this is the most Pythonic approach; to incorporate a robot into an existing ROS node though, set to False
+### @param dxl_joint_states - name of the joint states topic that contains just the states of the dynamixel servos
+### @param kobuki_joint_states - name of the joints states topic that contains the states of the Kobuki's two wheels
 class InterbotixLocobotXS(object):
     def __init__(self, robot_model, arm_model=None, arm_group_name="arm", gripper_name="gripper", turret_group_name="camera", robot_name=None, init_node=True, dxl_joint_states="dynamixel/joint_states", kobuki_joint_states="mobile_base/joint_states"):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
@@ -20,6 +28,9 @@ class InterbotixLocobotXS(object):
             self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
             self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
 
+### @brief Definition of the Interbotix Kobuki Module
+### @param robot_name - namespace of the Kobuki node (a.k.a the name of the Interbotix Locobot)
+### @param kobuki_joint_states - name of the joints states topic that contains the states of the Kobuki's two wheels
 class InterbotixKobukiInterface(object):
     def __init__(self, robot_name, kobuki_joint_states):
         self.robot_name = robot_name
@@ -28,9 +39,14 @@ class InterbotixKobukiInterface(object):
         self.pub_base_command = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/velocity", Twist, queue_size=1)                     # ROS Publisher to command twists to the Kobuki base
         self.pub_base_reset = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/reset_odometry", Empty, queue_size=1)                 # ROS Publisher to reset the base odometry
         self.pub_base_sound = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/sound", Sound, queue_size=1)
+        self.pub_base_pose = rospy.Publisher("/" + self.robot_name + "/move_base_simple/goal", PoseStamped, queue_size=1)
         self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/mobile_base/odom", Odometry, self.base_odom_cb)
         self.sub_wheel_states = rospy.Subscriber("/" + self.robot_name + "/" + kobuki_joint_states, JointState, self.wheel_states_cb)
 
+    ### @brief Move the base for a given amount of time
+    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
+    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
+    ### @param duration - desired time [sec] that the robot should follow the specified speeds
     def move(self, x=0, yaw=0, duration=1.0):
         time_start = rospy.get_time()
         r = rospy.Rate(10)
@@ -39,24 +55,50 @@ class InterbotixKobukiInterface(object):
             r.sleep()
         self.pub_base_command.publish(Twist())
 
+    ### @brief Move the base to a given pose in a Map (Nav Stack must be enabled!)
+    ### @param x - desired 'x' position [m] w.r.t. the map frame that the robot should achieve
+    ### @param y - desired 'y' position [m] w.r.t. the map frame that the robot should achieve
+    ### @param yaw - desired yaw [rad] w.r.t. the map frame that the robot should achieve
+    def move_to_pose(self, x, y, yaw):
+        msg = PoseStamped()
+        msg.header.frame_id = "map"
+        msg.header.stamp = rospy.Time.now()
+        msg.pose.position.x = x
+        msg.pose.position.y = y
+        quat = quaternion_from_euler(0, 0, yaw)
+        msg.pose.orientation = Quaternion(quat[0], quat[1], quat[2], quat[3])
+        self.pub_base_pose.publish(msg)
+
+    ### @brief For those who have their own controller, call this function repeatedly to move the robot
+    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
+    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
     def command_velocity(self, x=0, yaw=0):
         self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
 
+    ### @brief ROS Callback function to update the odometry of the robot
+    ### @param msg - ROS Odometry message from the Kobuki
     def base_odom_cb(self, msg):
         self.odom = msg.pose.pose
 
+    ### @brief ROS Callback function get get the wheel joint states
+    ### @param msg - ROS JointState message from Kobuki
     def wheel_states_cb(self, msg):
         self.wheel_states = msg
 
+    ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
+    ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
     def get_odom(self):
         quat = (self.odom.orientation.x, self.odom.orientation.y, self.odom.orientation.z, self.odom.orientation.w)
         euler = euler_from_quaternion(quat)
         pose = [pose.position.x, pose.position.y, euler[2]]
         return pose
 
+    ### Get the current wheel positions
+    ### @return <list> - 2 element list containing the wheel positions [rad]
     def get_wheel_states(self):
         return list(self.wheel_states.position)
 
+    ### Reset odometry to zero
     def reset_odom(self):
         self.pub_base_reset.publish(Empty())
         self.pub_base_sound.publish(Sound(value=Sound.CLEANINGEND))
