@@ -1,9 +1,11 @@
 import rospy
+import actionlib
 from std_msgs.msg import Empty
 from kobuki_msgs.msg import Sound
 from geometry_msgs.msg import Twist, Vector3, PoseStamped, Quaternion
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 from interbotix_xs_modules.arm import InterbotixArmXSInterface
@@ -19,11 +21,12 @@ from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 ### @param init_node - set to True if the InterbotixRobotXSCore class should initialize the ROS node - this is the most Pythonic approach; to incorporate a robot into an existing ROS node though, set to False
 ### @param dxl_joint_states - name of the joint states topic that contains just the states of the dynamixel servos
 ### @param kobuki_joint_states - name of the joints states topic that contains the states of the Kobuki's two wheels
+### @param use_move_base_action - whether or not Move-Base's Action Server should be used instead of the Topic interface; set to True to make the 'move_to_pose' function block until the robot reaches its goal pose
 class InterbotixLocobotXS(object):
-    def __init__(self, robot_model, arm_model=None, arm_group_name="arm", gripper_name="gripper", turret_group_name="camera", robot_name=None, init_node=True, dxl_joint_states="dynamixel/joint_states", kobuki_joint_states="mobile_base/joint_states"):
+    def __init__(self, robot_model, arm_model=None, arm_group_name="arm", gripper_name="gripper", turret_group_name="camera", robot_name=None, init_node=True, dxl_joint_states="dynamixel/joint_states", kobuki_joint_states="mobile_base/joint_states", use_move_base_action=False):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
         self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
-        self.base = InterbotixKobukiInterface(self.dxl.robot_name, kobuki_joint_states)
+        self.base = InterbotixKobukiInterface(self.dxl.robot_name, kobuki_joint_states, use_move_base_action)
         if arm_model is not None:
             self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
             self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
@@ -31,17 +34,23 @@ class InterbotixLocobotXS(object):
 ### @brief Definition of the Interbotix Kobuki Module
 ### @param robot_name - namespace of the Kobuki node (a.k.a the name of the Interbotix Locobot)
 ### @param kobuki_joint_states - name of the joints states topic that contains the states of the Kobuki's two wheels
+### @param use_move_base_action - whether or not Move-Base's Action Server should be used instead of the Topic interface; set to True to make the 'move_to_pose' function block until the robot reaches its goal pose
 class InterbotixKobukiInterface(object):
-    def __init__(self, robot_name, kobuki_joint_states):
+    def __init__(self, robot_name, kobuki_joint_states, use_move_base_action):
         self.robot_name = robot_name
         self.odom = None
         self.wheel_states = None
+        self.use_move_base_action = use_move_base_action
+        if (self.use_move_base_action):
+            self.mb_client = actionlib.SimpleActionClient("/" + self.robot_name + "/move_base", MoveBaseAction)
+            self.mb_client.wait_for_server()
         self.pub_base_command = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/velocity", Twist, queue_size=1)                     # ROS Publisher to command twists to the Kobuki base
         self.pub_base_reset = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/reset_odometry", Empty, queue_size=1)                 # ROS Publisher to reset the base odometry
         self.pub_base_sound = rospy.Publisher("/" + self.robot_name + "/mobile_base/commands/sound", Sound, queue_size=1)
         self.pub_base_pose = rospy.Publisher("/" + self.robot_name + "/move_base_simple/goal", PoseStamped, queue_size=1)
         self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/mobile_base/odom", Odometry, self.base_odom_cb)
         self.sub_wheel_states = rospy.Subscriber("/" + self.robot_name + "/" + kobuki_joint_states, JointState, self.wheel_states_cb)
+        rospy.sleep(1)
 
     ### @brief Move the base for a given amount of time
     ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
@@ -59,15 +68,27 @@ class InterbotixKobukiInterface(object):
     ### @param x - desired 'x' position [m] w.r.t. the map frame that the robot should achieve
     ### @param y - desired 'y' position [m] w.r.t. the map frame that the robot should achieve
     ### @param yaw - desired yaw [rad] w.r.t. the map frame that the robot should achieve
-    def move_to_pose(self, x, y, yaw):
-        msg = PoseStamped()
-        msg.header.frame_id = "map"
-        msg.header.stamp = rospy.Time.now()
-        msg.pose.position.x = x
-        msg.pose.position.y = y
+    ### @param wait - whether the function should wait until the base reaches its goal pose before returning
+    ### @return <bool> - whether the robot successfully reached its goal pose (only applies if 'wait' is True)
+    ### @details - note that if 'wait' is False, the function will always return True.
+    def move_to_pose(self, x, y, yaw, wait=False):
+        target_pose = PoseStamped()
+        target_pose.header.frame_id = "map"
+        target_pose.header.stamp = rospy.Time.now()
+        target_pose.pose.position.x = x
+        target_pose.pose.position.y = y
         quat = quaternion_from_euler(0, 0, yaw)
-        msg.pose.orientation = Quaternion(quat[0], quat[1], quat[2], quat[3])
-        self.pub_base_pose.publish(msg)
+        target_pose.pose.orientation = Quaternion(quat[0], quat[1], quat[2], quat[3])
+        if (wait and self.use_move_base_action):
+            goal = MoveBaseGoal(target_pose)
+            self.mb_client.send_goal(goal)
+            self.mb_client.wait_for_result()
+            if not (self.mb_client.get_state() == actionlib.GoalStatus.SUCCEEDED):
+                rospy.logerr("Did not successfully reach goal...")
+                return False
+        else:
+            self.pub_base_pose.publish(target_pose)
+        return True
 
     ### @brief For those who have their own controller, call this function repeatedly to move the robot
     ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
