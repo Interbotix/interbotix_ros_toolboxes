@@ -67,7 +67,7 @@ class MoveItGUIInterface(QWidget):
             slider = QSlider(Qt.Horizontal)
             slider.setFont(font)
             slider.setRange(0, RANGE)
-            slider.setValue(RANGE/2)
+            slider.setValue(int(RANGE/2))
             vertical_layout.addWidget(slider)
             slider_list.append(vertical_layout)
             self.pose_map[name] = {'display': display, 'slider': slider}
@@ -77,7 +77,7 @@ class MoveItGUIInterface(QWidget):
         # Organize the six 'slider containers' into 3 rows where each row has two columns.
         # The first column is for end-effector position while the second column is for end-effector orientation.
         # Then add these 'rows' to the 'master' container
-        num_rows = len(slider_list)/2
+        num_rows = int(len(slider_list)/2)
         for i in range(num_rows):
             horizontal_layout = QHBoxLayout()
             slider_list[i].setContentsMargins(0, 0, 5, 0)
