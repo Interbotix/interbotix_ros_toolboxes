@@ -1,4 +1,4 @@
-#include "interbotix_xs_moveit_interface/xs_moveit_interface_obj.h"
+#include "interbotix_moveit_interface/moveit_interface_obj.h"
 
 /// @brief Constructor for the InterbotixMoveItInterface
 InterbotixMoveItInterface::InterbotixMoveItInterface(ros::NodeHandle *node_handle)
@@ -185,26 +185,26 @@ void InterbotixMoveItInterface::moveit_scale_ee_velocity(const double factor)
 /// @brief ROS Service to plan or execute a desired end-effector pose, position, or orientation
 /// @param req - custom message of type 'MoveItPlan'. Look at the service message for details
 /// @param res [out] - a boolean specifying whether the plan or execution was successful and a 'string' message saying likewise
-bool InterbotixMoveItInterface::moveit_planner(interbotix_xs_moveit_interface::MoveItPlan::Request &req, interbotix_xs_moveit_interface::MoveItPlan::Response &res)
+bool InterbotixMoveItInterface::moveit_planner(interbotix_moveit_interface::MoveItPlan::Request &req, interbotix_moveit_interface::MoveItPlan::Response &res)
 {
   bool success = false;
   std::string service_type;
-  if (req.cmd == interbotix_xs_moveit_interface::MoveItPlan::Request::CMD_PLAN_POSE)
+  if (req.cmd == interbotix_moveit_interface::MoveItPlan::Request::CMD_PLAN_POSE)
   {
     success = moveit_plan_ee_pose(req.ee_pose);
     service_type = "Planning EE pose";
   }
-  else if (req.cmd == interbotix_xs_moveit_interface::MoveItPlan::Request::CMD_PLAN_POSITION)
+  else if (req.cmd == interbotix_moveit_interface::MoveItPlan::Request::CMD_PLAN_POSITION)
   {
     success = moveit_plan_ee_position(req.ee_pose.position.x, req.ee_pose.position.y, req.ee_pose.position.z);
     service_type = "Planning EE position";
   }
-  else if (req.cmd == interbotix_xs_moveit_interface::MoveItPlan::Request::CMD_PLAN_ORIENTATION)
+  else if (req.cmd == interbotix_moveit_interface::MoveItPlan::Request::CMD_PLAN_ORIENTATION)
   {
     success = moveit_plan_ee_orientation(req.ee_pose.orientation);
     service_type = "Planning EE orientation";
   }
-  else if (req.cmd == interbotix_xs_moveit_interface::MoveItPlan::Request::CMD_EXECUTE)
+  else if (req.cmd == interbotix_moveit_interface::MoveItPlan::Request::CMD_EXECUTE)
   {
     success = moveit_execute_plan();
     service_type = "Execution";

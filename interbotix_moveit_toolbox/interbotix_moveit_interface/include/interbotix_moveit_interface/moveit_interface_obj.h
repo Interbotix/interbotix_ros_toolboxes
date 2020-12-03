@@ -1,7 +1,7 @@
-#ifndef XS_MOVEIT_INTERFACE_OBJ_H_
-#define XS_MOVEIT_INTERFACE_OBJ_H_
+#ifndef _MOVEIT_INTERFACE_OBJ_H_
+#define _MOVEIT_INTERFACE_OBJ_H_
 
-#include "interbotix_xs_moveit_interface/MoveItPlan.h"
+#include "interbotix_moveit_interface/MoveItPlan.h"
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_msgs/DisplayRobotState.h>
@@ -76,7 +76,7 @@ private:
   /// @brief ROS Service to plan or execute a desired end-effector pose, position, or orientation
   /// @param req - custom message of type 'MoveItPlan'. Look at the service message for details
   /// @param res [out] - a boolean specifying whether the plan or execution was successful and a 'string' message saying likewise
-  bool moveit_planner(interbotix_xs_moveit_interface::MoveItPlan::Request &req, interbotix_xs_moveit_interface::MoveItPlan::Response &res);
+  bool moveit_planner(interbotix_moveit_interface::MoveItPlan::Request &req, interbotix_moveit_interface::MoveItPlan::Response &res);
 };
 
 #endif

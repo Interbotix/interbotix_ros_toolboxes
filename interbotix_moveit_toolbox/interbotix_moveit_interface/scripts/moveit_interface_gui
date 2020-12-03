@@ -6,8 +6,8 @@ from threading import Thread
 
 import rospy
 from tf.transformations import quaternion_from_euler
-from interbotix_xs_moveit_interface.srv import MoveItPlanRequest
-from interbotix_xs_moveit_interface.srv import MoveItPlan
+from interbotix_moveit_interface.srv import MoveItPlanRequest
+from interbotix_moveit_interface.srv import MoveItPlan
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
@@ -242,7 +242,7 @@ class MoveItGUIInterface(QWidget):
 
 
 if __name__ == '__main__':
-    rospy.init_node('xs_moveit_interface_gui')
+    rospy.init_node('moveit_interface_gui')
     app = QApplication(sys.argv)
     moveit_gui = MoveItGUIInterface()
     # Start the 'MoveItPlanClient' function in its own thread

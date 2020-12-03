@@ -1,8 +1,8 @@
-#include "interbotix_xs_moveit_interface/xs_moveit_interface_obj.h"
+#include "interbotix_moveit_interface/moveit_interface_obj.h"
 
 int main( int argc, char** argv )
 {
-    ros::init(argc, argv, "xs_moveit_interface");
+    ros::init(argc, argv, "moveit_interface");
     // We need two spinners to run the InterbotixMoveItInterface node
     //    - One spinner allows ROS messages to be processed during the blocking 'move_group.move()' command
     //    - Another spinner allows ROS messages to be processed during a blocking service call (since planning

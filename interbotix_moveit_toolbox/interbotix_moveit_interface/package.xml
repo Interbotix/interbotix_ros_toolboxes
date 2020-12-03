@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>interbotix_xs_moveit_interface</name>
+  <name>interbotix_moveit_interface</name>
   <version>0.0.0</version>
-  <description>The interbotix_xs_moveit_interface package</description>
+  <description>The interbotix_moveit_interface package</description>
   <maintainer email="trsupport@trossenrobotics.com">Solomon Wiznitzer</maintainer>
   <license>BSD</license>
-  <!-- <url type="website">http://wiki.ros.org/interbotix_xs_moveit_interface</url> -->
+  <!-- <url type="website">http://wiki.ros.org/interbotix_moveit_interface</url> -->
   <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
 
   <!-- The *depend tags are used to specify dependencies -->

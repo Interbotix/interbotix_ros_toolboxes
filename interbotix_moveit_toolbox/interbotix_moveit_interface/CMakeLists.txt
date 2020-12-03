@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(interbotix_xs_moveit_interface)
+project(interbotix_moveit_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -60,9 +60,9 @@ include_directories(
 ## Declare a C++ executable
 ## Specify libraries to link a library or executable target against
 ## Add cmake target dependencies of the executable
-add_executable(xs_moveit_interface src/xs_moveit_interface.cpp src/xs_moveit_interface_obj.cpp)
-target_link_libraries(xs_moveit_interface ${catkin_LIBRARIES})
-add_dependencies(xs_moveit_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
+target_link_libraries(moveit_interface ${catkin_LIBRARIES})
+add_dependencies(moveit_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
@@ -71,7 +71,7 @@ add_dependencies(xs_moveit_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/xs_moveit_interface_gui
-  scripts/xs_moveit_python_interface
+  scripts/moveit_interface_gui
+  scripts/moveit_python_interface
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
