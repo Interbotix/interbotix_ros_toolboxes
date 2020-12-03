@@ -8,6 +8,7 @@ import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 from math import pi
+from six.moves import input
 from std_msgs.msg import String
 from tf.transformations import quaternion_from_euler
 from moveit_commander.conversions import pose_to_list
@@ -279,50 +280,50 @@ class MoveGroupPythonIntefaceTutorial(object):
 
 def main():
     print("============ Press `Enter` to begin the tutorial by setting up the moveit_commander (press ctrl-d to exit) ...")
-    raw_input()
+    input()
     tutorial = MoveGroupPythonIntefaceTutorial()
 
     print("============ Press `Enter` to execute a movement using a joint state goal ...")
-    raw_input()
+    input()
     tutorial.go_to_joint_state()
 
     print("============ Press `Enter` to execute a movement using a pose goal ...")
-    raw_input()
+    input()
     tutorial.go_to_pose_goal()
 
     print("============ Press `Enter` to plan and display a Cartesian path ...")
-    raw_input()
+    input()
     cartesian_plan, fraction = tutorial.plan_cartesian_path()
 
     print("============ Press `Enter` to display a saved trajectory (this will replay the Cartesian path)  ...")
-    raw_input()
+    input()
     tutorial.display_trajectory(cartesian_plan)
 
     print("============ Press `Enter` to execute a saved path ...")
-    raw_input()
+    input()
     tutorial.execute_plan(cartesian_plan)
 
     if "interbotix_gripper" in tutorial.group_names:
 
         print("============ Press `Enter` to add a box to the planning scene ...")
-        raw_input()
+        input()
         tutorial.add_box()
 
         print("============ Press `Enter` to attach a Box to the Interbotix robot ...")
-        raw_input()
+        input()
         tutorial.attach_box()
 
         print("============ Press `Enter` to plan and execute a path with an attached collision object ...")
-        raw_input()
+        input()
         cartesian_plan, fraction = tutorial.plan_cartesian_path(x_dir=-1)
         tutorial.execute_plan(cartesian_plan)
 
         print("============ Press `Enter` to detach the box from the Interbotix robot ...")
-        raw_input()
+        input()
         tutorial.detach_box()
 
         print("============ Press `Enter` to remove the box from the planning scene ...")
-        raw_input()
+        input()
         tutorial.remove_box()
 
     print("============ Python tutorial demo complete!")
