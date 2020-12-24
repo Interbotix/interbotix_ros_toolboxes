@@ -16,6 +16,13 @@ def yawToRotationMatrix(yaw):
                     ])
     return R_z
 
+# Transform a Six Element Pose vector to a Transformation Matrix
+def poseToTransformationMatrix(pose):
+    mat = np.identity(4)
+    mat[:3, :3] = eulerAnglesToRotationMatrix(pose[3:])
+    mat[:3, 3] = pose[:3]
+    return mat
+
 # Calculates Rotation Matrix given euler angles.
 def eulerAnglesToRotationMatrix(theta):
 

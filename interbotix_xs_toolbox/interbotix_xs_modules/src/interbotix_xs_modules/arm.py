@@ -5,8 +5,8 @@ import modern_robotics as mr
 from interbotix_xs_sdk.msg import *
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
+from interbotix_common_modules import angle_manipulation as ang
 from interbotix_xs_modules import mr_descriptions as mrd
-from interbotix_xs_modules import angle_manipulation as ang
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 
@@ -44,8 +44,6 @@ class InterbotixArmXSInterface(object):
             rospy.logerr("Please set the group's 'profile type' to 'time'.")
         if (self.group_info.mode != "position"):
             rospy.logerr("Please set the group's 'operating mode' to 'position'.")
-        if (robot_model is None):
-            robot_model = robot_name
         self.robot_des = getattr(mrd, robot_model)
         self.initial_guesses = [[0.0] * self.group_info.num_joints for i in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)

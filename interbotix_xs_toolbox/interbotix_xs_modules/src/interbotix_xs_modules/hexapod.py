@@ -8,8 +8,8 @@ from interbotix_xs_sdk.msg import *
 from geometry_msgs.msg import PoseStamped, Point
 from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import TransformStamped, Quaternion
-from interbotix_xs_modules import angle_manipulation as ang
 from interbotix_xs_modules.core import InterbotixRobotXSCore
+from interbotix_common_modules import angle_manipulation as ang
 from interbotix_rpi_modules.neopixels import InterbotixRpiPixelInterface
 
 
