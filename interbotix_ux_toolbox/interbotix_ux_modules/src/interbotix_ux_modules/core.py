@@ -22,7 +22,9 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 class InterbotixRobotUXCore(object):
     def __init__(self, robot_model, robot_name=None, mode=0, wait_for_finish=True, ee_offset=None, init_node=True, joint_state_topic="joint_states"):
         self.joint_states = None
+        self.xarm_states = None
         self.ee_offset = ee_offset
+        self.xs_mutex = threading.Lock()
         self.js_mutex = threading.Lock()
         self.robot_model = robot_model
         self.robot_name = robot_name
@@ -60,20 +62,21 @@ class InterbotixRobotUXCore(object):
         self.srv_move_servoj = rospy.ServiceProxy("/" + self.robot_name + "/move_servoj", Move)
         self.srv_move_servo_cart = rospy.ServiceProxy("/" + self.robot_name + "/move_servo_cart", Move)
         self.sub_joint_states = rospy.Subscriber("/" + self.robot_name + "/" + joint_state_topic, JointState, self.joint_state_cb)
+        self.sub_xarm_states = rospy.Subscriber("/" + self.robot_name + "/xarm_states", RobotMsg, self.xarm_state_cb)
         rospy.loginfo("Initializing InterbotixRobotUXCore...")
         rospy.loginfo("\nRobot Name: %s\nRobot Model: %s\n" % (self.robot_name, robot_model))
-        while (self.joint_states == None and not rospy.is_shutdown()): pass
+        while (self.joint_states == None and self.xarm_states == None and not rospy.is_shutdown()): pass
         self.js_index_map = dict(zip(self.joint_states.name, range(len(self.joint_states.name))))
         self.mode = mode
         rospy.sleep(1)
         self.robot_motion_enable(8, True)
-        self.robot_smart_mode_reset(self.mode)
         if self.ee_offset is not None:
             ee_off = self.ee_offset[:]
             ee_off[0] *= 1000
             ee_off[1] *= 1000
             ee_off[2] *= 1000
             self.robot_set_tcp_offset(ee_off)
+        self.robot_smart_mode_reset(self.mode)
 
     ### @brief Enable/Disable the specified joint
     ### @param id - joint to enable/disable (1-8)
@@ -173,7 +176,7 @@ class InterbotixRobotUXCore(object):
     ### @param accel - desired end-effector acceleration [mm/s^2]
     ### @param radii - radius of curve when connecting two lines in a sequence together [mm]
     ### @return ret - error code (0 means all good)
-    def robot_move_line_b(self, num_points, pose_list, vel=200, accel=2000, radii=0):
+    def robot_move_lineb(self, num_points, pose_list, vel=200, accel=2000, radii=0):
         move_request = MoveRequest(mvvelo=vel, mvacc=accel, mvtime=0, mvradii=radii)
         for point in range(num_points):
             move_request.pose = pose_list[point]
@@ -212,14 +215,20 @@ class InterbotixRobotUXCore(object):
         if resp.ret != 0: rospy.loginfo(resp.message)
         return resp.ret
 
-    ### @brief Smart mode reset - checks for errors while setting the mode and loops until its successful
+    ### @brief Smart mode reset - checks for errors while setting the mode and loops until it's successful
     ### @param mode - desired mode to set
     def robot_smart_mode_reset(self, mode=0):
-        ret = self.robot_set_mode(mode)
-        while (ret != 0):
-            self.robot_clear_error()
+        with self.xs_mutex:
+            current_mode = self.xarm_states.mode
+        while (mode != current_mode):
             ret = self.robot_set_mode(mode)
-        self.robot_set_state(0)
+            while (ret != 0):
+                self.robot_clear_error()
+                ret = self.robot_set_mode(mode)
+            self.robot_set_state(0)
+            rospy.sleep(0.5)
+            with self.xs_mutex:
+                current_mode = self.xarm_states.mode
 
     ### @brief Get info on the specified joint
     ### @param name - joint name for which to get info
@@ -248,3 +257,9 @@ class InterbotixRobotUXCore(object):
     def joint_state_cb(self, msg):
         with self.js_mutex:
             self.joint_states = msg
+
+    ### @brief ROS Subscriber Callback function to get the current xarm states
+    ### @param msg - ROS RobotMsg message
+    def xarm_state_cb(self, msg):
+        with self.xs_mutex:
+            self.xarm_states = msg
