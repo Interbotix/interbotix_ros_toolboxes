@@ -105,7 +105,7 @@ Besides for the arguments listed below, the arguments above are in this launch f
 | enable_pipeline | whether to enable the perception pipeline filters to run continuously; to save computer processing power, this should be set to False unless you are actively trying to tune the filter parameters; if False, the pipeline will only run if the `get_cluster_positions` ROS service is called | $(arg use_pointcloud_tuner_gui) |
 | cloud_topic | the absolute ROS topic name to subscribe to raw pointcloud data | /camera/depth/color/points |
 
-### static_transform_pub.launch
+#### static_transform_pub.launch
 | Argument | Description | Default Value |
 | -------- | ----------- | :-----------: |
 | load_transforms | whether or not the **static_trans_pub** node should publish any poses stored in the static_transforms.yaml file at startup; this should only be set to false if a tf chain already exists connecting the camera and arm base_link frame (usually defined in a URDF), and you'd rather use that tf chain as opposed to the one specified in the static_transforms.yaml file | true |
