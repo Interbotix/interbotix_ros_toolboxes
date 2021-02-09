@@ -34,11 +34,11 @@ class InterbotixRobotXSCore(object):
         self.pub_single = rospy.Publisher("/" + self.robot_name + "/commands/joint_single", JointSingleCommand, queue_size=1)
         self.pub_traj = rospy.Publisher("/" + self.robot_name + "/commands/joint_trajectory", JointTrajectoryCommand, queue_size=1)
         self.sub_joint_states = rospy.Subscriber("/" + self.robot_name + "/" + joint_state_topic, JointState, self.joint_state_cb)
-        rospy.loginfo("Initializing InterbotixRobotXSCore...")
-        rospy.loginfo("\nRobot Name: %s\nRobot Model: %s\n" % (self.robot_name, robot_model))
         while (self.joint_states == None and not rospy.is_shutdown()): pass
         self.js_index_map = dict(zip(self.joint_states.name, range(len(self.joint_states.name))))
-        rospy.sleep(1)
+        rospy.sleep(0.5)
+        print("Robot Name: %s\nRobot Model: %s" % (self.robot_name, robot_model))
+        print("Initialized InterbotixRobotXSCore!\n")
 
     def robot_set_operating_modes(self, cmd_type, name, mode, profile_type="velocity", profile_velocity=0, profile_acceleration=0):
         self.srv_set_op_modes(cmd_type, name, mode, profile_type, profile_velocity, profile_acceleration)

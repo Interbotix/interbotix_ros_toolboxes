@@ -11,6 +11,8 @@ from interbotix_xs_modules.core import InterbotixRobotXSCore
 from interbotix_xs_modules.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.turret import InterbotixTurretXSInterface
 from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
+from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
+from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 
 ### @brief Standalone Module to control an Interbotix Locobot
 ### @param robot_model - Interbotix Locobot model (ex. 'locobot_px100' or 'locobot_base')
@@ -26,10 +28,15 @@ class InterbotixLocobotXS(object):
     def __init__(self, robot_model, arm_model=None, arm_group_name="arm", gripper_name="gripper", turret_group_name="camera", robot_name=None, init_node=True, dxl_joint_states="dynamixel/joint_states", kobuki_joint_states="mobile_base/joint_states", use_move_base_action=False):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
         self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
-        self.base = InterbotixKobukiInterface(self.dxl.robot_name, kobuki_joint_states, use_move_base_action)
+        if rospy.has_param(self.dxl.robot_name + "/use_base") and rospy.get_param(self.dxl.robot_name + "/use_base") == True:
+            self.base = InterbotixKobukiInterface(self.dxl.robot_name, kobuki_joint_states, use_move_base_action)
+        if rospy.has_param(self.dxl.robot_name + "/use_perception") and rospy.get_param(self.dxl.robot_name + "/use_perception") == True:
+            self.pcl = InterbotixPointCloudInterface(self.dxl.robot_name + "/pc_filter", False)
         if arm_model is not None:
             self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
             self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
+            if rospy.has_param(self.dxl.robot_name + "/use_armtag") and rospy.get_param(self.dxl.robot_name + "/use_armtag") == True:
+                self.armtag = InterbotixArmTagInterface(self.dxl.robot_name + "/armtag", self.dxl.robot_name + "/apriltag", False)
 
 ### @brief Definition of the Interbotix Kobuki Module
 ### @param robot_name - namespace of the Kobuki node (a.k.a the name of the Interbotix Locobot)
@@ -50,7 +57,8 @@ class InterbotixKobukiInterface(object):
         self.pub_base_pose = rospy.Publisher("/" + self.robot_name + "/move_base_simple/goal", PoseStamped, queue_size=1)
         self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/mobile_base/odom", Odometry, self.base_odom_cb)
         self.sub_wheel_states = rospy.Subscriber("/" + self.robot_name + "/" + kobuki_joint_states, JointState, self.wheel_states_cb)
-        rospy.sleep(1)
+        rospy.sleep(0.5)
+        print("Initialized InterbotixKobukiInterface!\n")
 
     ### @brief Move the base for a given amount of time
     ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)

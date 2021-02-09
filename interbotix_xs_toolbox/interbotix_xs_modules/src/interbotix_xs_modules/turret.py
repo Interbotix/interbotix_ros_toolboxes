@@ -44,9 +44,9 @@ class InterbotixTurretXSInterface(object):
                      self.tilt_name : {"command" : tilt_position, "profile_type" : tilt_profile_type, "profile_velocity" : tilt_profile_velocity, "profile_acceleration" : tilt_profile_acceleration, "lower_limit" : tilt_limits[0], "upper_limit" : tilt_limits[1]}}
         self.change_profile(self.pan_name, pan_profile_type, pan_profile_velocity, pan_profile_acceleration)
         self.change_profile(self.tilt_name, tilt_profile_type, tilt_profile_velocity, tilt_profile_acceleration)
-        rospy.loginfo("Initializing InterbotixTurretXSInterface...")
-        rospy.loginfo("\nTurret Group Name: %s\nPan Name: %s, Profile Type: %s, Profile Velocity: %.1f, Profile Acceleration: %.1f\nTilt Name: %s, Profile Type: %s, Profile Velocity: %.1f, Profile Acceleration: %.1f" \
+        print("Turret Group Name: %s\nPan Name: %s, Profile Type: %s, Profile Velocity: %.1f, Profile Acceleration: %.1f\nTilt Name: %s, Profile Type: %s, Profile Velocity: %.1f, Profile Acceleration: %.1f" \
         % (group_name, self.pan_name, pan_profile_type, pan_profile_velocity, pan_profile_acceleration, self.tilt_name, tilt_profile_type, tilt_profile_velocity, tilt_profile_acceleration))
+        print("Initialized InterbotixTurretXSInterface!\n")
 
     ### @brief Helper function to command the 'Profile_Velocity' and 'Profile_Acceleration' motor registers
     ### @param joint_name - joint to change

@@ -48,8 +48,8 @@ class InterbotixArmXSInterface(object):
         self.initial_guesses = [[0.0] * self.group_info.num_joints for i in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
-        self.moving_time = moving_time
-        self.accel_time = accel_time
+        self.moving_time = 2.0
+        self.accel_time = 0.3
         self.group_name = group_name
         self.joint_commands = []
         for name in self.group_info.joint_names:
@@ -57,8 +57,8 @@ class InterbotixArmXSInterface(object):
         self.T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, self.joint_commands)
         self.set_trajectory_time(moving_time, accel_time)
         self.info_index_map = dict(zip(self.group_info.joint_names, range(self.group_info.num_joints)))
-        rospy.loginfo("Initializing InterbotixArmXSInterface...")
-        rospy.loginfo("\nArm Group Name: %s\nMoving Time: %.2f seconds\nAcceleration Time: %.2f seconds\nDrive Mode: Time-Based-Profile\n" % (group_name, moving_time, accel_time))
+        print("Arm Group Name: %s\nMoving Time: %.2f seconds\nAcceleration Time: %.2f seconds\nDrive Mode: Time-Based-Profile" % (group_name, moving_time, accel_time))
+        print("Initialized InterbotixArmXSInterface!\n")
 
     ### @brief Helper function to publish joint positions and block if necessary
     ### @param positions - desired joint positions

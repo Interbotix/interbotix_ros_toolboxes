@@ -94,8 +94,7 @@ class InterbotixHexapodXSInterface(object):
         self.initialize_start_pose()
         self.pub_pose = rospy.Publisher("/" + self.core.robot_name + "/pose", PoseStamped, queue_size=1)    # ROS Publisher to publish self.T_sf as a PoseStamped message
         tmr_transforms = rospy.Timer(rospy.Duration(0.04), self.publish_states)                             # ROS Timer to publish transforms to the /tf and /odom topics at a fixed rate
-        rospy.loginfo("Initializing InterbotixHexapodXSInterface...")
-        rospy.loginfo("Hexapod is ready to roll!")
+        print("Initialized InterbotixHexapodXSInterface!\n")
 
     ### @brief Parses the URDF and populates the appropiate variables with link information
     def get_urdf_info(self):

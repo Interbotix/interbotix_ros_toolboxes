@@ -1,0 +1,5 @@
+# List of ClusterInfo messages. The length of the list should correspond to the
+# number of objects seen by the camera
+
+---
+interbotix_perception_modules/ClusterInfo[] clusters

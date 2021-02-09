@@ -1,0 +1,279 @@
+#!/usr/bin/env python
+
+import sys
+import rospy
+import signal
+from python_qt_binding.QtCore import Qt
+from python_qt_binding.QtGui import QFont
+from python_qt_binding.QtWidgets import *
+from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
+
+### @brief GUI to tune the PointCloud Filtering parameters
+class PointCloudTunerGui(QWidget):
+    def __init__(self):
+        super(PointCloudTunerGui, self).__init__()
+        self.name_map = {}
+        filter_ns = rospy.get_namespace().strip("/")
+        self.pc_obj = InterbotixPointCloudInterface(filter_ns=filter_ns, init_node=False)
+        self.filepath = self.pc_obj.get_filepath()
+        self.big_font = QFont("Helvetica", 14, QFont.Bold)
+        self.small_font = QFont("Helvetica", 9, QFont.Bold)
+        self.vbox = QVBoxLayout()
+        self.master_layout = QVBoxLayout()
+        self.setFixedSize(530, 480)
+        self.setWindowTitle('PointCloud Tuner GUI')
+        self.create_crop_box_block()
+        self.create_voxel_grid_block()
+        self.create_seg_block()
+        self.create_ror_block()
+        self.create_cluster_block()
+        self.create_scroll_area()
+        self.create_button_block()
+        self.setLayout(self.master_layout)
+        self.show()
+
+    ### @brief Creates the Crop Box Filter Block
+    def create_crop_box_block(self):
+        grid_layout = QGridLayout()
+        title_label = self.create_label("Crop Box Filter", self.big_font)
+        grid_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.create_sub_component("X min [m]", self.pc_obj.set_x_filter_min, self.pc_obj.get_x_filter_min, -0.5, 0.5, 2, grid_layout, 1, 0)
+        self.create_sub_component("X max [m]", self.pc_obj.set_x_filter_max, self.pc_obj.get_x_filter_max,-0.5, 0.5, 2, grid_layout, 1, 1)
+        self.create_sub_component("Y min [m]", self.pc_obj.set_y_filter_min, self.pc_obj.get_y_filter_min, -0.5, 0.5, 2, grid_layout, 2, 0)
+        self.create_sub_component("Y max [m]", self.pc_obj.set_y_filter_max, self.pc_obj.get_y_filter_max, -0.5, 0.5, 2, grid_layout, 2, 1)
+        self.create_sub_component("Z min [m]", self.pc_obj.set_z_filter_min, self.pc_obj.get_z_filter_min,0.2, 1.5, 2, grid_layout, 3, 0)
+        self.create_sub_component("Z max [m]", self.pc_obj.set_z_filter_max, self.pc_obj.get_z_filter_max, 0.2, 1.5, 2, grid_layout, 3, 1)
+        self.create_horz_line(grid_layout, 4, 0, 1, 2)
+        self.vbox.addLayout(grid_layout)
+
+    ### @brief Creates the Voxel Filter Block
+    def create_voxel_grid_block(self):
+        grid_layout = QGridLayout()
+        title_label = self.create_label("Voxel Grid Filter", self.big_font)
+        grid_layout.addWidget(title_label, 0, 0)
+        sub_layout = self.create_sub_component("Leaf Size [m]", self.pc_obj.set_voxel_leaf_size, self.pc_obj.get_voxel_leaf_size, 0.001, 0.01, 3, grid_layout, 1, 0)
+        self.create_horz_line(grid_layout, 2, 0, 1, 2)
+        self.vbox.addLayout(grid_layout)
+
+    ### @brief Creates the Plane Segmentation Block
+    def create_seg_block(self):
+        grid_layout = QGridLayout()
+        title_label = self.create_label("Segmentation Filter", self.big_font)
+        grid_layout.addWidget(title_label, 0, 0, 1, 2)
+        sub_layout_1 = self.create_sub_component("Dist. Thresh [m]", self.pc_obj.set_plane_dist_thresh, self.pc_obj.get_plane_dist_thresh, 0.001, 0.05, 3, grid_layout, 1, 0)
+        sub_layout_2 = self.create_sub_component("Max Iterations", self.pc_obj.set_plane_max_iter, self.pc_obj.get_plane_max_iter, 25, 1000, 0, grid_layout, 1, 1)
+        self.create_horz_line(grid_layout, 2, 0, 1, 2)
+        self.vbox.addLayout(grid_layout)
+
+    ### @brief Creates the Radius Outlier Removal Block
+    def create_ror_block(self):
+        grid_layout = QGridLayout()
+        title_label = self.create_label("Radius Outlier Removal Filter", self.big_font)
+        grid_layout.addWidget(title_label, 0, 0, 1, 2)
+        sub_layout_1 = self.create_sub_component("Min Neighbors", self.pc_obj.set_ror_min_neighbors, self.pc_obj.get_ror_min_neighbors, 1, 20, 0, grid_layout, 1, 0)
+        sub_layout_2 = self.create_sub_component("Radius Search [m]", self.pc_obj.set_ror_radius_search, self.pc_obj.get_ror_radius_search, 0.005, 0.05, 3, grid_layout, 1, 1)
+        self.create_horz_line(grid_layout, 2, 0, 1, 2)
+        self.vbox.addLayout(grid_layout)
+
+    ### @brief Creates the Cluster Filter Block
+    def create_cluster_block(self):
+        grid_layout = QGridLayout()
+        title_label = self.create_label("Cluster Filter", self.big_font)
+        grid_layout.addWidget(title_label, 0, 0, 1, 2)
+        sub_layout_1 = self.create_sub_component("Min Size", self.pc_obj.set_cluster_min_size, self.pc_obj.get_cluster_min_size, 25, 1000, 0, grid_layout, 1, 0)
+        sub_layout_2 = self.create_sub_component("Max Size", self.pc_obj.set_cluster_max_size, self.pc_obj.get_cluster_max_size, 25, 1000, 0, grid_layout, 1, 1)
+        sub_layout_3 = self.create_sub_component("Tolerance [m]", self.pc_obj.set_cluster_tol, self.pc_obj.get_cluster_tol, 0.01, 0.1, 3, grid_layout, 2, 0, 1, 2)
+        self.create_horz_line(grid_layout, 3, 0, 1, 2)
+        self.vbox.addLayout(grid_layout)
+
+    ### @brief Encapsulates all filter blocks into a Scroll Area
+    def create_scroll_area(self):
+        widget = QWidget()
+        widget.setLayout(self.vbox)
+        scroll = QScrollArea()
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(False)
+        scroll.setWidget(widget)
+        scroll.setAlignment(Qt.AlignCenter)
+        self.master_layout.addWidget(scroll)
+
+    ### @brief Creates a GUI subsection for the 'Load Configs', 'Save Configs', and 'Reset Configs' buttons
+    def create_button_block(self):
+        # parent container for this section
+        horz_layout = QHBoxLayout()
+
+        # first row
+        reset_button = self.create_button('Reset Configs', self.small_font)
+        load_button = self.create_button('Load Configs', self.small_font)
+        save_button = self.create_button('Save Configs', self.small_font)
+
+        horz_layout.addStretch()
+        horz_layout.addWidget(reset_button)
+        horz_layout.addStretch()
+        horz_layout.addWidget(load_button)
+        horz_layout.addStretch()
+        horz_layout.addWidget(save_button)
+        horz_layout.addStretch()
+
+        # signals
+        reset_button.clicked.connect(self.reset_configs)
+        load_button.clicked.connect(self.load_configs)
+        save_button.clicked.connect(self.save_configs)
+
+        self.master_layout.addLayout(horz_layout)
+
+    ### @brief Helper function used to create the Blocks above
+    ### @param name - name of the Block
+    ### @param set_func - function to set the value of a specific parameter
+    ### @param get_func - function to get the value of a specfic parameter
+    ### @param min - minimum value that the parameter can have
+    ### @param max - maximum value that the parameter can have
+    ### @param precision - number of digits to show after the decimal point
+    ### @param parent_layout - reference to the QGridLayout object
+    ### @param row - row where the sub-component should be placed in the parent layout
+    ### @param col - column where the sub-component should be placed in the parent layout
+    ### @param row_span - number of rows that the sub-component should take up
+    ### @param col_span - number of columns that the sub-component should take up
+    def create_sub_component(self, name, set_func, get_func, min, max, precision, parent_layout, row, col, row_span=1, col_span=1):
+        horz_layout = QHBoxLayout()
+        vertical_layout = QVBoxLayout()
+
+        # first row
+        label = self.create_label(name, self.small_font)
+        display = self.create_display(str(get_func()))
+        horz_layout.addWidget(label)
+        horz_layout.addWidget(display)
+        vertical_layout.addLayout(horz_layout)
+
+        # second row
+        range = int(round(abs(max - min)/10**-precision))
+        slider = self.create_slider(min, max, get_func(), range)
+        vertical_layout.addWidget(slider)
+        parent_layout.addLayout(vertical_layout, row, col, row_span, col_span)
+
+        # signals
+        display.editingFinished.connect(lambda:self.update_slider_bar(name))
+        slider.valueChanged.connect(lambda:self.update_display(name))
+
+        # global dictionary to store and retrieve values
+        self.name_map[name] = {'display' : display, 'slider' : slider, 'min' : min, 'max' : max, 'set_func' : set_func, 'get_func' : get_func, 'range' : range, 'precision' : precision}
+
+    ### @brief Create a QLabel with some custom settings
+    ### @param text - message that the label should display
+    ### @param font - type of font to use
+    ### @return label - returns QLabel object
+    def create_label(self, text, font):
+        label = QLabel(text)
+        label.setFont(font)
+        label.setAlignment(Qt.AlignCenter)
+        return label
+
+    ### @brief Create a QPushButton with some custom settings
+    ### @param text - message that the button should display
+    ### @param font - type of font to use
+    ### @return button - returns QPushButton object
+    def create_button(self, text, font):
+        button = QPushButton(text)
+        button.setFont(font)
+        return button
+
+    ### @brief Creates a QLineEdit box with some custom settings
+    ### @param text - text that should be displayed
+    ### @return display - returns QLineEdit object
+    def create_display(self, text):
+        display = QLineEdit(text)
+        display.setFont(self.small_font)
+        display.setAlignment(Qt.AlignRight)
+        return display
+
+    ### @brief Creates a QSlider with some custom settings
+    ### @param min - min value of the slider
+    ### @param max - max value of the slider
+    ### @param default - default value of the slider
+    ### @param range - number of steps for the slider to have
+    ### @return slider - returns QSlider object
+    def create_slider(self, min, max, default, range=100):
+        slider = QSlider(Qt.Horizontal)
+        slider.setRange(0, range)
+        pctvalue = (default - min) / float(max - min)
+        slider.setValue(int(round(pctvalue * range)))
+        return slider
+
+    ### @brief Creates a horizontal line to act as a section divider
+    ### @param parent_layout - reference to the QGridLayout
+    ### @param row - row placement of the GUI subsection in the parent grid layout
+    ### @param col - column placement of the GUI subsection in the parent grid layout
+    ### @param row_span - number of rows that the horizontal line should take up in the parent layout
+    ### @param col_span - number of columns that the horizontal line should take up in the parent layout
+    def create_horz_line(self, parent_layout, row, col, row_span, col_span):
+        horz_line = QLabel()
+        horz_line.setFrameStyle(QFrame.HLine)
+        horz_line.setFrameShadow(QFrame.Plain)
+        horz_line.setLineWidth(3)
+        horz_line.setMidLineWidth(3)
+        parent_layout.addWidget(horz_line, row, col, row_span, col_span)
+
+# Event Handlers
+
+    ### @brief Event handler when a display is changed
+    ### @param name - name of the sub-component where the value was changed
+    ### @details - the function updates the slider position to reflect that shown in the display
+    def update_slider_bar(self, name):
+        info = self.name_map[name]
+        value = float(info['display'].text())
+        if (value < info['min']):
+            value = info['min']
+            info['display'].setText(str(value))
+        elif (value > info['max']):
+            value = info['max']
+            info['display'].setText(str(value))
+        pctvalue = (value - info['min']) / float(info['max'] - info['min'])
+        info['slider'].setValue(int(round(pctvalue * info['range'])))
+
+    ### @brief Event handler when a slider is changed
+    ### @param name - name of the sub-component where the value was changed
+    ### @details - the function updates the display to reflect the position dictated by the slider
+    def update_display(self, name):
+        info = self.name_map[name]
+        slider_value = info['slider'].value()
+        pctvalue = slider_value / float(info['range'])
+        value = pctvalue * (info['max'] - info['min']) + info['min']
+        num = ('%.' + str(info['precision']) + 'f') % value
+        info['display'].setText(num)
+        info['set_func'](value)
+
+    ### @brief Event handler when the 'Reset Configs' button is pressed
+    ### @details - resets the displays and sliders to the values as defined in the loaded YAML file
+    def reset_configs(self):
+        self.pc_obj.load_params(self.filepath)
+        for info in self.name_map.values():
+            pctvalue = (info['get_func']() - info['min']) / float(info['max'] - info['min'])
+            info['slider'].setValue(int(round(pctvalue * info['range'])))
+
+    ### @brief Event handler when the 'Load Configs' button is pressed
+    ### @details - Opens up a dialogue box where the user can specify the YAML file to load
+    def load_configs(self):
+        fname = QFileDialog.getOpenFileName(self, 'Open file', self.filepath, "YAML files (*.yaml)")
+        if (fname[0] == ""): return
+        self.filepath = fname[0]
+        self.pc_obj.load_params(self.filepath)
+        for info in self.name_map.values():
+            pctvalue = (info['get_func']() - info['min']) / float(info['max'] - info['min'])
+            info['slider'].setValue(int(round(pctvalue * info['range'])))
+
+    ### @brief Event handler when the 'Save Configs' button is pressed
+    ### @details - Opens up a dialogue box where the user can specify the YAML file to which to save the parameters
+    def save_configs(self):
+        fname = QFileDialog.getSaveFileName(self, 'Save file', self.filepath, "YAML files (*.yaml)")
+        if (fname[0] == ""): return
+        self.filepath = fname[0]
+        self.pc_obj.save_params(self.filepath)
+
+if __name__ == '__main__':
+    rospy.init_node('pointcloud_tuner_gui')
+    app = QApplication(sys.argv)
+    gui = PointCloudTunerGui()
+    # Only kill the program at node shutdown
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    sys.exit(app.exec_())

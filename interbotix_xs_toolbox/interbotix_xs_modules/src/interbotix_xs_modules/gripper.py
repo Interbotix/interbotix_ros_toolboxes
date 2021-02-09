@@ -38,8 +38,8 @@ class InterbotixGripperXSInterface(object):
         self.left_finger_lower_limit = gripper_info.joint_lower_limits[0]
         self.left_finger_upper_limit = gripper_info.joint_upper_limits[0]
         tmr_gripper_state = rospy.Timer(rospy.Duration(0.02), self.gripper_state)
-        rospy.loginfo("Initializing InterbotixGripperXSInterface...")
-        rospy.loginfo("\nGripper Name: %s\nGripper Pressure: %d%%\n" % (gripper_name, gripper_pressure * 100))
+        print("Gripper Name: %s\nGripper Pressure: %d%%" % (gripper_name, gripper_pressure * 100))
+        print("Initialized InterbotixGripperXSInterface!\n")
 
     ### @brief ROS Timer Callback function to stop the gripper moving past its limits when in PWM mode
     ### @param event [unused] - Timer event message

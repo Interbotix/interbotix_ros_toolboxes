@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="load_transforms"                   default="true"/>
+  <arg name="transform_filepath"                default=""/>
+
+  <node
+    name="static_trans_pub"
+    pkg="interbotix_perception_modules"
+    type="static_trans_pub"
+    output="screen">
+    <param name="load_transforms" value="$(arg load_transforms)"/>
+    <param name="transform_filepath" value="$(arg transform_filepath)"/>
+  </node>
+
+</launch>
