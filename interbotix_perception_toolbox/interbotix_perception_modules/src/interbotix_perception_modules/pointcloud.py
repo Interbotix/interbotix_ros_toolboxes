@@ -261,9 +261,9 @@ class InterbotixPointCloudInterface(object):
             valid_indices = range(num_clusters)
             for cluster in clusters:
                 for indx in valid_indices:
-                    if (root_clusters[indx].position.x - cluster.position.x < self.params.cluster_tol and
-                       root_clusters[indx].position.y - cluster.position.y < self.params.cluster_tol and
-                       root_clusters[indx].position.z - cluster.position.z < self.params.cluster_tol):
+                    if (abs(root_clusters[indx].position.x - cluster.position.x) < self.params.cluster_tol and
+                       abs(root_clusters[indx].position.y - cluster.position.y) < self.params.cluster_tol and
+                       abs(root_clusters[indx].position.z - cluster.position.z) < self.params.cluster_tol):
                        avg_clusters[indx].position.x += cluster.position.x / num_samples
                        avg_clusters[indx].position.y += cluster.position.y / num_samples
                        avg_clusters[indx].position.z += cluster.position.z /num_samples
