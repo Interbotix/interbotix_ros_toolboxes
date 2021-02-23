@@ -52,6 +52,7 @@ class InterbotixArmXSInterface(object):
         self.accel_time = 0.3
         self.group_name = group_name
         self.joint_commands = []
+        self.rev = 6.283
         for name in self.group_info.joint_names:
             self.joint_commands.append(self.core.joint_states.position[self.core.js_index_map[name]])
         self.T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, self.joint_commands)
@@ -173,6 +174,17 @@ class InterbotixArmXSInterface(object):
 
             # Check to make sure a solution was found and that no joint limits were violated
             if success:
+                theta_list = [int(elem * 1000)/1000.0 for elem in theta_list]
+                for x in range(len(theta_list)):
+                    if theta_list[x] <= -self.rev:
+                        theta_list[x] %= -self.rev
+                    elif theta_list[x] >= self.rev:
+                        theta_list[x] %= self.rev
+
+                    if theta_list[x] < self.group_info.joint_lower_limits[x]:
+                        theta_list[x] += self.rev
+                    elif theta_list[x] > self.group_info.joint_upper_limits[x]:
+                        theta_list[x] -= self.rev
                 solution_found = self.check_joint_limits(theta_list)
             else:
                 solution_found = False
