@@ -261,10 +261,17 @@ class InterbotixArmUXInterface(object):
     def get_single_joint_command(self, joint_name):
         return self.joint_commands[self.index_map[joint_name]]
 
-    ### @brief Get the end-effector pose w.r.t the Space frame
+    ### @brief Get the latest commanded end-effector pose w.r.t the Space frame
+    ### @return <4x4 matrix> - Transformation matrix
+    def get_ee_pose_command(self):
+        return np.array(self.T_sb)
+
+    ### @brief Get the actual end-effector pose w.r.t the Space frame
     ### @return <4x4 matrix> - Transformation matrix
     def get_ee_pose(self):
-        return np.array(self.T_sb)
+        joint_states = [self.core.joint_states.position[self.core.js_index_map[name]] for name in self.group_info.joint_names]
+        T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, joint_states)
+        return T_sb
 
     ### @brief Resets self.joint_commands to be the actual positions seen by the encoders
     ### @details - should be used whenever joints are torqued off / zero-gravity, right after torquing them on again
