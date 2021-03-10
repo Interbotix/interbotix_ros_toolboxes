@@ -236,7 +236,7 @@ class InterbotixArmXSInterface(object):
     ###            This virtual frame has the exact same x, y, z, roll, and pitch of /<robot_name>/base_link but contains the yaw
     ###            of the end-effector frame (/<robot_name>/ee_gripper_link).
     ###            Note that 'y' and 'yaw' must equal 0 if using arms with less than 6dof.
-    def set_ee_cartesian_trajectory(self, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, moving_time=None, wp_moving_time=0.5, wp_accel_time=0.25, wp_period=0.05):
+    def set_ee_cartesian_trajectory(self, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, moving_time=None, wp_moving_time=0.2, wp_accel_time=0.1, wp_period=0.05):
         if self.group_info.num_joints < 6 and (y is not 0 or yaw is not 0):
             rospy.loginfo("Please leave the 'y' and 'yaw' fields at '0' when working with arms that have less than 6dof.")
             return False
