@@ -19,7 +19,7 @@ class InterbotixPointCloudInterface(object):
             rospy.init_node(filter_ns.strip("/") + "_interface")
         self.params = FilterParamsRequest()
         self.param_filepath = rospy.get_param("/" + filter_ns + "/filter_params")
-        self.load_params()
+        self.load_params_from_param_server(filter_ns)
         rospy.wait_for_service("/" + filter_ns + "/set_filter_params")
         rospy.wait_for_service("/" + filter_ns + "/enable_pipeline")
         rospy.wait_for_service("/" + filter_ns + "/get_cluster_positions")
@@ -377,6 +377,22 @@ class InterbotixPointCloudInterface(object):
         with open(filepath, "r") as yamlfile:
             param_dict = yaml.safe_load(yamlfile)
         self.set_params(param_dict)
+
+    def load_params_from_param_server(self, filter_ns):
+        self.params.x_filter_min = rospy.get_param("/" + filter_ns + "/x_filter_min")
+        self.params.x_filter_max = rospy.get_param("/" + filter_ns + "/x_filter_max")
+        self.params.y_filter_min = rospy.get_param("/" + filter_ns + "/y_filter_min")
+        self.params.y_filter_max = rospy.get_param("/" + filter_ns + "/y_filter_max")
+        self.params.z_filter_min = rospy.get_param("/" + filter_ns + "/z_filter_min")
+        self.params.z_filter_max = rospy.get_param("/" + filter_ns + "/z_filter_max")
+        self.params.voxel_leaf_size = rospy.get_param("/" + filter_ns + "/voxel_leaf_size")
+        self.params.plane_max_iter = rospy.get_param("/" + filter_ns + "/plane_max_iter")
+        self.params.plane_dist_thresh = rospy.get_param("/" + filter_ns + "/plane_dist_thresh")
+        self.params.ror_radius_search = rospy.get_param("/" + filter_ns + "/ror_radius_search")
+        self.params.ror_min_neighbors = rospy.get_param("/" + filter_ns + "/ror_min_neighbors")
+        self.params.cluster_tol = rospy.get_param("/" + filter_ns + "/cluster_tol")
+        self.params.cluster_min_size = rospy.get_param("/" + filter_ns + "/cluster_min_size")
+        self.params.cluster_max_size = rospy.get_param("/" + filter_ns + "/cluster_max_size")
 
     ### @brief Save params to the specified filepath
     ### @param filepath - YAML config file to save the params; if None, the default filepath specified by the 'filter_params' ROS parameter is used

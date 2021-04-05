@@ -7,6 +7,7 @@
   <arg name="cloud_topic"                       default="camera/depth/color/points"/>
 
   <param name="$(arg filter_ns)/filter_params"  value="$(arg filter_params)"/>
+  <rosparam command="load" file="$(arg filter_params)" ns="$(arg filter_ns)"/>
 
   <node
     name="perception_pipeline"
@@ -16,7 +17,6 @@
     ns="$(arg filter_ns)">
     <param name="enable_pipeline" value="$(arg enable_pipeline)"/>
     <param name="cloud_topic" value="$(arg cloud_topic)"/>
-    <rosparam command="load" file="$(arg filter_params)"/>
   </node>
 
   <node if="$(arg use_pointcloud_tuner_gui)"

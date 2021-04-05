@@ -242,22 +242,26 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   // Get parameters from the parameter server
+  // Private Parameters
   ros::param::get("~enable_pipeline", enable_pipeline);
   ros::param::get("~cloud_topic", cloud_topic);
-  ros::param::get("~voxel_leaf_size", voxel_leaf_size);
-  ros::param::get("~x_filter_min", x_filter_min);
-  ros::param::get("~y_filter_min", y_filter_min);
-  ros::param::get("~z_filter_min", z_filter_min);
-  ros::param::get("~x_filter_max", x_filter_max);
-  ros::param::get("~y_filter_max", y_filter_max);
-  ros::param::get("~z_filter_max", z_filter_max);
-  ros::param::get("~plane_max_iter", plane_max_iter);
-  ros::param::get("~plane_dist_thresh", plane_dist_thresh);
-  ros::param::get("~ror_radius_search", ror_radius_search);
-  ros::param::get("~ror_min_neighbors", ror_min_neighbors);
-  ros::param::get("~cluster_tol", cluster_tol);
-  ros::param::get("~cluster_min_size", cluster_min_size);
-  ros::param::get("~cluster_max_size", cluster_max_size);
+
+  // Public Parameters
+  std::string filter_ns = ros::this_node::getNamespace();
+  ros::param::get(filter_ns + "/voxel_leaf_size", voxel_leaf_size);
+  ros::param::get(filter_ns + "/x_filter_min", x_filter_min);
+  ros::param::get(filter_ns + "/y_filter_min", y_filter_min);
+  ros::param::get(filter_ns + "/z_filter_min", z_filter_min);
+  ros::param::get(filter_ns + "/x_filter_max", x_filter_max);
+  ros::param::get(filter_ns + "/y_filter_max", y_filter_max);
+  ros::param::get(filter_ns + "/z_filter_max", z_filter_max);
+  ros::param::get(filter_ns + "/plane_max_iter", plane_max_iter);
+  ros::param::get(filter_ns + "/plane_dist_thresh", plane_dist_thresh);
+  ros::param::get(filter_ns + "/ror_radius_search", ror_radius_search);
+  ros::param::get(filter_ns + "/ror_min_neighbors", ror_min_neighbors);
+  ros::param::get(filter_ns + "/cluster_tol", cluster_tol);
+  ros::param::get(filter_ns + "/cluster_min_size", cluster_min_size);
+  ros::param::get(filter_ns + "/cluster_max_size", cluster_max_size);
 
   // Initialize ROS Services, Subscribers, and Publishers
   ros::ServiceServer service_set_filter_params = nh.advertiseService("set_filter_params", srv_set_filter_params);
