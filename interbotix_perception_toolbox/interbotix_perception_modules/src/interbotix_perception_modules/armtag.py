@@ -59,7 +59,7 @@ class InterbotixArmTagInterface(object):
 
         # If position_only, set the orientation of the found AR tag to be equivalent to the orientation of the arm's AR tag as dictated by the URDF
         if (position_only):
-            T_CamActualTag = self.get_transform(tfBuffer, self.apriltag.image.header.frame_id, self.arm_tag_frame)
+            T_CamActualTag = self.get_transform(tfBuffer, self.apriltag.image_frame_id, self.arm_tag_frame)
             T_CamTag[:3,:3] = T_CamActualTag[:3,:3]
 
         # Now, get a snapshot of the pose of arm's base_link frame w.r.t. the AR tag link (as defined in the URDF - not the one found by the algorithm)
@@ -68,10 +68,10 @@ class InterbotixArmTagInterface(object):
 
         # Now, lets find the transform of the arm's base_link frame w.r.t. the reference frame
         T_CamBase = np.dot(T_CamTag, T_TagBase)
-        if ref_frame == self.apriltag.image.header.frame_id:
+        if ref_frame == self.apriltag.image_frame_id:
             T_RefBase = T_CamBase
         else:
-            T_RefCam = self.get_transform(tfBuffer, ref_frame, self.apriltag.image.header.frame_id)
+            T_RefCam = self.get_transform(tfBuffer, ref_frame, self.apriltag.image_frame_id)
             T_RefBase = np.dot(T_RefCam, T_CamBase)
 
         # Now, we can publish the transform from the reference link to the arm's base_link legally as the arm's base_link has no parent

@@ -25,6 +25,8 @@ Below is a list and short description of each helper node. Over time, this list 
 
 - **armtag_tuner_gui** - presents a PyQt GUI to the user with a 'snap' button that can be used to find an AprilTag and publish the desired static transform; it also shows the resulting transform to the user
 
+- **picture_snapper** - small node that presents a 'snap_picture' ROS Server; it saves the latest picture obtained from a camera to the specified file location; it's important for this node to run on the same computer that the **apriltag_ros_single_image_server_node** node is running on since the latter node needs to be able to access the image file.
+
 - **static_trans_pub** - this is a small custom node that manages static transforms; any module that would like to publish a static transform publishes it to this node; it then appends it to a list if its a new transform or modifies a current transform and sends it out to ROS; it also loads/saves the transforms to a YAML file at node startup/shutdown
 
 - **pointcloud_tuner_gui** - presents a PyQt GUI to the user with display boxes and slider bars to allow a user to tune filter parameters used in the perception pipeline; it also loads/saves these settings to a YAML file

@@ -44,8 +44,9 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  FilterParams.srv
   ClusterInfoArray.srv
+  FilterParams.srv
+  SnapPicture.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

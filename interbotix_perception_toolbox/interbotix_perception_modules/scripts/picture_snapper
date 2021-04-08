@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import cv2
+import rospy
+import threading
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+from interbotix_perception_modules.srv import SnapPicture, SnapPictureResponse
+
+### @brief Class to get the latest picture from the camera and save it to a file with a specified name
+### @details - meant to run on the same computer with the AprilTag Single Image Server node;
+###            this way, all images will be saved to the same computer so that the AprilTag
+###            Single Image Server node can access them
+class PictureSnapper(object):
+    def __init__(self):
+        self.image = None
+        self.img_mutex = threading.Lock()
+        camera_color_topic = rospy.get_param("camera_color_topic").strip("/")
+        self.sub_camera_color = rospy.Subscriber("/" + camera_color_topic, Image, self.camera_color_cb)
+        rospy.Service('snap_picture', SnapPicture, self.snap_picture)
+        while (self.image == None and not rospy.is_shutdown()): pass
+
+    ### @brief ROS Subscriber Callback to get the latest color image
+    ### @param msg - ROS Image message
+    def camera_color_cb(self, msg):
+        with self.img_mutex:
+            self.image = msg
+
+    ### @brief ROS Service Callback to save the latest rgb picture with the desired name
+    ### @param req - ROS 'SnapPicture' Service message
+    def snap_picture(self, req):
+        bridge = CvBridge()
+        with self.img_mutex:
+            cv_image = bridge.imgmsg_to_cv2(self.image, "bgr8")
+        cv2.imwrite(req.filepath, cv_image)
+        return SnapPictureResponse()
+
+def main():
+    rospy.init_node('picture_snapper')
+    PictureSnapper()
+    rospy.spin()
+
+if __name__=='__main__':
+    main()

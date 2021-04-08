@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="tag_id"                            default="5"/>
-  <arg name="tag_size"                          default="0.023"/>
+  <arg name="tag_size"                          default="0.02"/>
   <arg name="tag_family"                        default="tagStandard41h12"/>
   <arg name="standalone_tags"                   default="[{id: $(arg tag_id), size: $(arg tag_size), name: ar_tag}]"/>
   <arg name="camera_frame"                      default="camera_color_optical_frame"/>
@@ -30,6 +30,14 @@
     <param name="camera_frame"                    value="$(arg camera_frame)"/>
     <rosparam param="standalone_tags"             subst_value="True">$(arg standalone_tags)</rosparam>
     <rosparam param="tag_bundles">[]</rosparam>
+  </node>
+
+  <node
+    name="picture_snapper"
+    pkg="interbotix_perception_modules"
+    type="picture_snapper"
+    output="screen"
+    ns="$(arg apriltag_ns)">
   </node>
 
 </launch>
