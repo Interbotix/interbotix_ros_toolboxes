@@ -48,8 +48,8 @@ class InterbotixArmXSInterface(object):
         self.initial_guesses = [[0.0] * self.group_info.num_joints for i in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
-        self.moving_time = 2.0
-        self.accel_time = 0.3
+        self.moving_time = None
+        self.accel_time = None
         self.group_name = group_name
         self.joint_commands = []
         self.rev = 2 * math.pi
