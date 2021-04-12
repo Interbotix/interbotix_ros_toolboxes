@@ -91,8 +91,12 @@ class InterbotixArmXSInterface(object):
     ### @return <bool> - True if all positions are within limits; False otherwise
     def check_joint_limits(self, positions):
         theta_list = [int(elem * 1000)/1000.0 for elem in positions]
+        speed_list = [abs(goal - current)/float(self.moving_time) for goal,current in zip(theta_list, self.joint_commands)]
+        # check position and velocity limits
         for x in range(self.group_info.num_joints):
             if not (self.group_info.joint_lower_limits[x] <= theta_list[x] <= self.group_info.joint_upper_limits[x]):
+                return False
+            if (speed_list[x] > self.group_info.joint_velocity_limits[x]):
                 return False
         return True
 
@@ -102,9 +106,13 @@ class InterbotixArmXSInterface(object):
     ### @return <bool> - True if within limits; False otherwise
     def check_single_joint_limit(self, joint_name, position):
         theta = int(position * 1000)/1000.0
+        speed = abs(theta - self.joint_commands[self.info_index_map[joint_name]])/float(self.moving_time)
         ll = self.group_info.joint_lower_limits[self.info_index_map[joint_name]]
         ul = self.group_info.joint_upper_limits[self.info_index_map[joint_name]]
+        vl = self.group_info.joint_velocity_limits[self.info_index_map[joint_name]]
         if not (ll <= theta <= ul):
+            return False
+        if speed > vl:
             return False
         return True
 
