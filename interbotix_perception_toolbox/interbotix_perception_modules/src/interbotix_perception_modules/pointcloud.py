@@ -258,7 +258,7 @@ class InterbotixPointCloudInterface(object):
             if len(clusters) != num_clusters:
                 rospy.logwarn("Found %d clusters instead of %d clusters..." % (len(clusters), num_clusters))
                 return False, []
-            valid_indices = range(num_clusters)
+            valid_indices = list(range(num_clusters))
             for cluster in clusters:
                 for indx in valid_indices:
                     if (abs(root_clusters[indx].position.x - cluster.position.x) < self.params.cluster_tol and
