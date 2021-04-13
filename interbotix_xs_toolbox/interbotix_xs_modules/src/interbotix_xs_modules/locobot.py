@@ -28,14 +28,14 @@ class InterbotixLocobotXS(object):
     def __init__(self, robot_model, arm_model=None, arm_group_name="arm", gripper_name="gripper", turret_group_name="camera", robot_name="locobot", init_node=True, dxl_joint_states="dynamixel/joint_states", kobuki_joint_states="mobile_base/joint_states", use_move_base_action=False):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
         self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
-        if rospy.has_param(robot_name + "/use_base") and rospy.get_param(robot_name + "/use_base") == True:
+        if rospy.has_param("/" + robot_name + "/use_base") and rospy.get_param("/" + robot_name + "/use_base") == True:
             self.base = InterbotixKobukiInterface(robot_name, kobuki_joint_states, use_move_base_action)
-        if rospy.has_param(robot_name + "/use_perception") and rospy.get_param(robot_name + "/use_perception") == True:
+        if rospy.has_param("/" + robot_name + "/use_perception") and rospy.get_param("/" + robot_name + "/use_perception") == True:
             self.pcl = InterbotixPointCloudInterface(robot_name + "/pc_filter", False)
         if arm_model is not None:
             self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
             self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
-            if rospy.has_param(robot_name + "/use_armtag") and rospy.get_param(robot_name + "/use_armtag") == True:
+            if rospy.has_param("/" + robot_name + "/use_armtag") and rospy.get_param("/" + robot_name + "/use_armtag") == True:
                 self.armtag = InterbotixArmTagInterface(robot_name + "/armtag", robot_name + "/apriltag", False)
 
 ### @brief Definition of the Interbotix Kobuki Module
