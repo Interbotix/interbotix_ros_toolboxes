@@ -8,7 +8,7 @@ Now, as the name suggests, these are *Server* images, so they do not come with d
  Since we're using the Pi 4, and the 64-bit option apparently makes things faster, you should choose the 20.04.2 64-bit option.
 
  ## Hardware
- Instead of purchasing components separately, it's much easier to get a Raspberry Pi 4B Kit (from Amazon or wherever) that comes with all necessary components. This includes a power cable, mini-to-full-size HDMI cable, case, fan, heatsinks, a class 10 microSD card (at least 32GB), and of course, the Pi itself (4GB RAM option seems to be pretty good, and is what we use at Interbotix).
+ Instead of purchasing components separately, it's much easier to get a Raspberry Pi 4B Kit (from Amazon or wherever) that comes with all necessary components. This includes a power cable, mini-to-full-size HDMI cable, case, fan, heatsinks, a class 10 microSD card (at least 32GB), and of course, the Pi itself (4GB RAM option seems to be pretty good, and is what we use at Interbotix). Note that using less than 4GB RAM on the RPi 4 can result in it freezing during code compilation (like when running the installation script for any of our RPi compatible robots). To get around this, you can change any mention of the *catkin_make* command in the robot installation scripts to *catkin_make -j1*.
 
  - [Rasberry Pi 4B Kit](https://www.amazon.com/Vilros-Raspberry-Complete-Transparent-Cooled/dp/B07VFCB192/ref=sr_1_8?dchild=1&keywords=rpi+4+kit&qid=1615835937&sr=8-8)
  - HDMI monitor, mouse, Ethernet cable (that connects to Internet), and keyboard
@@ -64,13 +64,13 @@ Now, as the name suggests, these are *Server* images, so they do not come with d
         $ sudo apt update && sudo apt upgrade
         $ sudo reboot
 
-- Finally, install the desktop! The process should take about 20 minutes.
+- Finally, install the desktop! The process should take about 20 minutes. Note that a message will pop up in the middle of the install asking you to choose between 'lightdm' and 'gdm3' as the default display manager. As Ubunte Mate uses the 'lightdm' display manager, make sure to select 'lightdm'.
 
         # Installing Ubuntu Mate Desktop
         $ sudo apt install ubuntu-mate-desktop
         $ sudo reboot
 
-- At boot, the monitor should now display a login screen (instead of the terminal prompts from before). So login! If you'd like to enable automatic login from now on...
+- At boot, the monitor should now display a login screen (instead of the terminal prompts from before). Before logging in, click the Ubuntu sign next to the username text box, and select 'MATE' as the desktop environment. Then login! If you'd like to enable automatic login from now on...
   - click the **Power Icon** on the top right of the desktop followed by **System Settings...**
   - Click **Login Window**
   - Go to the **Users** tab
