@@ -39,13 +39,13 @@ class InterbotixPointCloudInterface(object):
         self.params.z_filter_min = param_dict["z_filter_min"]
         self.params.z_filter_max = param_dict["z_filter_max"]
         self.params.voxel_leaf_size = param_dict["voxel_leaf_size"]
-        self.params.plane_max_iter = param_dict["plane_max_iter"]
+        self.params.plane_max_iter = int(param_dict["plane_max_iter"])
         self.params.plane_dist_thresh = param_dict["plane_dist_thresh"]
         self.params.ror_radius_search = param_dict["ror_radius_search"]
-        self.params.ror_min_neighbors = param_dict["ror_min_neighbors"]
+        self.params.ror_min_neighbors = int(param_dict["ror_min_neighbors"])
         self.params.cluster_tol = param_dict["cluster_tol"]
-        self.params.cluster_min_size = param_dict["cluster_min_size"]
-        self.params.cluster_max_size = param_dict["cluster_max_size"]
+        self.params.cluster_min_size = int(param_dict["cluster_min_size"])
+        self.params.cluster_max_size = int(param_dict["cluster_max_size"])
 
     ### @brief Filters out any data point in a pointcloud with an 'x' value less than 'x_filter_min'
     ### @param x_filter_min - desired minimum 'x' value [m]
@@ -92,7 +92,7 @@ class InterbotixPointCloudInterface(object):
     ### @brief Set the maximum number of iterations the sample consensus method should run
     ### @param plane_max_iter - desired max iterations (default is 50)
     def set_plane_max_iter(self, plane_max_iter):
-        self.params.plane_max_iter = plane_max_iter
+        self.params.plane_max_iter = int(plane_max_iter)
         self.srv_set_params(self.params)
 
     ### @brief Set the max distance perpendicular from the calculated 'plane' in which a point should be considerd part of the plane
@@ -110,7 +110,7 @@ class InterbotixPointCloudInterface(object):
     ### @brief Set the minimum number of neighbors (within the radius set above)
     ###        that any given point should have to remain in the pointcloud
     def set_ror_min_neighbors(self, ror_min_neighbors):
-        self.params.ror_min_neighbors = ror_min_neighbors
+        self.params.ror_min_neighbors = int(ror_min_neighbors)
         self.srv_set_params(self.params)
 
     ### @brief Set the cluster tolerance - all points that are within 'cluster_tol'
@@ -123,13 +123,13 @@ class InterbotixPointCloudInterface(object):
     ### @brief Set the minimum size that a cluster must be to be considered a cluster
     ### @param cluster_min_size - desired minimum size [number of points in a cluster's pointcloud]
     def set_cluster_min_size(self, cluster_min_size):
-        self.params.cluster_min_size = cluster_min_size
+        self.params.cluster_min_size = int(cluster_min_size)
         self.srv_set_params(self.params)
 
     ### @brief Set the maximum size that a cluster can be to be considered a cluster
     ### @param cluster_max_size - desired maximum size [number of points in a cluster's pointcloud]
     def set_cluster_max_size(self, cluster_max_size):
-        self.params.cluster_max_size = cluster_max_size
+        self.params.cluster_max_size = int(cluster_max_size)
         self.srv_set_params(self.params)
 
     ### @brief Helper function to convert from a FilterParams Service type to a Python Dictionary
@@ -386,13 +386,13 @@ class InterbotixPointCloudInterface(object):
         self.params.z_filter_min = rospy.get_param("/" + filter_ns + "/z_filter_min")
         self.params.z_filter_max = rospy.get_param("/" + filter_ns + "/z_filter_max")
         self.params.voxel_leaf_size = rospy.get_param("/" + filter_ns + "/voxel_leaf_size")
-        self.params.plane_max_iter = rospy.get_param("/" + filter_ns + "/plane_max_iter")
+        self.params.plane_max_iter = int(rospy.get_param("/" + filter_ns + "/plane_max_iter"))
         self.params.plane_dist_thresh = rospy.get_param("/" + filter_ns + "/plane_dist_thresh")
         self.params.ror_radius_search = rospy.get_param("/" + filter_ns + "/ror_radius_search")
-        self.params.ror_min_neighbors = rospy.get_param("/" + filter_ns + "/ror_min_neighbors")
+        self.params.ror_min_neighbors = int(rospy.get_param("/" + filter_ns + "/ror_min_neighbors"))
         self.params.cluster_tol = rospy.get_param("/" + filter_ns + "/cluster_tol")
-        self.params.cluster_min_size = rospy.get_param("/" + filter_ns + "/cluster_min_size")
-        self.params.cluster_max_size = rospy.get_param("/" + filter_ns + "/cluster_max_size")
+        self.params.cluster_min_size = int(rospy.get_param("/" + filter_ns + "/cluster_min_size"))
+        self.params.cluster_max_size = int(rospy.get_param("/" + filter_ns + "/cluster_max_size"))
 
     ### @brief Save params to the specified filepath
     ### @param filepath - YAML config file to save the params; if None, the default filepath specified by the 'filter_params' ROS parameter is used

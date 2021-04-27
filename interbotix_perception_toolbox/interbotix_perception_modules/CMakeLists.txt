@@ -92,5 +92,6 @@ catkin_install_python(PROGRAMS
   scripts/armtag_tuner_gui
   scripts/pointcloud_tuner_gui
   scripts/static_trans_pub
+  scripts/picture_snapper
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
