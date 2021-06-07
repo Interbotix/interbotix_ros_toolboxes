@@ -1,7 +1,7 @@
 import rospy
 import actionlib
 from std_msgs.msg import Empty
-from kobuki_msgs.msg import Sound
+from kobuki_msgs.msg import Sound, AutoDockingAction, AutoDockingGoal
 from geometry_msgs.msg import Twist, Vector3, PoseStamped, Quaternion
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
@@ -113,6 +113,27 @@ class InterbotixKobukiInterface(object):
     ### @param msg - ROS JointState message from Kobuki
     def wheel_states_cb(self, msg):
         self.wheel_states = msg
+
+    ### @brief Call action to automatically dock the base to charging station dock
+    ### @details - must be near enough to dock to see IR signals (~1 meter in front)
+    def auto_dock(self):
+            rospy.loginfo("Attempting to dock...")
+            # call docking action client and set docking action goal
+            ad_client = actionlib.SimpleActionClient("/" + self.robot_name + "auto_docking", AutoDockingAction)
+            ad_goal = AutoDockingGoal()
+
+            # wait for action server to be called and send docking goal
+            ad_client.wait_for_server()
+            ad_client.send_goal(ad_goal)
+
+            # run action and wait 60 seconds for result
+            ad_succeed = ad_client.wait_for_result(rospy.Duration(secs=60))
+
+            # log success or failure
+            if ad_succeed:
+                rospy.loginfo("Docking successful.")
+            else:
+                rospy.logerr("Docking unsuccessful.")
 
     ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
     ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
