@@ -117,23 +117,39 @@ class InterbotixKobukiInterface(object):
     ### @brief Call action to automatically dock the base to charging station dock
     ### @details - must be near enough to dock to see IR signals (~1 meter in front)
     def auto_dock(self):
-            rospy.loginfo("Attempting to dock...")
-            # call docking action client and set docking action goal
-            ad_client = actionlib.SimpleActionClient("/" + self.robot_name + "auto_docking", AutoDockingAction)
-            ad_goal = AutoDockingGoal()
+            rospy.loginfo("auto_dock called")
+            try:
+                # set docking action client
+                rospy.loginfo("Calling auto_dock action client...")
+                ad_client = actionlib.SimpleActionClient("/" + self.robot_name + "/auto_dock_action", AutoDockingAction)
+                rospy.loginfo("auto_dock action client called.")
 
-            # wait for action server to be called and send docking goal
-            ad_client.wait_for_server()
-            ad_client.send_goal(ad_goal)
+                # connect to Action Server
+                rospy.loginfo("Wating for auto_dock Action Server...")
+                while not ad_client.wait_for_server(timeout=rospy.Duration(secs=5)):
+                    if rospy.is_shutdown(): return False
+                    rospy.loginfo("     Action Server not yet connected...")
+                rospy.loginfo("auto_dock Action Server found.")
 
-            # run action and wait 60 seconds for result
-            ad_succeed = ad_client.wait_for_result(rospy.Duration(secs=60))
+                # set docking goal
+                rospy.loginfo("Setting auto_dock goal")
+                ad_goal = AutoDockingGoal()
+                rospy.loginfo("auto_dock goal set.")
 
-            # log success or failure
-            if ad_succeed:
-                rospy.loginfo("Docking successful.")
-            else:
-                rospy.logerr("Docking unsuccessful.")
+                # send docking goal
+                ad_client.send_goal(ad_goal)
+                rospy.on_shutdown(ad_client.cancel_goal())
+
+                # run action and wait 120 seconds for result
+                if ad_client.wait_for_result(timeout=rospy.Duration(secs=120)):
+                    return True
+                else:
+                    return False
+
+            # catch interrupts
+            except rospy.ROSInterruptException():
+                rospy.logerr("Docking interrupted by user.")
+                return False
 
     ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
     ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
