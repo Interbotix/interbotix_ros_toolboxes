@@ -1,7 +1,7 @@
 import rospy
 import actionlib
 from std_msgs.msg import Empty
-from kobuki_msgs.msg import Sound
+from kobuki_msgs.msg import Sound, AutoDockingAction, AutoDockingGoal
 from geometry_msgs.msg import Twist, Vector3, PoseStamped, Quaternion
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
@@ -113,6 +113,44 @@ class InterbotixKobukiInterface(object):
     ### @param msg - ROS JointState message from Kobuki
     def wheel_states_cb(self, msg):
         self.wheel_states = msg
+
+    ### @brief Call action to automatically dock the base to charging station dock
+    ### @details - must be near enough to dock to see IR signals (~1 meter in front)
+    def auto_dock(self):
+
+        rospy.loginfo("Attempting to autonomously dock to charging station.\n")
+        
+        try:
+            # set docking action client
+            ad_client = actionlib.SimpleActionClient("/" + self.robot_name + "/dock_drive_action", AutoDockingAction)
+
+            # connect to Action Server
+            rospy.loginfo("Wating for auto_dock Action Server...")
+            while not ad_client.wait_for_server(timeout=rospy.Duration(secs=5)):
+                if rospy.is_shutdown(): return False
+            rospy.loginfo("Found auto_dock Action Server")
+
+            # set docking goal
+            ad_goal = AutoDockingGoal()
+            ad_client.send_goal(ad_goal)
+            rospy.on_shutdown(ad_client.cancel_goal)
+
+            rospy.loginfo("Attemping to dock...")
+            # run action and wait 120 seconds for result
+            ad_client.wait_for_result(rospy.Duration(secs=120))
+            
+            if ad_client.get_result():
+                rospy.loginfo("Docking Successful.")
+            else:
+                rospy.loginfo("Docking Unsuccessful.")
+
+        # catch interrupts
+        except rospy.ROSInterruptException():
+            rospy.logerr("Docking interrupted by user.")
+            ad_client.cancel_goal()
+        except Exception:
+            rospy.logerr("Docking interrupted unexpectedly.")
+            ad_client.cancel_goal()
 
     ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
     ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
