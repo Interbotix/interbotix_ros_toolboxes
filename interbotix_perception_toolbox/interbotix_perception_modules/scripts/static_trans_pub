@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import os
 import yaml
 import rospy
 import tf2_ros
+from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import TransformStamped
 
 ### @brief Class to manage the publishing of static transforms
@@ -13,10 +15,30 @@ class StaticTransformManager(object):
     def __init__(self):
         self.transform_list = []
         self.br = tf2_ros.StaticTransformBroadcaster()
-        self.filepath = rospy.get_param("~transform_filepath")
+
+        # file and directory management
+        filename = rospy.get_param(
+            "~transform_filename",
+            default="static_transforms.yaml")
+        self.filepath = rospy.get_param(
+            "~transform_filepath", 
+            default=os.path.join("/interbotix/static_transforms/", filename))
+        filedir = os.path.dirname(self.filepath)
+        print(filedir)
+        self.full_filepath = os.path.join(os.getcwd(), self.filepath)
+        rospy.loginfo("Transform filepath set to " + self.full_filepath)
+        try: # check if directory exists, if not make one
+            if not os.path.exists(filedir):
+                os.makedirs(filedir)
+                rospy.loginfo("Creating directory: " + os.path.join(os.getcwd(), filedir))
+        except Exception: # if we fail (permissions, etc.)
+            rospy.logerr("Failed to create directory: " + e + " File will not be saved.")
+
         if rospy.get_param("~load_transforms"):
             self.load_transforms()
+        
         rospy.Subscriber("static_transforms", TransformStamped, self.transform_cb)
+        rospy.Service('save_transforms', Trigger, self.trigger_cb)
         rospy.on_shutdown(self.save_transforms)
 
     ### @brief ROS Subscriber Callback that receives TransformStamped messages
@@ -24,6 +46,8 @@ class StaticTransformManager(object):
     ### @details - any new static transform is appended to the self.transform_list variable;
     ###            if the transform already exists, the old one is replaced with the new one
     def transform_cb(self, msg):
+        rospy.loginfo(
+            "Static Transform Publisher received TF from \"" + msg.header.frame_id + "\" to \"" + msg.child_frame_id + "\"")
         for indx in range(len(self.transform_list)):
             if msg.child_frame_id == self.transform_list[indx].child_frame_id:
                 self.transform_list.pop(indx)
@@ -36,6 +60,7 @@ class StaticTransformManager(object):
         try:
             with open(self.filepath, "r") as yamlfile:
                 trans_list = yaml.safe_load(yamlfile)
+            rospy.loginfo("Loaded static transforms from " + self.full_filepath)
 
             self.transform_list = []
             for trans_dict in trans_list:
@@ -52,15 +77,16 @@ class StaticTransformManager(object):
                 trans.header.stamp = rospy.Time.now()
                 self.transform_list.append(trans)
             self.br.sendTransform(self.transform_list)
+
         except IOError:
-            rospy.loginfo("File at %s does not exist yet. No static transforms loaded." % self.filepath)
+            rospy.logwarn("File at %s does not exist yet. No static transforms loaded." % self.full_filepath)
 
     ### @brief At node shutdown, save all static transforms to the YAML file specified at 'self.transform_filepath'
     ### @details - if no transforms were published to this node, no file is created and no transforms are saved
     def save_transforms(self):
         if self.transform_list == []:
             return
-        rospy.loginfo("Saving transforms...")
+        
         trans_list = []
         for trans in self.transform_list:
             trans_dict = {}
@@ -77,6 +103,22 @@ class StaticTransformManager(object):
 
         with open(self.filepath, "w") as yamlfile:
             yaml.dump(trans_list, yamlfile, default_flow_style=False)
+
+        rospy.loginfo("Saved static transforms to: " + self.full_filepath)
+
+    ### @brief Service callback to save transforms now, instead of on node shutdown
+    ### @returns - TriggerResponse stating that the TFs were saved
+    def trigger_cb(self, req):
+        try:
+            self.save_transforms()
+            return TriggerResponse(
+                success=True,
+                message="Static transforms saved successfully.")
+        except Exception:
+            rospy.logerr("Something went wrong when saving static transforms.")
+            return TriggerResponse(
+                success=False,
+                message="Static transforms NOT saved successfully.")
 
 def main():
     rospy.init_node('static_trans_pub')

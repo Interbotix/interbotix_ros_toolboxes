@@ -3,10 +3,10 @@
   <name>interbotix_perception_modules</name>
   <version>0.0.0</version>
   <description>The interbotix_perception_modules package</description>
-  <maintainer email="trsupport@trossenrobotics.com">Solomon Wiznitzer</maintainer>
+  <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
   <!-- <url type="website">http://wiki.ros.org/interbotix_perception_modules</url> -->
-  <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
+  <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
   <!-- The *depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
@@ -19,6 +19,7 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>std_srvs</build_depend>
   <build_export_depend>apriltag_ros</build_export_depend>
   <build_export_depend>cv_bridge</build_export_depend>
   <build_export_depend>message_generation</build_export_depend>
@@ -27,6 +28,7 @@
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <build_export_depend>std_srvs</build_export_depend>
   <exec_depend>apriltag_ros</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>message_runtime</exec_depend>
@@ -36,6 +38,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   tf2_ros
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -93,5 +94,6 @@ catkin_install_python(PROGRAMS
   scripts/pointcloud_tuner_gui
   scripts/static_trans_pub
   scripts/picture_snapper
+  # scripts/landmark_creator
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
