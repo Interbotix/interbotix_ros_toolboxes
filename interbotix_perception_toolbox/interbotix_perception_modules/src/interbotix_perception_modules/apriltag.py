@@ -23,8 +23,8 @@ class InterbotixAprilTagInterface(object):
         self.srv_analyze_image = rospy.ServiceProxy("/" + apriltag_ns + "/single_image_tag_detection", AnalyzeSingleImage)
         self.pub_transforms = rospy.Publisher("/static_transforms", TransformStamped, queue_size=50)
         rospy.sleep(0.5)
-        while (self.request.camera_info == CameraInfo() and not rospy.is_shutdown()): pass
         print("Initialized InterbotixAprilTagInterface!\n")
+        while (self.request.camera_info == CameraInfo() and not rospy.is_shutdown()): pass
 
     ### @brief ROS Subscriber Callback to get the camera info
     ### @param msg - ROS CameraInfo message

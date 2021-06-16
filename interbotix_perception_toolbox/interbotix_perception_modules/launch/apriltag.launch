@@ -8,6 +8,7 @@
   <arg name="apriltag_ns"                       default="apriltag"/>
   <arg name="camera_color_topic"                default="camera/color/image_raw"/>
   <arg name="camera_info_topic"                 default="camera/color/camera_info"/>
+  <arg name="image_save_dir"                    default="interbotix/picture_snapper/"/>
 
   <param name="$(arg apriltag_ns)/camera_color_topic" value="$(arg camera_color_topic)"/>
   <param name="$(arg apriltag_ns)/camera_info_topic" value="$(arg camera_info_topic)"/>
@@ -38,6 +39,7 @@
     type="picture_snapper"
     output="screen"
     ns="$(arg apriltag_ns)">
+    <param name="image_save_dir"                  value="$(arg image_save_dir)"/>
   </node>
 
 </launch>
