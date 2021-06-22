@@ -1,25 +1,26 @@
 <launch>
 
+    <!-- Use this launch file to test out the picture snapper helper node -->
     <!-- Launches the RealSense camera node and an AprilTag detection node -->
-
-    <!-- Common Args -->
-    <arg name="robot_name"                      default="locobot"/>
     
     <!-- AprilTag Args -->
     <arg name="apriltag_ns"                     default="apriltag"/>
+    <arg name="camera_color_topic"              default="/camera/color/image_raw"/>
+    <arg name="camera_info_topic"               default="/camera/color/camera_info"/>
+    
     <!-- <arg name="image_save_dir"                  default="interbotix/picture_snapper/"/> -->
     
     <!-- AprilTag -->
     <include file="$(find interbotix_perception_modules)/launch/apriltag.launch">
         <arg name="apriltag_ns"                 value="$(arg apriltag_ns)"/>
-        <arg name="camera_color_topic"          value="$(arg robot_name)/camera/color/image_raw"/>
-        <arg name="camera_info_topic"           value="$(arg robot_name)/camera/color/camera_info"/>
+        <arg name="camera_color_topic"          value="$(arg camera_color_topic)"/>
+        <arg name="camera_info_topic"           value="$(arg camera_info_topic)"/>
         <!-- <arg name="image_save_dir"              value="$(arg image_save_dir)"/> -->
     </include>
 
     <!-- RealSense -->
-    <include file="$(find realsense2_camera)/launch/rs_camera.launch" ns="$(arg robot_name)">
-        <arg name="tf_prefix"		            value="$(arg robot_name)/camera"/>
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="tf_prefix"		            value="/camera"/>
         <arg name="filters"                     value=""/>
         <arg name="align_depth"                 value="false"/>
         <arg name="color_fps"                   value="30"/>

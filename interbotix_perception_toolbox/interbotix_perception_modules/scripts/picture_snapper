@@ -27,9 +27,11 @@ class PictureSnapper(object):
         self.camera_color_topic = rospy.get_param("camera_color_topic").strip("/")
         self.sub_camera_color = rospy.Subscriber("/" + self.camera_color_topic, Image, self.camera_color_cb)
 
+        apriltag_ns = rospy.get_param("~apriltag_ns", default="apriltag")
+
         # directory in which to save pictures (leave this as is)
         dir_param = rospy.get_param(
-            "/apriltag/picture_snapper/image_save_dir", 
+            "/" + apriltag_ns + "/picture_snapper/image_save_dir", 
             default="interbotix/picture_snapper/")
         self.image_save_dir = os.path.dirname(dir_param)
         self.full_image_save_dir = os.path.join(os.getcwd(), self.image_save_dir)
@@ -55,19 +57,22 @@ class PictureSnapper(object):
     ### @brief ROS Service Callback to save the latest rgb picture with the desired name
     ### @param req - ROS 'SnapPicture' Service message
     def snap_picture(self, req):
-        res = False
+        res = SnapPictureResponse()
+        res.success = False
+        res.filepath = "NULL"
         bridge = CvBridge()
         with self.img_mutex:
             try:
                 cv_image = bridge.imgmsg_to_cv2(self.image, "bgr8")
                 cv2.imwrite(os.path.join(self.image_save_dir, req.filename), cv_image)
-                rospy.loginfo(
-                    "Image saved to " + os.path.join(self.full_image_save_dir, req.filename))
-                res = True
+                filepath = os.path.join(self.full_image_save_dir, req.filename)
+                rospy.loginfo("Image saved to " + filepath)
+                res.success = True
+                res.filepath = filepath
             except Exception as e:
                 rospy.logerr("Failed to save image.")
                 rospy.logerr(e)
-        return SnapPictureResponse(res)
+        return res
 
 def main():
     rospy.init_node('picture_snapper')

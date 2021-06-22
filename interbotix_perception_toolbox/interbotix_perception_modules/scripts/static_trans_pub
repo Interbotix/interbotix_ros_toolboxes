@@ -24,7 +24,6 @@ class StaticTransformManager(object):
             "~transform_filepath", 
             default=os.path.join("/interbotix/static_transforms/", filename))
         filedir = os.path.dirname(self.filepath)
-        print(filedir)
         self.full_filepath = os.path.join(os.getcwd(), self.filepath)
         rospy.loginfo("Transform filepath set to " + self.full_filepath)
         try: # check if directory exists, if not make one
