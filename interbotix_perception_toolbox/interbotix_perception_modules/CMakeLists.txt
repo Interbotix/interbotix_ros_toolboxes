@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   tf2_ros
+  tf2_geometry_msgs
   std_srvs
 )
 
@@ -63,7 +64,16 @@ generate_messages(
 ## The catkin_package macro generates cmake config files for your package
 ## Declare things to be passed to dependent projects
 catkin_package(
- CATKIN_DEPENDS apriltag_ros cv_bridge message_runtime pcl_conversions pcl_ros roscpp rospy tf2_ros
+ CATKIN_DEPENDS
+  apriltag_ros
+  cv_bridge
+  message_runtime
+  pcl_conversions
+  pcl_ros
+  roscpp
+  rospy
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 ###########
@@ -94,6 +104,6 @@ catkin_install_python(PROGRAMS
   scripts/pointcloud_tuner_gui
   scripts/static_trans_pub
   scripts/picture_snapper
-  # scripts/landmark_creator
+  #scripts/landmark_manager
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
