@@ -19,7 +19,9 @@ class InterbotixAprilTagInterface(object):
         self.image_frame_id = None
         
         # set up subs, pubs, and services
-        camera_info_topic = rospy.get_param("/" + apriltag_ns + "/camera_info_topic").strip("/")
+        camera_info_topic = rospy.get_param(
+            "/" + apriltag_ns + "/camera_info_topic",
+            default="camera/color/image_raw").strip("/")
         rospy.wait_for_service("/" + apriltag_ns + "/snap_picture")
         rospy.wait_for_service("/" + apriltag_ns + "/single_image_tag_detection")
         self.sub_camera_info = rospy.Subscriber("/" + camera_info_topic, CameraInfo, self.camera_info_cb)
@@ -51,20 +53,20 @@ class InterbotixAprilTagInterface(object):
     ### @param publish_tf - whether to publish the pose of the AprilTag to the /tf tree
     ### @return pose - Pose message of the proposed AR tag w.r.t. the camera color image frame
     ### @details - tf is published to the StaticTransformManager node (in this package) as a static transform
-    ###            if no tags are detected, a genertic, zero-ed pose is returned
+    ###            if no tags are detected, a genertic invalid pose is returned
     def find_pose(self, ar_tag_name="ar_tag", publish_tf=False):
         self.srv_snap_picture(self.request.full_path_where_to_get_image)
         detections = self.srv_analyze_image(self.request).tag_detections.detections
         
         # check if tags were detected, return genertic pose if not
         if len(detections) == 0:
-            rospy.logwarn("Could not find " + ar_tag_name + ". Returning a 'zero' Pose...")
             pose = Pose()
         else:
             pose = detections[0].pose.pose.pose #TODO: support for multiple tags
         
         # publish pose to /static_transforms
         if publish_tf:
+            rospy.logwarn("Could not find " + ar_tag_name + ". Returning a 'zero' Pose...")
             msg = TransformStamped()
             msg.header.frame_id = self.image_frame_id
             msg.header.stamp = rospy.Time.now()
