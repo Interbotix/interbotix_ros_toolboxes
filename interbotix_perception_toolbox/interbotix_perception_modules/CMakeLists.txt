@@ -104,6 +104,5 @@ catkin_install_python(PROGRAMS
   scripts/pointcloud_tuner_gui
   scripts/static_trans_pub
   scripts/picture_snapper
-  #scripts/landmark_manager
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
