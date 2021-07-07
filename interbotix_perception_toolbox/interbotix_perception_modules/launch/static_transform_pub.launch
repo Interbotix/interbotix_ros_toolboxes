@@ -1,6 +1,7 @@
 <launch>
 
     <arg name="load_transforms"                 default="true"/>
+    <arg name="save_transforms"                 default="true"/>
     <arg name="transform_filename"              default="static_transforms.yaml"/>
     <arg name="transform_filepath"              default="interbotix/static_transforms/$(arg transform_filename)"/> <!-- Saves to $ROS_HOME/<transform_filepath> -->
 
@@ -10,6 +11,7 @@
         type="static_trans_pub"
         output="screen">
         <param name="load_transforms"           value="$(arg load_transforms)"/>
+        <param name="save_transforms"           value="$(arg save_transforms)"/>
         <param name="transform_filepath"        value="$(arg transform_filepath)"/>
     </node>
 

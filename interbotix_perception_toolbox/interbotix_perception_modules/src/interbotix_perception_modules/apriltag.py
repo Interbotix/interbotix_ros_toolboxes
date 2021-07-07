@@ -8,6 +8,8 @@ from apriltag_ros.srv import AnalyzeSingleImage, AnalyzeSingleImageRequest
 ### @param apriltag_ns - the namespace that the AprilTag node and other related parameters are in
 ### @param init_node - whether or not the module should initalize a ROS node; set to False if a node was already initalized somwhere else
 class InterbotixAprilTagInterface(object):
+    valid_tags = [5, 413, 820, 875, 1050]
+    v = False
     def __init__(self, apriltag_ns="apriltag", init_node=False, 
                 full_img_get_path="/tmp/get_image.png",
                 full_img_save_path="/tmp/save_image.png"):
@@ -55,18 +57,18 @@ class InterbotixAprilTagInterface(object):
     ### @details - tf is published to the StaticTransformManager node (in this package) as a static transform
     ###            if no tags are detected, a genertic invalid pose is returned
     def find_pose(self, ar_tag_name="ar_tag", publish_tf=False):
-        self.srv_snap_picture(self.request.full_path_where_to_get_image)
-        detections = self.srv_analyze_image(self.request).tag_detections.detections
+        detections = self._snap().detections
         
         # check if tags were detected, return genertic pose if not
         if len(detections) == 0:
             pose = Pose()
+            if self.v: 
+                rospy.logwarn("Could not find " + ar_tag_name + ". Returning a 'zero' Pose...")
         else:
             pose = detections[0].pose.pose.pose #TODO: support for multiple tags
         
         # publish pose to /static_transforms
         if publish_tf:
-            rospy.logwarn("Could not find " + ar_tag_name + ". Returning a 'zero' Pose...")
             msg = TransformStamped()
             msg.header.frame_id = self.image_frame_id
             msg.header.stamp = rospy.Time.now()
@@ -78,3 +80,43 @@ class InterbotixAprilTagInterface(object):
             self.pub_transforms.publish(msg)
         
         return pose
+
+    def _snap(self):
+        """Takes snapshot using current camera, returns tag detections
+
+        :return: list of tag detections
+        :rtype: apriltag_ros/AprilTagDetectionArray
+        """
+        self.srv_snap_picture(self.request.full_path_where_to_get_image)
+        return self.srv_analyze_image(self.request).tag_detections
+
+    def set_valid_tags(self, ids):
+        """Setter for list of valid tags
+
+        :param ids: list of valid ids
+        :type ids: list of ints
+        """
+        if ids != None:
+            self.valid_tags = set(ids)
+
+    def find_pose_id(self):
+        """Finds the pose of tags that can be seen by the camera and whose ids 
+        are in the list of valid ids.
+
+        :return: poses of the tags relative to camera, corresponding ids
+        :rtype: list of Poses, list of ints
+        """
+        if self.valid_tags is None:
+            rospy.logwarn(
+                "Tried to find pose of valid tags but valid ids are not set")
+        detections = self._snap().detections
+        if len(detections) == 0:
+            return [], []
+
+        poses = []
+        tags = []
+        for d in detections:
+            if d.id[0] in self.valid_tags:
+                poses.append(d.pose.pose.pose)
+                tags.append(d.id[0])
+        return poses, tags

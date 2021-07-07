@@ -15,30 +15,46 @@ class StaticTransformManager(object):
     def __init__(self):
         self.transform_list = []
         self.br = tf2_ros.StaticTransformBroadcaster()
-
-        # file and directory management
-        filename = rospy.get_param(
-            "~transform_filename",
-            default="static_transforms.yaml")
-        self.filepath = rospy.get_param(
-            "~transform_filepath", 
-            default=os.path.join("/interbotix/static_transforms/", filename))
-        filedir = os.path.dirname(self.filepath)
-        self.full_filepath = os.path.join(os.getcwd(), self.filepath)
-        rospy.loginfo("Transform filepath set to " + self.full_filepath)
-        try: # check if directory exists, if not make one
-            if not os.path.exists(filedir):
-                os.makedirs(filedir)
-                rospy.loginfo("Creating directory: " + os.path.join(os.getcwd(), filedir))
-        except Exception: # if we fail (permissions, etc.)
-            rospy.logerr("Failed to create directory: " + e + " File will not be saved.")
-
-        if rospy.get_param("~load_transforms"):
-            self.load_transforms()
         
+        # get save/load params
+        load_transforms = rospy.get_param(
+            "~load_transforms", 
+            default=True)
+        save_transforms = rospy.get_param(
+            "~save_transforms", 
+            default=True)
+
+        # if save or load, do file and directory management
+        if save_transforms or load_transforms:
+            filename = rospy.get_param(
+                "~transform_filename",
+                default="static_transforms.yaml")
+            self.filepath = rospy.get_param(
+                "~transform_filepath", 
+                default=os.path.join("/interbotix/static_transforms/", filename))
+            filedir = os.path.dirname(self.filepath)
+            self.full_filepath = os.path.join(os.getcwd(), self.filepath)
+            rospy.loginfo("Transform filepath set to " + self.full_filepath)
+
+            try: # check if directory exists, if not make one
+                if not os.path.exists(filedir):
+                    os.makedirs(filedir)
+                    rospy.loginfo("Creating directory: " + os.path.join(os.getcwd(), filedir))
+            except Exception: # if we fail (permissions, etc.)
+                rospy.logwarn("Failed to create directory: " + e + " Transform file will not be saved.")
+
+            # load if we need to
+            if load_transforms:
+                self.load_transforms()
+        
+            # save and set up saving service if we need to
+            if save_transforms:
+                rospy.Service('save_transforms', Trigger, self.trigger_cb)
+                rospy.on_shutdown(self.save_transforms)
+
         rospy.Subscriber("static_transforms", TransformStamped, self.transform_cb)
-        rospy.Service('save_transforms', Trigger, self.trigger_cb)
-        rospy.on_shutdown(self.save_transforms)
+
+        print("Initialized Static Transform Publisher!")
 
     ### @brief ROS Subscriber Callback that receives TransformStamped messages
     ### @param msg - TransformStamped ROS message
@@ -118,6 +134,7 @@ class StaticTransformManager(object):
             return TriggerResponse(
                 success=False,
                 message="Static transforms NOT saved successfully.")
+
 
 def main():
     rospy.init_node('static_trans_pub')
