@@ -2,9 +2,10 @@
 
 import sys
 import rospy
+import rospkg
 import signal
 from python_qt_binding.QtCore import Qt
-from python_qt_binding.QtGui import QFont
+from python_qt_binding.QtGui import QFont, QIcon
 from python_qt_binding.QtWidgets import *
 from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 
@@ -12,6 +13,8 @@ from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 class ArmTagTunerGui(QWidget):
     def __init__(self):
         super(ArmTagTunerGui, self).__init__()
+        r = rospkg.RosPack()
+        self.pkg_path = r.get_path("interbotix_perception_modules")
         self.sp = None
         self.name_map = {}
         armtag_ns = rospy.get_namespace().strip("/")
@@ -21,7 +24,9 @@ class ArmTagTunerGui(QWidget):
         self.big_font = QFont("Helvetica", 14, QFont.Bold)
         self.small_font = QFont("Helvetica", 9, QFont.Bold)
         self.master_layout = QVBoxLayout()
-        self.setWindowTitle('ArmTag Tuner GUI')
+        self.setWindowTitle('Interbotix | ArmTag Tuner GUI')
+        self.setWindowIcon(QIcon(self.pkg_path + 
+            "/images/gui/icon/Interbotix_Circle.png"))
         self.create_snap_block()
         self.create_display_block()
         self.setLayout(self.master_layout)

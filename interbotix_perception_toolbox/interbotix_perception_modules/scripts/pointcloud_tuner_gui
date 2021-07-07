@@ -2,9 +2,10 @@
 
 import sys
 import rospy
+import rospkg
 import signal
 from python_qt_binding.QtCore import Qt
-from python_qt_binding.QtGui import QFont
+from python_qt_binding.QtGui import QFont, QIcon
 from python_qt_binding.QtWidgets import *
 from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 
@@ -12,6 +13,8 @@ from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterfa
 class PointCloudTunerGui(QWidget):
     def __init__(self):
         super(PointCloudTunerGui, self).__init__()
+        r = rospkg.RosPack()
+        self.pkg_path = r.get_path("interbotix_perception_modules")
         self.name_map = {}
         filter_ns = rospy.get_namespace().strip("/")
         self.pc_obj = InterbotixPointCloudInterface(filter_ns=filter_ns, init_node=False)
@@ -21,7 +24,9 @@ class PointCloudTunerGui(QWidget):
         self.vbox = QVBoxLayout()
         self.master_layout = QVBoxLayout()
         self.setFixedSize(530, 480)
-        self.setWindowTitle('PointCloud Tuner GUI')
+        self.setWindowTitle('Interbotix | PointCloud Tuner GUI')
+        self.setWindowIcon(QIcon(self.pkg_path + 
+            "/images/gui/icon/Interbotix_Circle.png"))
         self.create_crop_box_block()
         self.create_voxel_grid_block()
         self.create_seg_block()
