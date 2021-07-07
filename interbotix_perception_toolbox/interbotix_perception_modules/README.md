@@ -76,10 +76,8 @@ Short descriptions for each launch file's arguments are below...
 #### apriltag.launch
 | Argument | Description | Default Value |
 | -------- | ----------- | :-----------: |
-| tag_id | id of the AprilTag being used | 5 |
-| tag_size | size [m] of the AprilTag (as defined from one inside-corner to the opposite inside corner) | 0.02 |
 | tag_family | family to which the AprilTag belongs | tagStandard41h12 |
-| standalone_tags | individual AprilTags the algorithm should be looking for; this should not be user-set unless using multiple unique tags | refer to [apriltag.launch](launch/apriltag.launch) |
+| standalone_tags | individual AprilTags the algorithm should be looking for | refer to [tags.yaml](config/tags.yaml) |
 | camera_frame | the camera frame in which the AprilTag will be detected | camera_color_optical_frame |
 | apriltag_ns | name-space where the AprilTag related nodes and parameters are located | apriltag |
 | camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_raw |

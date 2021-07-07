@@ -1,9 +1,7 @@
 <launch>
 
-  <arg name="tag_id"                            default="5"/>
-  <arg name="tag_size"                          default="0.02"/>
   <arg name="tag_family"                        default="tagStandard41h12"/>
-  <arg name="standalone_tags"                   default="[{id: $(arg tag_id), size: $(arg tag_size), name: ar_tag}]"/>
+  <arg name="standalone_tags"                   default="$(find interbotix_perception_modules)/config/tags.yaml"/>
   <arg name="camera_frame"                      default="camera_color_optical_frame"/>
   <arg name="apriltag_ns"                       default="apriltag"/>
   <arg name="camera_color_topic"                default="camera/color/image_raw"/>
@@ -29,7 +27,7 @@
     <param name="publish_tf"                      value="false"/>
     <param name="remove_duplicates"               value="true"/>
     <param name="camera_frame"                    value="$(arg camera_frame)"/>
-    <rosparam param="standalone_tags"             subst_value="True">$(arg standalone_tags)</rosparam>
+    <rosparam command="load"                      file="$(arg standalone_tags)"/>
     <rosparam param="tag_bundles">[]</rosparam>
   </node>
 
