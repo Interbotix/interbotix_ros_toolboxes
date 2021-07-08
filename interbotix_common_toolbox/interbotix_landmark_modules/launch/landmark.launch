@@ -1,0 +1,44 @@
+<launch>
+
+    <!-- Common Args & Param -->
+    <arg name="robot_name"                      default=""/>
+
+    <!-- AprilTag Args & Params-->
+    <arg name="apriltag_ns"                     default="apriltag"/>
+    <arg name="camera_color_topic"              default="/camera/color/image_raw"/>
+    <arg name="camera_info_topic"               default="/camera/color/camera_info"/>
+
+    <!-- RealSense Args & Params -->
+    <arg name="use_cam"                         default="true"/>
+
+    <!-- Landmark Manager Args & Params-->
+    <arg name="landmarks_ns"                    default="landmarks"/>
+    <arg name="obs_frame"                       default="camera_color_optical_frame"/>
+    <arg name="fixed_frame"                     default="landmarks"/>
+
+    <!-- AprilTag -->
+    <include file="$(find interbotix_perception_modules)/launch/apriltag.launch">
+        <arg name="apriltag_ns"                 value="$(arg apriltag_ns)"/>
+        <arg name="camera_color_topic"          value="$(arg camera_color_topic)"/>
+        <arg name="camera_info_topic"           value="$(arg camera_info_topic)"/>
+    </include>
+
+    <!-- RealSense -->
+    <include if="$(arg use_cam)" file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="tf_prefix"		            value="/camera"/>
+        <arg name="filters"                     value=""/>
+        <arg name="align_depth"                 value="false"/>
+        <arg name="color_fps"                   value="30"/>
+        <arg name="color_width"                 value="640"/>
+        <arg name="color_height"                value="480"/>
+        <arg name="depth_fps"                   value="30"/>
+        <arg name="depth_width"                 value="640"/>
+        <arg name="depth_height"                value="480"/>
+    </include>
+
+    <!-- Static Transform Publisher -->
+    <include file="$(find interbotix_perception_modules)/launch/static_transform_pub.launch">
+        <arg name="load_transforms"             value="false"/>
+    </include>
+
+</launch>
