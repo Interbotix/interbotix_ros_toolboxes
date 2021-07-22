@@ -40,7 +40,7 @@ class Landmark(object):
         self.goto_set_  = False
 
         self._init_goto_markers()
-        print("Initialized Landmark \"{}\"".format(label))
+        # print("Initialized Landmark \"{}\"".format(label))
 
     def _init_goto_markers(self):
         """initializes goto marker paramers"""
@@ -333,8 +333,6 @@ class LandmarkCollection(object):
             self.ROS=False
             self.obs_frame = obs_frame
             self.fixed_frame = fixed_frame
-        
-        print("Initialized LandmarkCollection")
 
     def get_landmark(self, id_num):
         """returns the specified landmark
@@ -435,6 +433,9 @@ class LandmarkCollection(object):
         try:
             with open(filepath, "r") as yamlfile:
                 lm_dict = yaml.safe_load(yamlfile)
+
+            if lm_dict == None:
+                return
 
             for key in lm_dict.keys():
 
@@ -563,11 +564,6 @@ class LandmarkCollection(object):
         for lm in self.data.values():
             ls.append(lm)
         return str(ls)
-
-# class ValidTags(Enum):
-#     """enum class containing supported tags and their names"""
-#     Face_Two_Eyes   = 5
-#     Up_Arrow        = 413
-#     Face_One_Eye    = 820
-#     U               = 875
-#     Face_No_Eyes    = 1050
+        
+    def __len__(self):
+        return len(self.data)

@@ -7,11 +7,10 @@
     </include>
 
     <!-- Adds /landmark TF under /map in tree -->
-    <node
-        pkg="interbotix_landmark_modules"
-        type="tf_map_to_landmark"
-        name="tf_map_to_landmark">
-    </node>
+    <include file="$(find interbotix_landmark_modules)/launch/tf_map_to_landmark.launch">
+        <arg name="fixed_frame"                 value="landmarks"/>
+        <arg name="original_frame"              value="map"/>
+    </include>
     
     <!-- Tests -->
     <test test-name="test_landmark" pkg="interbotix_landmark_modules" type="test_landmark.py"/>
