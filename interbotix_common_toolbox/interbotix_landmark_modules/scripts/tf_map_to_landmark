@@ -22,11 +22,18 @@ class PublishMapToLandmarkStaticTF(object):
             queue_size=1,
             latch=True)
 
-        # build identity TF betweeen /map and /landmarks
+        original_frame = rospy.get_param(
+            "~original_frame", 
+            default="map")
+        fixed_frame = rospy.get_param(
+            "~fixed_frame", 
+            default="landmarks")
+
+        # build identity TF betweeen /orig and /fixed
         tf = TransformStamped()
-        tf.header.frame_id = "map"
+        tf.header.frame_id = original_frame
         tf.header.stamp = rospy.Time.now()
-        tf.child_frame_id = "landmarks"
+        tf.child_frame_id = fixed_frame
         tf.transform.translation.x = 0.0
         tf.transform.translation.y = 0.0
         tf.transform.translation.z = 0.0
@@ -39,9 +46,9 @@ class PublishMapToLandmarkStaticTF(object):
         pub.publish(tf)
         rospy.loginfo(
             "[tf_map_to_landmark] Broadcasted static transformation between " +
-            "\"map\" and \"landmarks\".")
+            "\"{}\" and \"{}\".".format(original_frame, fixed_frame))
 
-        rospy.sleep(rospy.Duration(10.0))
+        rospy.sleep(rospy.Duration(100.0))
 
         rospy.loginfo("[tf_map_to_landmark] Shutting down...")
         exit()
