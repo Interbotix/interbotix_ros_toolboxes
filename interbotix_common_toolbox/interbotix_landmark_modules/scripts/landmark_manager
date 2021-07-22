@@ -8,24 +8,31 @@ from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection
 
 class LandmarkManagerCLI(object):
     cursor = "  >  "
-    valid_tags = [5, 413, 820, 875, 1050]
-    def __init__(self, args):
-        print(("This CLI application will be used to define and "
+    def __init__(self):
+        print(("\n\nThis CLI application will be used to define and "
                 "enable user-specified landmarks."))
         r = rospkg.RosPack()
         lm_path = r.get_path("interbotix_landmark_modules")
 
         # load params
         self.filepath = rospy.get_param(
-            "landmark_config", 
+            "~landmark_config", 
             default="{}/landmarks/landmarks.yaml".format(lm_path))
         self.fixed_frame = rospy.get_param(
-            "fixed_frame",
+            "~fixed_frame",
             default="landmarks")
         self.obs_frame = rospy.get_param(
-            "obs_frame",
+            "~obs_frame",
             default="camera_color_optical_frame")
-        
+        param_tags = rospy.get_param(
+            "~standalone_tags",
+            default=[{'id':   5, 'size': 0.02},
+                    {'id':  413, 'size': 0.02},
+                    {'id':  820, 'size': 0.02},
+                    {'id':  875, 'size': 0.02},
+                    {'id': 1050, 'size': 0.02}])
+        self.valid_tags = [tag['id'] for tag in param_tags]
+
         self.landmarks = LandmarkCollection(
             landmarks={},
             fixed_frame=self.fixed_frame,
@@ -39,7 +46,7 @@ class LandmarkManagerCLI(object):
         """walks the user through adding landmarks to collection"""
         while True:
             print(("Select landmark id you wish to create. Options: "
-                    "\n\t{}".format(self.valid_tags)))
+                    "\n\t{}".format(self._print_tags())))
             while True:
                 id_ = self._get_input(int)
                 if id_ in self.valid_tags:
@@ -51,11 +58,9 @@ class LandmarkManagerCLI(object):
 
             print("Landmark label (all lowercase).")
             label = self._get_input(str).lower()
-            lm = Landmark(label, id_)
+            self.landmarks.add_landmark(label=label, id_num=id_)
 
-            print(("Set a \"go-to\" for this landmark? When a \"go-to\" "
-                    "is set, the rover will navigate to a relative pose "
-                    "near the landmark. Options: [y/n]"))
+            print(("Set a \"go-to\" for this landmark? Options: [y/n]"))
             goto_yn = self._get_input(str).lower()
             if (goto_yn == "y") or (goto_yn == "yes"):
                 print("x-position in meters: ")
@@ -64,15 +69,15 @@ class LandmarkManagerCLI(object):
                 goto_y = self._get_input(float)
                 print("theta-rotation in radians: ")
                 goto_theta = self._get_input(float)
-                lm.set_goto(x=goto_x, y=goto_y, theta=goto_theta)
-
-            lm.tf_set_ = False
-            self.landmarks.add_landmark(lm, lm.get_id())
+                self.landmarks.data[id_].set_goto(
+                    x=goto_x,
+                    y=goto_y,
+                    theta=goto_theta)
 
             print("Enter another landmark? Options: [y/n]")
             more = self._get_input(str).lower()
             if not ((more == "y") or (more == "yes")):
-                print("Done adding landmarks. Saving and closing...")
+                print("Done adding landmarks. Saving and closing...\n\n")
                 break
 
     def _get_input(self, type_):
@@ -96,22 +101,19 @@ class LandmarkManagerCLI(object):
         self.landmarks.save(self.filepath)
         print("Saved landmarks to {}".format(self.filepath))
 
+    def _print_tags(self):
+        """Formats the list of tags to highlight those with set landmarks
+        
+        :return: string with formatted list of tags
+        :rtype: string"""
+        tags_in_collection = self.landmarks.get_valid_tags()
+        tag_list = ""
+        for tag in self.valid_tags:
+            tag_list += ("({}) ".format(tag) if tag in tags_in_collection 
+                        else "{} ".format(tag))
+        return "[ " + tag_list + "]"
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Application to handle landmark creation and management.")
-    parser.add_argument(
-        '-i'
-        '--interface', 
-        choices=['gui', 'cli'], 
-        default='cli',
-        help="Choose between graphical and command line interface.")
-
-    args = parser.parse_args()
-    
-    if args.i__interface == 'gui':
-        print("GUI application is not supported yet.")
-        exit()
-
-    elif args.i__interface == 'cli':
-        rospy.init_node("landmark_manager")
-        cli = LandmarkManagerCLI(args)
+    rospy.init_node("landmark_manager")
+    cli = LandmarkManagerCLI()
