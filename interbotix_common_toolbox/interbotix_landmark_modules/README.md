@@ -5,10 +5,8 @@ This package contains Python modules and scripts, and supporting level ROS nodes
 
 Landmarks are defined using a simple configuration file (example [here](landmarks/landmarks.yaml)). The file format is as follows:
 - **landmark:** - Key for the landmark. Set as the AprilTag ID it represents
-    - **goto:** - Optional. For landmark-based navigation, a *goto* is a pose relative to the landmark frame to which the robot will set as the nav goal.
-        - **theta:** - *goto* rotation relative to the landmark frame
-        - **x:** - *goto* translation normal to the landmark frame
-        - **y:** - *goto* translation parallel to the landmark frame
+    - **mounted:** - True if the tag that defines the landmark is mounted to a wall
+        - **offset:** - How far from the mounted tag the robot should go to when set as the nav goal.
     - **id:** - AprilTag ID of the landmark
     - **label:** - Name given to the landmark
     - **set:** - Whether or not the AprilTag has been detected. False by default. *Do not set this manually*.
@@ -20,7 +18,7 @@ Below is a list and short description of each helper module. Over time, this lis
 
 Below if a list and short description of each helper node. Over time, this list will grow to include others.
 
-- **landmark_manager** - Presents a command line application to define landmarks. The manager requests an AprilTag ID out of the list of tags specified in the launch file, a label for the landmark, and a *goto* for the landmark. Once the user is finished entering landmarks, the application will close, and the landmarks will be saved to the specified file.
+- **landmark_manager** - Presents a command line application to define landmarks. The manager requests an AprilTag ID out of the list of tags specified in the launch file, a label for the landmark, whether the tag is mounted, and the mounted offset. Once the user is finished entering landmarks, the application will close, and the landmarks will be saved to the specified file.
 
 <p align="center">
   <img width="410" height="auto" src="images/landmark_manager.png">
@@ -56,12 +54,12 @@ Short descriptions for each launch file's arguements are below...
 
 ### Landmark Issues
 
-##### File at <filepath> does not exist yet. No landmarks loaded.
-Tried to load landmarks from a file that doesn't exist. Make sure that you're pointing to the right file and that you yaml file is properly formatted.
+##### File at \<filepath\> does not exist yet. No landmarks loaded.
+Tried to load landmarks from a file that doesn't exist. Make sure that you're pointing to the right file and that your yaml file is properly formatted.
 
-##### Tried to publish goto marker but node is not active.
-Tried to publish a visual representation of the goto markers, but the landmark has not yet been found. Make sure to see detect the landmarkm using the **landmark_finder** before trying to publish any information about the transformation or the goto.
+<!-- ##### Tried to publish goto marker but node is not active.
+Tried to publish a visual representation of the goto markers, but the landmark has not yet been found. Make sure to detect the landmark using the **landmark_finder** before trying to publish any information about the transformation or the goto. -->
 
 ## Future Work
-- Add special landmark label that, when navigated to, trigger some function.
+- Add special landmark labels that, when navigated to, trigger some function.
     - For example, navigating to a landmark labeled `kobuki_dock` triggers the auto_dock sequence.
