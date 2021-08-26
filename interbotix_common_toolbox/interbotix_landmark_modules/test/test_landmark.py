@@ -2,13 +2,14 @@
 
 import sys
 import unittest
-import math
+from math import cos, pi
 
 import rospy
 import rosunit
 import tf2_ros
 
-from geometry_msgs.msg import Pose, Pose2D, TransformStamped
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from geometry_msgs.msg import Pose, Pose2D, TransformStamped, Quaternion
 from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection
 
 ## Integration tests for the landmark and landmark collection modules
@@ -34,15 +35,6 @@ class LandmarkTest(unittest.TestCase):
         self.assertEquals(
             id_num, lm.get_id(), 
         "Landmark ID is incorrect.")
-
-    def test_goto(self):
-        """test landmark goto"""
-        goto = Pose2D(x=1, y=1, theta=math.pi)
-        lm = Landmark("test", 0)
-        lm.set_goto(goto)
-        self.assertEquals(
-            goto, lm.get_goto(), 
-            "Landmark goto is incorrect.")
 
     def test_landmark_collection_add_pop(self):
         """test adding and removing from landmark collection"""

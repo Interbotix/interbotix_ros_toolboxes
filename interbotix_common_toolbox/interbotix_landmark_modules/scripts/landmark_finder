@@ -90,7 +90,6 @@ class LandmarkFinder(object):
                         parent_new=self.fixed_frame)
             # publish and save
             self.landmarks.pub_tfs(tag_ids)
-            self.landmarks.pub_gotos()
 
 
 if __name__ == "__main__":

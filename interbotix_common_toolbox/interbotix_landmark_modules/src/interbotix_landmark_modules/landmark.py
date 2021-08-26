@@ -2,8 +2,8 @@ import yaml
 import copy
 import rospy
 import tf2_ros
-# from enum import Enum
 import tf2_geometry_msgs
+from math import sin, cos, pi
 from tf.transformations import *
 from interbotix_common_modules import geometry as g
 from visualization_msgs.msg import Marker, MarkerArray
@@ -33,50 +33,11 @@ class Landmark(object):
         self.tf_wrt_cam.child_frame_id = self.label_
         self.tf_wrt_map = TransformStamped()
         self.tf_wrt_map.child_frame_id = self.label_
-        self.goto_ = Pose2D()
+        self.mounted_offset = 0.0
 
         # flags
         self.tf_set_    = False
-        self.goto_set_  = False
-
-        self._init_goto_markers()
-        # print("Initialized Landmark \"{}\"".format(label))
-
-    def _init_goto_markers(self):
-        """initializes goto marker paramers"""
-        # spherical goto marker
-        self.goto_marker_sphere = Marker()
-        self.goto_marker_sphere.id = 0
-        self.goto_marker_sphere.header.frame_id = self.landmark_ns
-        self.goto_marker_sphere.header.stamp = rospy.Time.now()
-        self.goto_marker_sphere.ns = self.get_label()
-        self.goto_marker_sphere.type = Marker.SPHERE
-        self.goto_marker_sphere.action = Marker.ADD
-        self.goto_marker_sphere.scale.x = 0.025
-        self.goto_marker_sphere.scale.y = 0.025
-        self.goto_marker_sphere.scale.z = 0.025
-        self.goto_marker_sphere.color.a = 1
-        self.goto_marker_sphere.color.r = 1
-        self.goto_marker_sphere.color.g = 0
-        self.goto_marker_sphere.color.b = 0
-        self.goto_marker_sphere.pose.position.z = 0
-
-        # text goto marker
-        self.goto_marker_text = Marker()
-        self.goto_marker_text.id = 1
-        self.goto_marker_text.header.frame_id = self.landmark_ns
-        self.goto_marker_text.header.stamp = rospy.Time.now()
-        self.goto_marker_text.ns = self.get_label()
-        self.goto_marker_text.type = Marker.TEXT_VIEW_FACING
-        self.goto_marker_text.text = "{}_goto".format(self.get_label())
-        self.goto_marker_text.scale.x = 0.05
-        self.goto_marker_text.scale.y = 0.05
-        self.goto_marker_text.scale.z = 0.05
-        self.goto_marker_text.color.a = 1
-        self.goto_marker_text.color.r = 1
-        self.goto_marker_text.color.g = 1
-        self.goto_marker_text.color.b = 1
-        self.goto_marker_text.pose.position.z = 0.05
+        self.mounted_   = False
 
     def get_id(self):
         """getter for id attribute
@@ -139,9 +100,9 @@ class Landmark(object):
         self.label_ = label
 
     def get_x(self):
-        """getter for landmark x position
+        """getter for landmark x position wrt map frame
 
-        :return: landmark x position
+        :return: landmark x position wrt map frame
         :rtype: float
         """
         if self.tf_set_:
@@ -150,9 +111,9 @@ class Landmark(object):
             return 0.0
 
     def get_y(self):
-        """getter for landmark y position
+        """getter for landmark y position wrt map frame
 
-        :return: landmark y position
+        :return: landmark y position wrt map frame
         :rtype: float
         """
         if self.tf_set_:
@@ -161,9 +122,9 @@ class Landmark(object):
             return 0.0
 
     def get_theta(self):
-        """getter for landmark yaw rotation
+        """getter for landmark yaw rotation wrt map frame
 
-        :return: landmark yaw rotation
+        :return: landmark yaw rotation wrt map frame
         :rtype: float
         """
         if self.tf_set_:
@@ -231,37 +192,45 @@ class Landmark(object):
         self.set_tf_wrt_map(pose, parent_new)
         self.tf_set_ = True
 
-    def set_goto(self, p2d=None, x=None, y=None, theta=None):
-        """sets the goto pose"""
-        if isinstance(p2d, Pose2D) and (x is None):
-            self.goto_ = p2d
-            return
-        elif (p2d is None) and (x is not None):
-            p2d = Pose2D()
-            p2d.x = x
-            p2d.y = y
-            p2d.theta = theta
-            self.goto_ = p2d
-
-    def get_goto(self):
-        """gets the goto pose
+    def set_mounted(self, mounted):
+        """setter for mounted_ bool
         
-        :return: goto
-        :rtype: Pose2D
+        :param: mounted
+        :mounted type: bool
         """
-        return self.goto_
+        self.mounted_ = mounted
+
+    def set_mounted_offset(self, offset=0.0):
+        """sets the mounted offset"""
+        self.mounted_offset = offset
+
+    def is_mounted(self):
+        """getter for mounted_ bool
+        
+        :return: mounted
+        :rtype: bool
+        """
+        return self.mounted_
+
+    def get_mounted_offset(self):
+        """getter for the mounted_offset
+        
+        :return: mounted_offset
+        :rtype: float
+        """
+        return self.mounted_offset
 
     def get_mb_goal(self):
-        """gets the x, y, theta goal for move_base action
+        """getter for the x, y, theta goal for move_base action
 
         :return: list containing x, y, and theta for move base goal
         :rype: list of floats
         """
-        mb_x = self.get_x() + self.get_goto().x
-        mb_y = self.get_y() + self.get_goto().y
-        mb_theta = self.get_theta() + self.get_goto().theta
-        goal = [mb_x, mb_y, mb_theta]
-        return goal
+        
+        mb_x = self.get_x() + self.get_mounted_offset()*cos(self.get_theta())
+        mb_y = self.get_y() + self.get_mounted_offset()*sin(self.get_theta())
+        mb_theta = self.get_theta()
+        return [mb_x, mb_y, mb_theta]
 
     def __eq__(self, other):
         if isinstance(other, str):      # match label if string
@@ -280,19 +249,16 @@ class Landmark(object):
         label: {}
         id: {}
         tf_self: {}
-        goto: {
-
-
-        }
+        mounted: {}
+        mounted_offset: {}
         tf: {
-
-
+            ...
         }
         ---
         """
         tf = self.get_tf_wrt_map() if self.tf_set_ else self.get_tf_wrt_cam()
-        r = "---\nlabel: {}\nid: {}\ntf_set: {}\ngoto:\n{}\ntf:\n{}\n---".format(
-            self.label_, self.id_, self.tf_set_, self.goto_, tf)
+        r = "---\nlabel: {}\nid: {}\ntf_set: {}\nmounted: {}\nmounted_offset: {}\ntf:\n{}\n---".format(
+            self.label_, self.id_, self.tf_set_, self.is_mounted(), self.mounted_offset, tf)
         return r
 
 class LandmarkCollection(object):
@@ -323,12 +289,7 @@ class LandmarkCollection(object):
                 TransformStamped,
                 queue_size=10,
                 latch=True)
-            
-            self.goto_marker_pub = rospy.Publisher(
-                'goto_viz', 
-                MarkerArray, 
-                queue_size=10,
-                latch=True)
+
         else:
             self.ROS=False
             self.obs_frame = obs_frame
@@ -399,10 +360,8 @@ class LandmarkCollection(object):
             lm_dict["id"] = lm.id_
             lm_dict["label"] = lm.label_
             lm_dict["set"] = lm.tf_set_
-            lm_dict["goto"] = {}
-            lm_dict["goto"]["x"] = lm.goto_.x
-            lm_dict["goto"]["y"] = lm.goto_.y
-            lm_dict["goto"]["theta"] = lm.goto_.theta
+            lm_dict["mounted"] = lm.is_mounted()
+            lm_dict["mounted_offset"] = lm.mounted_offset
             if lm.tf_set_:
                 lm_dict["tf"] = {}
                 lm_dict["tf"]["frame_id"] = tf_map.header.frame_id
@@ -465,20 +424,16 @@ class LandmarkCollection(object):
                     self.data[key].tf_wrt_cam.child_frame_id = self.data[key].get_label()
                     self.data[key].tf_set_ = False
                 
-                # get goto values from configs
-                if "goto" in lm_dict[key].keys():
-                    goto = Pose2D()
-                    goto.x = lm_dict[key]["goto"]["x"]
-                    goto.y = lm_dict[key]["goto"]["y"]
-                    goto.theta = lm_dict[key]["goto"]["theta"]
-                else:
-                    goto = Pose2D()
+                # get mounted/mounted_offset values from configs
+                if "mounted" in lm_dict[key].keys():
+                    m = lm_dict[key]["mounted"]
+                    mo = lm_dict[key]["mounted_offset"]
 
-                self.data[key].set_goto(goto)
+                self.data[key].mounted_ = m
+                self.data[key].set_mounted_offset(mo)
 
                 if self.ROS:
                     self.pub_tfs()
-                    self.pub_gotos()
 
             self.update_valid_tags()
             return True
@@ -522,42 +477,6 @@ class LandmarkCollection(object):
                     self.static_tf_pub.publish(
                         lm.get_tf_wrt_map())
                 return True
-
-    def update_goto_markers(self):
-        """updates goto markers"""
-        for lm in self.data.values():
-            g = lm.get_goto()
-            lm.goto_marker_sphere.pose.position.x = lm.get_x() + g.x # TODO tf in tag TF
-            lm.goto_marker_sphere.pose.position.y = lm.get_y() + g.y
-            lm.goto_marker_sphere.pose.position.z = 0.0
-            lm.goto_marker_sphere.pose.orientation.x = 0.0
-            lm.goto_marker_sphere.pose.orientation.y = 0.0
-            lm.goto_marker_sphere.pose.orientation.z = 0.0
-            lm.goto_marker_sphere.pose.orientation.w = 1.0
-            lm.goto_marker_sphere.header.stamp = rospy.Time.now()
-
-            lm.goto_marker_text.pose.position.x = lm.get_x() # TODO tf in tag TF
-            lm.goto_marker_text.pose.position.y = lm.get_y()
-            lm.goto_marker_text.pose.position.z = 0.1
-            lm.goto_marker_text.pose.orientation.x = 0.0
-            lm.goto_marker_text.pose.orientation.y = 0.0
-            lm.goto_marker_text.pose.orientation.z = 0.0
-            lm.goto_marker_text.pose.orientation.w = 1.0
-            lm.goto_marker_text.header.stamp = rospy.Time.now()
-
-    def pub_gotos(self):
-        """publishes goto markers"""
-        if not self.ROS:
-            rospy.logwarn(
-                "Tried to publish goto marker but node is not active.")
-            return
-        else:
-            self.update_goto_markers()
-            msg = MarkerArray()
-            for lm in self.data.values():
-                msg.markers.append(lm.goto_marker_sphere)
-                msg.markers.append(lm.goto_marker_text)
-                self.goto_marker_pub.publish(msg)
 
     def __repr__(self):
         ls = []

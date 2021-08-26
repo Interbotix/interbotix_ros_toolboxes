@@ -96,6 +96,7 @@ class InterbotixKobukiInterface(object):
                 return False
         else:
             self.pub_base_pose.publish(target_pose)
+        self.pub_base_sound.publish(Sound.CLEANINGEND)
         return True
 
     ### @brief For those who have their own controller, call this function repeatedly to move the robot

@@ -60,19 +60,18 @@ class LandmarkManagerCLI(object):
             label = self._get_input(str).lower()
             self.landmarks.add_landmark(label=label, id_num=id_)
 
-            print(("Set a \"go-to\" for this landmark? Options: [y/n]"))
-            goto_yn = self._get_input(str).lower()
-            if (goto_yn == "y") or (goto_yn == "yes"):
-                print("x-position in meters: ")
-                goto_x = self._get_input(float)
-                print("y-position in meters: ")
-                goto_y = self._get_input(float)
-                print("theta-rotation in radians: ")
-                goto_theta = self._get_input(float)
-                self.landmarks.data[id_].set_goto(
-                    x=goto_x,
-                    y=goto_y,
-                    theta=goto_theta)
+            print(("Is the tag mounted? Options: [y/n]"))
+            mounted_yn = self._get_input(str).lower()
+            if (mounted_yn == "y") or (mounted_yn == "yes"):
+                mounted = True
+                print("offset in meters: ")
+                mounted_offset = self._get_input(float)
+            else:
+                mounted = False
+                mounted_offset = 0.0
+            self.landmarks.data[id_].mounted_ = mounted
+            self.landmarks.data[id_].set_mounted_offset(mounted_offset)
+
 
             print("Enter another landmark? Options: [y/n]")
             more = self._get_input(str).lower()
@@ -99,7 +98,6 @@ class LandmarkManagerCLI(object):
     def save_landmarks(self):
         """method to call the LandmarkCollection.save() function"""
         self.landmarks.save(self.filepath)
-        print("Saved landmarks to {}".format(self.filepath))
 
     def _print_tags(self):
         """Formats the list of tags to highlight those with set landmarks
