@@ -39,6 +39,8 @@ class Landmark(object):
         self.tf_set_    = False
         self.mounted_   = False
 
+        self._init_markers()
+
     def get_id(self):
         """getter for id attribute
 
@@ -130,7 +132,7 @@ class Landmark(object):
         if self.tf_set_:
             q = self.tf_wrt_map.transform.rotation
             return euler_from_quaternion(
-                [q.x, q.y, q.z, q.w])[2]
+                [q.x, q.y, q.z, q.w], 'rxyz')[2]
         else:
             return 0.0
 
@@ -226,11 +228,46 @@ class Landmark(object):
         :return: list containing x, y, and theta for move base goal
         :rype: list of floats
         """
-        
-        mb_x = self.get_x() + self.get_mounted_offset()*cos(self.get_theta())
-        mb_y = self.get_y() + self.get_mounted_offset()*sin(self.get_theta())
+        mb_x = self.get_x() + self.get_mounted_offset()*cos(self.get_theta() + pi/2)
+        mb_y = self.get_y() + self.get_mounted_offset()*sin(self.get_theta() + pi/2)
         mb_theta = self.get_theta()
         return [mb_x, mb_y, mb_theta]
+
+    def _init_markers(self):
+        """initializes marker paramers"""
+        # spherical marker (location)
+        self.marker_sphere = Marker()
+        self.marker_sphere.id = 0
+        self.marker_sphere.header.frame_id = self.landmark_ns
+        self.marker_sphere.header.stamp = rospy.Time(0)
+        self.marker_sphere.ns = self.get_label()
+        self.marker_sphere.type = Marker.SPHERE
+        self.marker_sphere.action = Marker.ADD
+        self.marker_sphere.scale.x = 0.025
+        self.marker_sphere.scale.y = 0.025
+        self.marker_sphere.scale.z = 0.025
+        self.marker_sphere.color.a = 1
+        self.marker_sphere.color.r = 1
+        self.marker_sphere.color.g = 0
+        self.marker_sphere.color.b = 0
+        self.marker_sphere.pose.position.z = 0
+
+        # text marker (label)
+        self.marker_text = Marker()
+        self.marker_text.id = 1
+        self.marker_text.header.frame_id = self.landmark_ns
+        self.marker_text.header.stamp = rospy.Time(0)
+        self.marker_text.ns = self.get_label()
+        self.marker_text.type = Marker.TEXT_VIEW_FACING
+        self.marker_text.text = "{}_goal".format(self.get_label())
+        self.marker_text.scale.x = 0.05
+        self.marker_text.scale.y = 0.05
+        self.marker_text.scale.z = 0.05
+        self.marker_text.color.a = 1
+        self.marker_text.color.r = 1
+        self.marker_text.color.g = 1
+        self.marker_text.color.b = 1
+        self.marker_text.pose.position.z = 0.05
 
     def __eq__(self, other):
         if isinstance(other, str):      # match label if string
@@ -287,6 +324,12 @@ class LandmarkCollection(object):
             self.static_tf_pub = rospy.Publisher(
                 'static_transforms', 
                 TransformStamped,
+                queue_size=10,
+                latch=True)
+
+            self.marker_pub = rospy.Publisher(
+                'marker_viz',
+                MarkerArray,
                 queue_size=10,
                 latch=True)
 
@@ -448,10 +491,11 @@ class LandmarkCollection(object):
                 self.data[key].mounted_ = m
                 self.data[key].set_mounted_offset(mo)
 
-                if self.ROS:
-                    self.pub_tfs()
-
             self.update_valid_tags()
+            if self.ROS:
+                self.pub_tfs()
+                self.pub_markers(self.valid_tags)
+
             return True
         
         except IOError:
@@ -493,6 +537,43 @@ class LandmarkCollection(object):
                     self.static_tf_pub.publish(
                         lm.get_tf_wrt_map())
                 return True
+
+    def update_markers(self):
+        """updates markers"""
+        for lm in self.data.values():
+            g = lm.get_mb_goal()
+            lm.marker_sphere.pose.position.x = g[0] # TODO tf in tag TF?
+            lm.marker_sphere.pose.position.y = g[1]
+            lm.marker_sphere.pose.position.z = 0.0
+            lm.marker_sphere.pose.orientation.x = 0.0
+            lm.marker_sphere.pose.orientation.y = 0.0
+            lm.marker_sphere.pose.orientation.z = 0.0
+            lm.marker_sphere.pose.orientation.w = 1.0
+            lm.marker_sphere.header.stamp = rospy.Time(0)
+
+            lm.marker_text.pose.position.x = g[0] # TODO tf in tag TF?
+            lm.marker_text.pose.position.y = g[1]
+            lm.marker_text.pose.position.z = 0.1
+            lm.marker_text.pose.orientation.x = 0.0
+            lm.marker_text.pose.orientation.y = 0.0
+            lm.marker_text.pose.orientation.z = 0.0
+            lm.marker_text.pose.orientation.w = 1.0
+            lm.marker_text.header.stamp = rospy.Time(0)
+
+    def pub_markers(self, tag_ids):
+        """publishes markers"""
+        if not self.ROS:
+            rospy.logwarn(
+                "Tried to publish marker but node is not active.")
+            return
+        else:
+            self.update_markers()
+            msg = MarkerArray()
+            for lm in self.get_set_landmarks():
+                if lm.get_id() in tag_ids:
+                    msg.markers.append(lm.marker_sphere)
+                    msg.markers.append(lm.marker_text)
+                    self.marker_pub.publish(msg)
 
     def __repr__(self):
         ls = []
