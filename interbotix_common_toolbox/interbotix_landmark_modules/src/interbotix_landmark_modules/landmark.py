@@ -341,6 +341,22 @@ class LandmarkCollection(object):
     def update_valid_tags(self):
         """updates the list of valid tags"""
         self.valid_tags = set([l.get_id() for l in self.data.values()])
+
+    def get_set_tags(self):
+        """returns the list of seen tags
+        
+        :return: list of ids corresponding to seen landmarks in the Collection
+        :rtype: list on ints
+        """
+        return set([l.get_id() for l in self.data.values() if l.tf_set_])
+
+    def get_set_landmarks(self):
+        """returns the list of seen landmarks
+        
+        :return: list of seen landmarks in the Collection
+        :rtype: list of Landmarks
+        """
+        return set([l for l in self.data.values() if l.tf_set_])
         
     def save(self, filepath, ids=None):
         """save landmarks to a specified yaml file
