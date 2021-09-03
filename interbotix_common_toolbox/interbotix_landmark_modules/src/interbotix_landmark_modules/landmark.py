@@ -228,10 +228,32 @@ class Landmark(object):
         :return: list containing x, y, and theta for move base goal
         :rype: list of floats
         """
-        mb_x = self.get_x() + self.get_mounted_offset()*cos(self.get_theta() + pi/2)
-        mb_y = self.get_y() + self.get_mounted_offset()*sin(self.get_theta() + pi/2)
-        mb_theta = self.get_theta()
-        return [mb_x, mb_y, mb_theta]
+        if not self.is_mounted(): # we know offset is 0
+            return [self.get_x(), self.get_y(), self.get_theta()]
+        else:
+            tf_goal = TransformStamped()
+            tf_goal.header.stamp = rospy.Time(0)
+            tf_goal.header.frame_id = self.get_label()
+            tf_goal.child_frame_id = "{}_goal".format(self.get_label())
+            
+            # z-axis is normal to tag face, 'front of tag'
+            tf_goal.transform.translation.z = self.get_mounted_offset()
+            tf_goal.transform.rotation.w = 1.0 # ensure valid qt
+            self.tf_buffer.set_transform(tf_goal, "default_authority")
+
+            # get tf from map to goal frame [x,y,theta]
+            tf_map_to_goal = self.tf_buffer.lookup_transform_core(
+                self.landmark_ns,
+                tf_goal.child_frame_id,
+                rospy.Time(0))
+            mb_goal = [tf_map_to_goal.transform.translation.x,
+                       tf_map_to_goal.transform.translation.y,
+                       euler_from_quaternion(
+                        [tf_map_to_goal.transform.rotation.x,
+                        tf_map_to_goal.transform.rotation.y,
+                        tf_map_to_goal.transform.rotation.z,
+                        tf_map_to_goal.transform.rotation.w])[2]]
+            return mb_goal
 
     def _init_markers(self):
         """initializes marker paramers"""
@@ -493,7 +515,8 @@ class LandmarkCollection(object):
 
             self.update_valid_tags()
             if self.ROS:
-                self.pub_tfs()
+                self.pub_tfs(self.valid_tags)
+                rospy.sleep(rospy.Duration(1.0)) # wait to make sure tf is published
                 self.pub_markers(self.valid_tags)
 
             return True
@@ -540,20 +563,20 @@ class LandmarkCollection(object):
 
     def update_markers(self):
         """updates markers"""
-        for lm in self.data.values():
+        for lm in self.get_set_landmarks(): # only publish seen tags
             g = lm.get_mb_goal()
-            lm.marker_sphere.pose.position.x = g[0] # TODO tf in tag TF?
+            lm.marker_sphere.pose.position.x = g[0]
             lm.marker_sphere.pose.position.y = g[1]
-            lm.marker_sphere.pose.position.z = 0.0
+            lm.marker_sphere.pose.position.z = 0.1
             lm.marker_sphere.pose.orientation.x = 0.0
             lm.marker_sphere.pose.orientation.y = 0.0
             lm.marker_sphere.pose.orientation.z = 0.0
             lm.marker_sphere.pose.orientation.w = 1.0
             lm.marker_sphere.header.stamp = rospy.Time(0)
 
-            lm.marker_text.pose.position.x = g[0] # TODO tf in tag TF?
+            lm.marker_text.pose.position.x = g[0]
             lm.marker_text.pose.position.y = g[1]
-            lm.marker_text.pose.position.z = 0.1
+            lm.marker_text.pose.position.z = 0.15
             lm.marker_text.pose.orientation.x = 0.0
             lm.marker_text.pose.orientation.y = 0.0
             lm.marker_text.pose.orientation.z = 0.0

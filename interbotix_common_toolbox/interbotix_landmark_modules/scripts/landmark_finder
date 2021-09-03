@@ -88,8 +88,9 @@ class LandmarkFinder(object):
                     self.landmarks.data[tag_ids[i]].update_tfs(
                         parent_old=self.obs_frame,
                         parent_new=self.fixed_frame)
-            # publish and save
+            # publish
             self.landmarks.pub_tfs(tag_ids)
+            rospy.sleep(rospy.Duration(1.0)) # wait to make sure tf is published
             self.landmarks.pub_markers(tag_ids)
 
 
