@@ -3,6 +3,12 @@
 ## Overview
 This package contains Python modules along with supporting level ROS nodes to perform perception with any robotic arm platform. Using the tools here along with a color/depth camera, robotic arm, and AprilTag, it is possible to have the arm pick and place small objects from a tabletop-type platform using camera feedback. Examples showcasing this can be found in the *interbotix_XXXXX_perception* ROS package in any arm-related repository.
 
+<p align="center">
+  <a href=”https://www.youtube.com/watch?v=03BZ6PLFOac”>
+    <img width="410" height="auto" src="https://www.trossenrobotics.com/shared/github/github_python_perception.png">
+  </a>
+</p>
+
 ## Structure
 Below is a list and short description of each helper module. Over time, this list will grow to include others.
 
@@ -69,6 +75,13 @@ The next GUI shows the filters implemented in the Perception Pipeline in the ord
 - **Save configs** - this allows a user to specify a file to which to save the current settings.
 
 - **Reset Configs** - this allows a user to reset the current settings to be what they were when the file was originally loaded into the GUI.
+
+<p align="center">
+  <a href=”https://www.youtube.com/watch?v=UesfMYM4qcc”>
+    <img width="410" height="auto" src="https://www.trossenrobotics.com/shared/github/github_perception_pipeline.png">
+  </a>
+</p>
+
 
 ### Launch File Arguments
 Short descriptions for each launch file's arguments are below...

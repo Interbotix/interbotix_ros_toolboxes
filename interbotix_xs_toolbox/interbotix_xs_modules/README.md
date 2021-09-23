@@ -3,6 +3,12 @@
 ## Overview
 This package contains Python modules meant to work with any of our Interbotix X-Series platforms. It is what allows users with minimal ROS experience to get started with our platforms. Example demo scripts that build from these modules can be found in the *python_demos* directory in any repository that depends on this one.
 
+<p align="center">
+    <a href=”https://www.youtube.com/watch?v=KoqBEvz4GII”>
+        <img width="410" height="auto" src="https://www.trossenrobotics.com/shared/github/github_working_with_python.png">
+    </a>
+</p>
+
 ## Structure
 For these modules to work, the launch file located in any *interbotix_XXXXX_control* package must first be started. Additionally, the desired module must also be imported in your Python script. A brief description of each module is shown below. Note that for some modules, there are two classes defined. Both have the same name, but one includes 'Interface' as well. The one without 'Interface' in it is just a collection of various 'Interface' objects which make up a robot platform. That is the one which should be imported in Python scripts. The 'Interface' one though is what actually defines the functionality for a given object. This should only be imported when designing a new robot platform.
 

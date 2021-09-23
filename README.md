@@ -36,3 +36,4 @@ Feel free to send PRs to add features to currently existing Toolbox ROS packages
 
 ## Contributors
 - [Solomon Wiznitzer](https://github.com/swiz23) - **ROS Engineer**
+- [Luke Schmitt](https://github.com/lsinterbotix) - **Robotics Software Engineer**
