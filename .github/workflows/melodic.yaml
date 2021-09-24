@@ -1,0 +1,31 @@
+name: build-melodic
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  industrial_ci:
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: melodic, ROS_REPO: main, BUILDER: catkin_make, NOT_TEST_BUILD: true}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Clone core and remove CATKIN_IGNOREs
+        run: |
+          git clone https://github.com/Interbotix/interbotix_ros_core.git
+          rm interbotix_ros_core/interbotix_ros_xseries/CATKIN_IGNORE
+          rm interbotix_common_toolbox/interbotix_moveit_interface/CATKIN_IGNORE
+          rm interbotix_xs_toolbox/CATKIN_IGNORE
+      - name: Create src directory for xs
+        run: |
+          mkdir src
+          mv interbotix_ros_core src
+          mv interbotix_common_toolbox src
+          mv interbotix_xs_toolbox src
+      - uses: 'ros-industrial/industrial_ci@master'
+        env: ${{matrix.env}}
