@@ -10,6 +10,11 @@ Links to other repositories that use this repo include:
 - [interbotix_ros_crawlers](https://github.com/Interbotix/interbotix_ros_crawlers)
 - [interbotix_ros_manipulators](https://github.com/Interbotix/interbotix_ros_manipulators)
 
+### Build Status
+![build-kinetic status](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/kinetic.yaml/badge.svg)
+![build-melodic Status](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/melodic.yaml/badge.svg)
+![build-noetic Status](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/noetic.yaml/badge.svg)
+
 ## Repo Structure
 ```
 GitHub Landing Page: Explains repository structure and contains a single directory for each type of toolbox.
