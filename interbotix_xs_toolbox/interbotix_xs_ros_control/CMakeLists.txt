@@ -1,48 +1,85 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(interbotix_xs_ros_control)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  controller_manager
-  hardware_interface
-  interbotix_xs_msgs
-  joint_limits_interface
-  joint_trajectory_controller
-  roscpp
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(hardware_interface REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(xseries_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(joint_trajectory_controller REQUIRED)
+
+## COMPILE
+set(LIBRARY_NAME "interbotix_xs_ros_control")
+add_library(
+  ${LIBRARY_NAME}
+  SHARED
+  src/xs_hardware_interface_obj.cpp
 )
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-catkin_package(
- INCLUDE_DIRS include
- CATKIN_DEPENDS controller_manager hardware_interface interbotix_xs_msgs joint_limits_interface joint_trajectory_controller roscpp
-)
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
+target_include_directories(
+  ${LIBRARY_NAME}
+  PRIVATE
   include
-  ${catkin_INCLUDE_DIRS}
+)
+ament_target_dependencies(
+  ${LIBRARY_NAME}
+  hardware_interface
+  pluginlib
+  rclcpp
+  xseries_msgs
+  sensor_msgs
+  joint_trajectory_controller
 )
 
-## Declare a C++ executable
-## Specify libraries to link a library or executable target against
-## Add cmake target dependencies of the executable
-add_executable(xs_hardware_interface src/xs_hardware_interface.cpp src/xs_hardware_interface_obj.cpp)
-target_link_libraries(xs_hardware_interface ${catkin_LIBRARIES})
-add_dependencies(xs_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+pluginlib_export_plugin_description_file(hardware_interface interbotix_xs_ros_control.xml)
+
+# INSTALL
+install(
+  TARGETS ${LIBRARY_NAME}
+  DESTINATION lib
+)
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+# install(DIRECTORY
+#   launch
+#   config
+#   DESTINATION share/${PROJECT_NAME}/
+# )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+## EXPORTS
+ament_export_include_directories(
+  include
+)
+ament_export_libraries(
+  ${LIBRARY_NAME}
+)
+ament_export_dependencies(
+  hardware_interface
+  pluginlib
+  rclcpp
+)
+
+ament_package()

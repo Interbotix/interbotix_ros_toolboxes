@@ -8,6 +8,7 @@
 #include <hardware_interface/system_interface.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <hardware_interface/types/hardware_interface_status_values.hpp>
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include <hardware_interface/visibility_control.h>
 
 #include <xseries_msgs/msg/joint_group_command.hpp>
@@ -15,26 +16,40 @@
 #include <xseries_msgs/srv/robot_info.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
+
+using hardware_interface::HardwareInfo;
+using hardware_interface::return_type;
+using hardware_interface::status;
+using hardware_interface::HW_IF_POSITION;
 class XSHardwareInterface: public hardware_interface::SystemInterface
 {
 public:
 
-  XSHardwareInterface();
-  ~XSHardwareInterface();
-
-  hardware_interface::return_type configure(const hardware_interface::HardwareInfo & info) override;
+  RCLCPP_SHARED_PTR_DEFINITIONS(XSHardwareInterface);
+  return_type configure(const hardware_interface::HardwareInfo & info) override;
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
 
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
-  hardware_interface::return_type start() override;
+  return_type start() override;
 
-  hardware_interface::return_type stop() override;
+  return_type stop() override;
 
-  hardware_interface::return_type read() override;
+  return_type read() override;
 
-  hardware_interface::return_type write() override;
+  return_type write() override;
+
+  status get_status() const final
+  {
+    return status_;
+  }
+
+  std::string get_name() const final
+  {
+    return info_.name;
+  }
+
 
   void init();
 
@@ -59,11 +74,14 @@ protected:
   rclcpp::Publisher<xseries_msgs::msg::JointSingleCommand>::SharedPtr pub_gripper;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr sub_joint_states;
   rclcpp::Client<xseries_msgs::srv::RobotInfo>::SharedPtr srv_robot_info;
-
+  
   float gripper_cmd_prev;
   std::string group_name;
   std::string gripper_name;
   std::vector<int16_t> joint_state_indices;
+  status status_;
+  HardwareInfo info_;
+  std::mutex joint_state_mtx_;
 
   double loop_hz;
   size_t num_joints;
