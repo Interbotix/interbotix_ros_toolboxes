@@ -2,9 +2,13 @@
 
 void XSHardwareInterface::executor_cb()
 {
+  using namespace std::chrono_literals;
+
+  rclcpp::Rate r(20ms);
   while (rclcpp::ok)
   {
-    rclcpp::spin_some(nh->get_node_base_interface());
+    executor->spin_some();
+    r.sleep();
   }
 }
 
@@ -12,7 +16,7 @@ void XSHardwareInterface::init()
 {
   nh = std::make_shared<rclcpp::Node>("control_nh");
   executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-  // executor->add_node(nh);
+  executor->add_node(nh);
   std::string js_topic;
   using namespace std::placeholders;
   pub_group = nh->create_publisher<xseries_msgs::msg::JointGroupCommand>("commands/joint_group", 10);
@@ -114,6 +118,10 @@ std::vector<hardware_interface::StateInterface> XSHardwareInterface::export_stat
         hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_POSITION,
             &joint_positions[i]));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(
+            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY,
+            &joint_velocities[i]));
 
   }
   return state_interfaces;
@@ -122,8 +130,7 @@ std::vector<hardware_interface::CommandInterface> XSHardwareInterface::export_co
 {
 
   std::vector<hardware_interface::CommandInterface> command_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++)
-  {
+  for (uint i = 0; i < info_.joints.size(); i++){
     command_interfaces.emplace_back(
         hardware_interface::CommandInterface(
             info_.joints[i].name, hardware_interface::HW_IF_POSITION,
