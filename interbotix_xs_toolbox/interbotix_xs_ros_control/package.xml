@@ -19,6 +19,7 @@
   <depend>xseries_msgs</depend>
   <depend>xacro</depend>
   <depend>sensor_msgs</depend>
+  <depend>urdf</depend>
   <depend>joint_trajectory_controller</depend>
 
   <test_depend>ament_lint_auto</test_depend>

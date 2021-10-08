@@ -22,6 +22,7 @@ find_package(pluginlib REQUIRED)
 find_package(xseries_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(urdf REQUIRED)
 find_package(joint_trajectory_controller REQUIRED)
 
 ## COMPILE
@@ -41,6 +42,7 @@ ament_target_dependencies(
   hardware_interface
   pluginlib
   rclcpp
+  urdf
   xseries_msgs
   sensor_msgs
   joint_trajectory_controller
