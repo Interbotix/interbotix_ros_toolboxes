@@ -5,10 +5,10 @@ void XSHardwareInterface::executor_cb()
   using namespace std::chrono_literals;
 
   rclcpp::Rate r(20ms);
-  while (rclcpp::ok)
+  while (rclcpp::ok())
   {
     executor->spin_some();
-    r.sleep();
+    // r.sleep();
   }
 }
 
@@ -28,19 +28,19 @@ void XSHardwareInterface::init()
   update_thread = std::thread(&XSHardwareInterface::executor_cb, this);
   group_info_srv->cmd_type = "group";
   group_info_srv->name = "arm";
-  gripper_info_srv->cmd_type = "single";
-  gripper_info_srv->name = "gripper";
+  // gripper_info_srv->cmd_type = "single";
+  // gripper_info_srv->name = "gripper";
   using namespace std::chrono_literals;
   srv_robot_info->wait_for_service(500ms);
   auto group_future = srv_robot_info->async_send_request(group_info_srv);
-  auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
+  // auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
   auto group_res = group_future.get();
   num_joints = group_res->num_joints + 1;
   joint_state_indices = group_res->joint_state_indices;
-  auto grip_res = gripper_future.get();
-  joint_state_indices.push_back(grip_res->joint_state_indices.at(0));
+  // auto grip_res = gripper_future.get();
+  // joint_state_indices.push_back(grip_res->joint_state_indices.at(0));
   std::vector<std::string> joint_names = group_res->joint_names;
-  joint_names.push_back(grip_res->joint_names.at(0));
+  // joint_names.push_back(grip_res->joint_names.at(0));
 
   // Resize vectors
   joint_positions.resize(num_joints);
