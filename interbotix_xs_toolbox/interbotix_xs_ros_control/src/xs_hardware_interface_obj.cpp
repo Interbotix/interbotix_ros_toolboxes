@@ -35,7 +35,7 @@ void XSHardwareInterface::init()
   auto group_future = srv_robot_info->async_send_request(group_info_srv);
   // auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
   auto group_res = group_future.get();
-  num_joints = group_res->num_joints + 1;
+  num_joints = group_res->num_joints;
   joint_state_indices = group_res->joint_state_indices;
   // auto grip_res = gripper_future.get();
   // joint_state_indices.push_back(grip_res->joint_state_indices.at(0));
@@ -60,8 +60,8 @@ void XSHardwareInterface::init()
     joint_position_commands.at(i) = joint_states.position.at(joint_state_indices.at(i));
     joint_commands_prev.at(i) = joint_position_commands.at(i);
   }
-  joint_commands_prev.resize(num_joints - 1);
-  gripper_cmd_prev = joint_states.position.at(joint_state_indices.back()) * 2;
+  joint_commands_prev.resize(num_joints);
+  // gripper_cmd_prev = joint_states.position.at(joint_state_indices.back()) * 2;
 
   // Create position joint interface
 }
@@ -154,10 +154,10 @@ return_type XSHardwareInterface::write()
   xseries_msgs::msg::JointGroupCommand group_msg;
   xseries_msgs::msg::JointSingleCommand gripper_msg;
   group_msg.name = "arm";
-  gripper_msg.name = "gripper";
-  gripper_msg.cmd = joint_position_commands.back() * 2;
+  // gripper_msg.name = "gripper";
+  // gripper_msg.cmd = joint_position_commands.back() * 2;
 
-  for (size_t i{0}; i < num_joints - 1; i++)
+  for (size_t i{0}; i < num_joints; i++)
     group_msg.cmd.push_back(joint_position_commands.at(i));
 
   if (joint_commands_prev != group_msg.cmd)
@@ -165,11 +165,11 @@ return_type XSHardwareInterface::write()
     pub_group->publish(group_msg);
     joint_commands_prev = group_msg.cmd;
   }
-  if (gripper_cmd_prev != gripper_msg.cmd)
-  {
-    pub_gripper->publish(gripper_msg);
-    gripper_cmd_prev = gripper_msg.cmd;
-  }
+  // if (gripper_cmd_prev != gripper_msg.cmd)
+  // {
+  //   pub_gripper->publish(gripper_msg);
+  //   gripper_cmd_prev = gripper_msg.cmd;
+  // }
   return return_type::OK;
 }
 
