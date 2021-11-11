@@ -17,11 +17,11 @@ void XSHardwareInterface::init()
   nh.getParam("hardware_interface/group_name", group_name);
   nh.getParam("hardware_interface/gripper_name", gripper_name);
   nh.getParam("hardware_interface/joint_states_topic", js_topic);
-  pub_group = nh.advertise<interbotix_xs_sdk::JointGroupCommand>("commands/joint_group", 1);
-  pub_gripper = nh.advertise<interbotix_xs_sdk::JointSingleCommand>("commands/joint_single", 1);
+  pub_group = nh.advertise<interbotix_xs_msgs::JointGroupCommand>("commands/joint_group", 1);
+  pub_gripper = nh.advertise<interbotix_xs_msgs::JointSingleCommand>("commands/joint_single", 1);
   sub_joint_states = nh.subscribe(js_topic, 1, &XSHardwareInterface::joint_state_cb, this);
-  srv_robot_info = nh.serviceClient<interbotix_xs_sdk::RobotInfo>("get_robot_info");
-  interbotix_xs_sdk::RobotInfo group_info_srv, gripper_info_srv;
+  srv_robot_info = nh.serviceClient<interbotix_xs_msgs::RobotInfo>("get_robot_info");
+  interbotix_xs_msgs::RobotInfo group_info_srv, gripper_info_srv;
   group_info_srv.request.cmd_type = "group";
   group_info_srv.request.name = group_name;
   gripper_info_srv.request.cmd_type = "single";
@@ -106,8 +106,8 @@ void XSHardwareInterface::read()
 
 void XSHardwareInterface::write(ros::Duration elapsed_time)
 {
-  interbotix_xs_sdk::JointGroupCommand group_msg;
-  interbotix_xs_sdk::JointSingleCommand gripper_msg;
+  interbotix_xs_msgs::JointGroupCommand group_msg;
+  interbotix_xs_msgs::JointSingleCommand gripper_msg;
   group_msg.name = group_name;
   gripper_msg.name = "gripper";
   gripper_msg.cmd = joint_position_commands.back() * 2;

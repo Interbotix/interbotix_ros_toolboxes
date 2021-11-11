@@ -5,6 +5,7 @@ project(interbotix_xs_modules)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  interbotix_xs_msgs
   interbotix_xs_sdk
 )
 

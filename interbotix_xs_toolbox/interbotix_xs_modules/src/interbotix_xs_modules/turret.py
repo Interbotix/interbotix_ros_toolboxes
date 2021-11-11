@@ -1,7 +1,7 @@
 import math
 import rospy
 import numpy as np
-from interbotix_xs_sdk.msg import *
+from interbotix_xs_msgs.msg import *
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 
 ### @brief Standalone Module to control an Interbotix Turret

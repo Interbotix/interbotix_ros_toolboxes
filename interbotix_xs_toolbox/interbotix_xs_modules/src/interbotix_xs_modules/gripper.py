@@ -1,5 +1,5 @@
 import rospy
-from interbotix_xs_sdk.msg import JointSingleCommand
+from interbotix_xs_msgs.msg import JointSingleCommand
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 
 ### @brief Standalone Module to control an Interbotix Gripper using PWM or Current control

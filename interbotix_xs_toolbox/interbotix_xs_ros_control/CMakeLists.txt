@@ -10,6 +10,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   controller_manager
   hardware_interface
+  interbotix_xs_msgs
   interbotix_xs_sdk
   joint_limits_interface
   joint_trajectory_controller
@@ -26,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Declare things to be passed to dependent projects
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS controller_manager hardware_interface interbotix_xs_sdk joint_limits_interface joint_trajectory_controller roscpp
+ CATKIN_DEPENDS controller_manager hardware_interface interbotix_xs_msgs interbotix_xs_sdk joint_limits_interface joint_trajectory_controller roscpp
 )
 
 ###########
