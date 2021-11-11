@@ -12,9 +12,9 @@ endif()
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  interbotix_xs_msgs
   apriltag_ros
   cv_bridge
-  message_generation
   pcl_conversions
   pcl_ros
   roscpp
@@ -33,31 +33,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
 
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  ClusterInfo.msg
-)
-
-## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  ClusterInfoArray.srv
-  FilterParams.srv
-  SnapPicture.srv
-)
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-  std_msgs
-)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -65,9 +40,9 @@ generate_messages(
 ## Declare things to be passed to dependent projects
 catkin_package(
  CATKIN_DEPENDS
+  interbotix_xs_msgs
   apriltag_ros
   cv_bridge
-  message_runtime
   pcl_conversions
   pcl_ros
   roscpp

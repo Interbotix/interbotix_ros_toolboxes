@@ -4,7 +4,7 @@ import rospy
 import tf2_ros
 import numpy as np
 from urdf_parser_py.urdf import URDF
-from interbotix_xs_sdk.msg import *
+from interbotix_xs_msgs.msg import *
 from geometry_msgs.msg import PoseStamped, Point
 from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import TransformStamped, Quaternion

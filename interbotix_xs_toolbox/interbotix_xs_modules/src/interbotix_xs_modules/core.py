@@ -1,8 +1,8 @@
 import copy
 import rospy
 import threading
-from interbotix_xs_sdk.msg import *
-from interbotix_xs_sdk.srv import *
+from interbotix_xs_msgs.msg import *
+from interbotix_xs_msgs.srv import *
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint

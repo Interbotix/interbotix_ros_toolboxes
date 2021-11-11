@@ -12,9 +12,9 @@
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 #include <controller_manager/controller_manager.h>
-#include "interbotix_xs_sdk/JointGroupCommand.h"
-#include "interbotix_xs_sdk/JointSingleCommand.h"
-#include "interbotix_xs_sdk/RobotInfo.h"
+#include "interbotix_xs_msgs/JointGroupCommand.h"
+#include "interbotix_xs_msgs/JointSingleCommand.h"
+#include "interbotix_xs_msgs/RobotInfo.h"
 #include <sensor_msgs/JointState.h>
 
 class XSHardwareInterface: public hardware_interface::RobotHW

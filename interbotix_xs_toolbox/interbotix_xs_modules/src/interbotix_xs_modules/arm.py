@@ -2,7 +2,7 @@ import math
 import rospy
 import numpy as np
 import modern_robotics as mr
-from interbotix_xs_sdk.msg import *
+from interbotix_xs_msgs.msg import *
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 from interbotix_common_modules import angle_manipulation as ang
