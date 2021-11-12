@@ -24,16 +24,22 @@ GitHub Landing Page: Explains repository structure and contains a single directo
 │       ├── Robot Python Module Type 1
 │       ├── Robot Python Module Type 2
 │       └── Robot Python Module Type X
+├── Support-Level Required Third Party Packages
+│   ├── Third Party Package 1
+│   ├── Third Party Package 2
+│   └── Third Party Package X
 ├── LICENSE
 └── README.md
 ```
-As shown above, there are four main levels to this repository. To clarify some of the terms above, refer to the descriptions below.
+As shown above, there are four main levels and two types of packages in this repository. To clarify some of the terms above, refer to the descriptions below.
 
 - **Toolbox Type** - Toolboxes are broken up into types based on hardware or application. For example, one toolbox exists for Dynamixel-based robot platforms. Similarly, another toolbox exists for the Raspberry Pi platform. The Common toolbox on the other hand can be used for any application, regardless of hardware type. Future toolboxes could be based on other types of actuators or other computer platforms (like the Nvidia Jetson).
 
 - **Suppport-Level Toolbox ROS Package** - This refers to a ROS package that is used for more than one Robot Type (like for manipulators and rovers). By putting the package here, there's only instance of the code instead of duplicates in multiple repositories. Some examples include the *interbotix_xs_ros_control* and *interbotix_moveit_interface* ROS packages as they are used both in the *interbotix_ros_manipulators* and *interbotix_ros_rovers* repositories.
 
 - **Robot Python Module** - This refers to a Python Module found in the *interbotix_XXXXX_modules* ROS package. These modules are here because they can also be used for more than one robot type. For example, the *arm.py* module in the *interbotix_xs_modules* ROS package can be used both in X-Series Locobots found in the *interbotix_ros_rovers* repository and in the X-Series Arms found in the *interbotix_ros_manipulators* repository.
+
+- **Support-Level Required Third Party Packages** - These packages are made by external organizations that the Support-Level Toolbox Packages require to run. Only packages that are not available on package indicies like PyPI are stored here to reduce the git repository size. These packages will be managed using the git submodule feature. For example, the ModernRobotics Python library is available on PyPI, but the MATLAB library is not and is included here.
 
 ## Contributing
 Feel free to send PRs to add features to currently existing Toolbox ROS packages or to include new ones (like modules). Note that all PRs should follow the structure and naming conventions outlined in the repo including documentation.
