@@ -2,12 +2,13 @@
 #define XS_HARDWARE_INTERFACE_OBJ_H
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/state.hpp>
 #include <urdf/model.h>
 #include <boost/scoped_ptr.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/system_interface.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
-#include <hardware_interface/types/hardware_interface_status_values.hpp>
+#include <hardware_interface/types/lifecycle_state_names.hpp>
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include <hardware_interface/visibility_control.h>
 
@@ -19,31 +20,27 @@
 
 using hardware_interface::HardwareInfo;
 using hardware_interface::return_type;
-using hardware_interface::status;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using hardware_interface::HW_IF_POSITION;
 class XSHardwareInterface: public hardware_interface::SystemInterface
 {
 public:
 
   RCLCPP_SHARED_PTR_DEFINITIONS(XSHardwareInterface);
-  return_type configure(const hardware_interface::HardwareInfo & info) override;
+  CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
 
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
-  return_type start() override;
+  CallbackReturn start();
 
-  return_type stop() override;
+  CallbackReturn stop();
 
   return_type read() override;
 
   return_type write() override;
 
-  status get_status() const final
-  {
-    return status_;
-  }
 
   std::string get_name() const final
   {
@@ -79,7 +76,6 @@ protected:
   std::string group_name;
   std::string gripper_name;
   std::vector<int16_t> joint_state_indices;
-  status status_;
   HardwareInfo info_;
   std::mutex joint_state_mtx_;
 

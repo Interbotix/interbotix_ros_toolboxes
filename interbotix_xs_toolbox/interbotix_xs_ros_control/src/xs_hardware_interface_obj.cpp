@@ -66,20 +66,18 @@ void XSHardwareInterface::init()
   // Create position joint interface
 }
 
-return_type XSHardwareInterface::start()
+CallbackReturn XSHardwareInterface::start()
 {
-  status_ = hardware_interface::status::STARTED;
-  return return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-return_type XSHardwareInterface::stop()
+CallbackReturn XSHardwareInterface::stop()
 {
-  status_ = hardware_interface::status::STOPPED;
   update_thread.join();
-  return return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-return_type XSHardwareInterface::configure(const hardware_interface::HardwareInfo &info)
+CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareInfo &info)
 {
   init();
   info_ = info;
@@ -93,7 +91,7 @@ return_type XSHardwareInterface::configure(const hardware_interface::HardwareInf
           nh->get_logger(),
           "Joint '%s' has %d command interfaces found. 1 expected.",
           joint.name.c_str(), static_cast<int>(joint.command_interfaces.size()));
-      return return_type::ERROR;
+      return CallbackReturn::ERROR;
     }
 
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION)
@@ -102,10 +100,9 @@ return_type XSHardwareInterface::configure(const hardware_interface::HardwareInf
           nh->get_logger(), "Joint '%s' have %s command interfaces found. '%s' expected.",
           joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
           hardware_interface::HW_IF_POSITION);
-      return return_type::ERROR;
+      return CallbackReturn::ERROR;
     }
-    status_ = hardware_interface::status::CONFIGURED;
-    return hardware_interface::return_type::OK;
+    return CallbackReturn::SUCCESS;
   }
 }
 
