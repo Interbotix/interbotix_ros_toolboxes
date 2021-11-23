@@ -158,7 +158,7 @@ class InterbotixKobukiInterface(object):
     def get_odom(self):
         quat = (self.odom.orientation.x, self.odom.orientation.y, self.odom.orientation.z, self.odom.orientation.w)
         euler = euler_from_quaternion(quat)
-        pose = [pose.position.x, pose.position.y, euler[2]]
+        pose = [self.odom.position.x, self.odom.position.y, euler[2]]
         return pose
 
     ### Get the current wheel positions
