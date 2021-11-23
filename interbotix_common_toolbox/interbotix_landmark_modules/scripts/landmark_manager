@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+import six
 import rospy
 import rospkg
-import argparse
 from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection
 
 
@@ -90,7 +90,7 @@ class LandmarkManagerCLI(object):
         """
         while True:
             try:
-                input_ = type_(raw_input(self.cursor))
+                input_ = type_(six.moves.input(self.cursor))
                 return input_
             except ValueError:
                 print("Please enter a value of {}".format(type_))
