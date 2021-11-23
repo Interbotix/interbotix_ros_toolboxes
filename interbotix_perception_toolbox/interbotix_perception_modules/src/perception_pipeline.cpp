@@ -16,16 +16,16 @@
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include "interbotix_xs_msgs/FilterParams.h"
-#include "interbotix_xs_msgs/ClusterInfo.h"
-#include "interbotix_xs_msgs/ClusterInfoArray.h"
+#include "interbotix_perception_modules/FilterParams.h"
+#include "interbotix_perception_modules/ClusterInfo.h"
+#include "interbotix_perception_modules/ClusterInfoArray.h"
 
 typedef pcl::PointXYZRGB PointT;
 
 ros::Publisher pub_pc_obj, pub_pc_filter, pub_marker_obj, pub_marker_crop;
 visualization_msgs::Marker marker_obj, marker_crop;
 sensor_msgs::PointCloud2ConstPtr input;
-std::vector<interbotix_xs_msgs::ClusterInfo> cluster_info_vector;
+std::vector<interbotix_perception_modules::ClusterInfo> cluster_info_vector;
 bool enable_pipeline = true;
 std::string cloud_topic;
 float x_filter_min, y_filter_min, z_filter_min;
@@ -160,7 +160,7 @@ void perception_pipeline()
     pub_marker_obj.publish(marker_obj);
 
     // Save a ClusterInfo message with info on the cluster
-    interbotix_xs_msgs::ClusterInfo ci_msg;
+    interbotix_perception_modules::ClusterInfo ci_msg;
     ci_msg.frame_id = input->header.frame_id;
     ci_msg.position.x = cntrd.x;
     ci_msg.position.y = cntrd.y;
@@ -191,7 +191,7 @@ void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& pointcloud)
 // @param req - Custom FilterParams service request containing the parameters to change
 // @param res - Custom FitlerParams service response (empty)
 // @return <bool> - true if service executed successfully
-bool srv_set_filter_params(interbotix_xs_msgs::FilterParams::Request& req, interbotix_xs_msgs::FilterParams::Response& res)
+bool srv_set_filter_params(interbotix_perception_modules::FilterParams::Request& req, interbotix_perception_modules::FilterParams::Response& res)
 {
   voxel_leaf_size = req.voxel_leaf_size;
   x_filter_min = req.x_filter_min;
@@ -214,7 +214,7 @@ bool srv_set_filter_params(interbotix_xs_msgs::FilterParams::Request& req, inter
 // @param req - Custom ClusterInfoArray service request (empty)
 // @param res - Custom ClusterInfoArray service response containing a list of ClusterInfo messages for each cluster found
 // @return <bool> - true if service executed successfully
-bool srv_get_cluster_positions(interbotix_xs_msgs::ClusterInfoArray::Request& req, interbotix_xs_msgs::ClusterInfoArray::Response& res)
+bool srv_get_cluster_positions(interbotix_perception_modules::ClusterInfoArray::Request& req, interbotix_perception_modules::ClusterInfoArray::Response& res)
 {
   if (!enable_pipeline)
     perception_pipeline();
