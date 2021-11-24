@@ -6,7 +6,7 @@ import rospy
 import threading
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from interbotix_xs_msgs.srv import SnapPicture, SnapPictureResponse
+from interbotix_perception_modules.srv import SnapPicture, SnapPictureResponse
 
 # To start this application, open a terminal on the robot and type...
 #   'roslaunch interbotix_perception_modules picture_snapper.launch'
