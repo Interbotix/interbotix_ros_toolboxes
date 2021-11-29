@@ -5,7 +5,7 @@ project(interbotix_rpi_modules)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  interbotix_xs_msgs
+  message_generation
   rospy
   std_msgs
 )
@@ -19,13 +19,29 @@ find_package(catkin REQUIRED COMPONENTS
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
 
+################################################
+## Declare ROS messages, services and actions ##
+################################################
+
+## Generate messages in the 'msg' folder
+add_message_files(
+   FILES
+   PixelCommands.msg
+)
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
 ## The catkin_package macro generates cmake config files for your package
 ## Declare things to be passed to dependent projects
 catkin_package(
-   CATKIN_DEPENDS interbotix_xs_msgs rospy std_msgs
+   CATKIN_DEPENDS message_runtime rospy std_msgs
 )
 
 #############
