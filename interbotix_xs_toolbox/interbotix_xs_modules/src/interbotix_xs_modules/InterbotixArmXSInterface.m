@@ -42,8 +42,8 @@ classdef InterbotixArmXSInterface < handle
         % rev - 2*pi
         rev (1,1) double = 2*pi
         
-        % T_sb - The base->space transformation matrix in SE(3)
-        T_sb           (4,4) double         
+        % T_sb - The space (s) to body (b) transformation matrix in SE(3)
+        T_sb (4,4) double
     end
     
     methods
@@ -110,7 +110,7 @@ classdef InterbotixArmXSInterface < handle
             
             % using the current joint positions, build the base to end effector 
             %   transform matrix
-            obj.T_sb = FKinSpace(...
+            obj.T_sb = FKinSpace( ...
                 obj.robot_des.M, obj.robot_des.Slist, obj.joint_commands);
             
             % set the update trajectory timing parameters from the given args
@@ -120,6 +120,7 @@ classdef InterbotixArmXSInterface < handle
             % build the info_index_map
             obj.info_index_map = containers.Map( ...
                 obj.group_info.JointNames, 1:obj.group_info.NumJoints);
+            
             fprintf( ...
                 "\nArm Group Name: %s\nMoving Time: %.2f seconds\nAcceleration Time: %.2f seconds\nDrive Mode: Time-Based-Profile\n", ...
                 group_name, opts.moving_time, opts.accel_time)
@@ -381,7 +382,7 @@ classdef InterbotixArmXSInterface < handle
 
             % publish sleep position
             obj.publish_positions( ...
-                obj.group_info.JointSleepPositions, ...                 
+                obj.group_info.JointSleepPositions, ...
                 moving_time=opts.moving_time, ...
                 accel_time=opts.accel_time, blocking=opts.blocking);
 
@@ -566,7 +567,7 @@ classdef InterbotixArmXSInterface < handle
     
             disp("No valid pose could be found")
             found = false;
-            return 
+            return
         end
         
         function [theta_list, success] = set_ee_pose_components( ...
@@ -582,42 +583,42 @@ classdef InterbotixArmXSInterface < handle
                 obj InterbotixArmXSInterface
                 
                 % x - linear position along the X-axis of the Space frame [m]
-                pose.x double = 0.0                    
+                pose.x double = 0.0
                 
                 % y - linear position along the Y-axis of the Space frame [m]
-                pose.y double = 0.0                    
+                pose.y double = 0.0
                 
                 % z - linear position along the Z-axis of the Space frame [m]
-                pose.z double = 0.0                    
+                pose.z double = 0.0
                 
                 % roll - angular position around the X-axis of the Space frame [rad]
-                pose.roll double = 0.0                    
+                pose.roll double = 0.0
                 
                 % pitch - angular position around the Y-axis of the Space frame [rad]
-                pose.pitch double = 0.0                    
+                pose.pitch double = 0.0
                 
                 % yaw - angular position around the Z-axis of the Space frame [rad]
-                pose.yaw double = []                     
+                pose.yaw double = []
                 
                 % custom_guess - list of joint positions with which to seed the 
                 % IK solver
-                opts.custom_guess double = []                     
+                opts.custom_guess double = []
                 
                 % execute - if True, this moves the physical robot after planning; 
                 %           otherwise, only planning is done
-                opts.execute {mustBeNumericOrLogical} = 1    
+                opts.execute {mustBeNumericOrLogical} = 1
                 
                 % moving_time - duration in seconds that the robot should move
-                opts.moving_time double = []                     
+                opts.moving_time double = []
 
                 % accel_time - duration in seconds that that robot should spend 
                 % accelerating/decelerating (must be less than or equal to half 
                 % the moving_time)
-                opts.accel_time double = []                     
+                opts.accel_time double = []
                 
                 % blocking - whether the function should wait to return control 
                 % to the user until the robot finishes moving
-                opts.blocking {mustBeNumericOrLogical} = 1    
+                opts.blocking {mustBeNumericOrLogical} = 1
             end
 
             % if dof<6 or yaw isn't specified, calculate yaw based on x and y
@@ -650,7 +651,7 @@ classdef InterbotixArmXSInterface < handle
         %   displacement that will follow a straight line path (when in 
         %   'position' control mode)
         % 
-        % return success - true if a trajectory was succesfully planned and 
+        % return success - true if a trajectory was successfully planned and 
         %   executed; otherwise false
         % 
         %   T_sy is a 4x4 transformation matrix representing the pose of a 
@@ -793,7 +794,7 @@ classdef InterbotixArmXSInterface < handle
                 obj.set_trajectory_time( ...
                     moving_time=opts.moving_time, accel_time=obj.accel_time);
             end
-        end        
+        end
 
         function joint_commands = get_joint_commands(obj)
         % get_joint_commands Get the latest commanded joint positions
@@ -814,7 +815,7 @@ classdef InterbotixArmXSInterface < handle
                 obj InterbotixArmXSInterface
                 
                 % joint_name - joint for which to get the position
-                joint_name string                   
+                joint_name string
             end
             joint_command = obj.joint_commands(obj.info_index_map(joint_name));
         end

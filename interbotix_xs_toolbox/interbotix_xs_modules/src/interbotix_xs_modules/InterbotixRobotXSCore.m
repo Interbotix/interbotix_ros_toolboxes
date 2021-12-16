@@ -181,39 +181,39 @@ classdef InterbotixRobotXSCore < handle
                 
                 % cmd_type - can be "group" for a group of motors or "single" 
                 % for a single motor
-                cmd_type string                  
+                cmd_type string
                 
                 % name - group name if cmd_type is 'group' or the motor name if 
                 % cmd_type is 'single'
-                name string                  
+                name string
                 
                 % kp_pos - passthrough to the Position_P_Gain register. See 
                 % the MotorGains Service description for details
-                kp_pos double = 0.0            
+                kp_pos double = 0.0
                 
                 % ki_pos - passthrough to the Position_I_Gain register. See 
                 % the MotorGains Service description for details
-                ki_pos double = 0.0            
+                ki_pos double = 0.0
                 
                 % kd_pos - passthrough to the Position_D_Gain register. See 
                 % the MotorGains Service description for details
-                kd_pos double = 0.0            
+                kd_pos double = 0.0
                 
                 % k1 - passthrough to the Feedforward_1st_Gain register. See 
                 % the MotorGains Service description for details
-                k1 double = 0.0            
+                k1 double = 0.0
                 
                 % k2 - passthrough to the Feedforward_2nd_Gain register. See 
                 % the MotorGains Service description for details
-                k2 double = 0.0            
+                k2 double = 0.0
                 
                 % kp_vel - passthrough to the Velocity_P_Gain register. See 
                 % the MotorGains Service description for details
-                kp_vel double = 100.0          
+                kp_vel double = 100.0
                 
                 % ki_vel - passthrough to the Velocity_I_Gain register. See 
                 % the MotorGains Service description for details
-                ki_vel double = 1920.0         
+                ki_vel double = 1920.0
             end
             srv = rosmessage("interbotix_xs_msgs/MotorGains");
             srv.CmdType = cmd_type;
@@ -444,11 +444,10 @@ classdef InterbotixRobotXSCore < handle
         end
 
         function joint_states = robot_get_joint_states(obj)
-        % robot_get_joint_states Get the current joint states (position, 
-        %   velocity, effort) of all Dynamixel motors
+        % robot_get_joint_states Get the current joint states (position, velocity, effort) of all Dynamixel motors
         % 
         % returns joint_states - JointState ROS message. Refer to online 
-        %   documenation to see its structure
+        %   documentation to see its structure
             arguments
                 obj InterbotixRobotXSCore
             end
@@ -456,8 +455,7 @@ classdef InterbotixRobotXSCore < handle
         end
 
         function joint_info = robot_get_single_joint_state(obj, name)
-        % robot_get_single_joint_state Get a single joint state for the 
-        %   specified Dynamixel motor
+        % robot_get_single_joint_state Get a single joint state for the specified Dynamixel motor
         % 
         % returns joint_info - struct with 3 keys: "Position", "Velocity", 
         %   and "Effort". Units are rad, rad/s, and mA
@@ -486,8 +484,7 @@ classdef InterbotixRobotXSCore < handle
         end
 
         function joint_state_cb(obj, ~, msg)
-        % joint_state_cb ROS Subscriber Callback function to get the latest 
-        %   JointState message
+        % joint_state_cb ROS Subscriber Callback function to get the latest JointState message
             obj.joint_states = msg;
         end
     end

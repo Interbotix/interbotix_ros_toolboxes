@@ -105,7 +105,7 @@ classdef InterbotixManipulatorXS < handle
                         stop(group_timers)
                         fprintf("%s stopped successfully.\n", group_timers(:).Name)
                         delete(group_timers);
-                        fprintf("All group timers deleted successfull.\n")
+                        fprintf("All group timers deleted successfully.\n")
                     else
                         fprintf("No timers to delete in group.\n")
                     end
