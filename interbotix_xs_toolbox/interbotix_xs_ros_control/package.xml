@@ -17,7 +17,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>ros2_controllers</depend>
   <depend>ros2controlcli</depend>
-  <depend>xseries_msgs</depend>
+  <depend>interbotix_xs_msgs</depend>
   <depend>xacro</depend>
   <depend>sensor_msgs</depend>
   <depend>urdf</depend>

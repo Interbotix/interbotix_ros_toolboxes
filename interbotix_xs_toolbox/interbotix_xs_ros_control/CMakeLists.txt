@@ -19,7 +19,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(xseries_msgs REQUIRED)
+find_package(interbotix_xs_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -45,7 +45,7 @@ ament_target_dependencies(
   rclcpp
   rclcpp_lifecycle
   urdf
-  xseries_msgs
+  interbotix_xs_msgs
   sensor_msgs
   joint_trajectory_controller
 )
