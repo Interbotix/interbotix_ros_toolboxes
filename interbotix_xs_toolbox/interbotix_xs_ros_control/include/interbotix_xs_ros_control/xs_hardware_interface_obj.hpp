@@ -67,10 +67,10 @@ protected:
   std::shared_ptr<rclcpp::Node> nh;
   std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> executor;
 
-  rclcpp::Publisher<xseries_msgs::msg::JointGroupCommand>::SharedPtr pub_group;
-  rclcpp::Publisher<xseries_msgs::msg::JointSingleCommand>::SharedPtr pub_gripper;
+  rclcpp::Publisher<interbotix_xs_msgs::msg::JointGroupCommand>::SharedPtr pub_group;
+  rclcpp::Publisher<interbotix_xs_msgs::msg::JointSingleCommand>::SharedPtr pub_gripper;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr sub_joint_states;
-  rclcpp::Client<xseries_msgs::srv::RobotInfo>::SharedPtr srv_robot_info;
+  rclcpp::Client<interbotix_xs_msgs::srv::RobotInfo>::SharedPtr srv_robot_info;
   
   float gripper_cmd_prev;
   std::string group_name;

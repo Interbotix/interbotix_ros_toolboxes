@@ -19,12 +19,12 @@ void XSHardwareInterface::init()
   executor->add_node(nh);
   std::string js_topic;
   using namespace std::placeholders;
-  pub_group = nh->create_publisher<xseries_msgs::msg::JointGroupCommand>("commands/joint_group", 10);
-  pub_gripper = nh->create_publisher<xseries_msgs::msg::JointSingleCommand>("commands/joint_single", 10);
+  pub_group = nh->create_publisher<interbotix_xs_msgs::msg::JointGroupCommand>("commands/joint_group", 10);
+  pub_gripper = nh->create_publisher<interbotix_xs_msgs::msg::JointSingleCommand>("commands/joint_single", 10);
   sub_joint_states = nh->create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, std::bind(&XSHardwareInterface::joint_state_cb, this, _1));
-  srv_robot_info = nh->create_client<xseries_msgs::srv::RobotInfo>("get_robot_info");
-  auto group_info_srv = std::make_shared<xseries_msgs::srv::RobotInfo::Request>();
-  auto gripper_info_srv = std::make_shared<xseries_msgs::srv::RobotInfo::Request>();
+  srv_robot_info = nh->create_client<interbotix_xs_msgs::srv::RobotInfo>("get_robot_info");
+  auto group_info_srv = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
+  auto gripper_info_srv = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
   update_thread = std::thread(&XSHardwareInterface::executor_cb, this);
   group_info_srv->cmd_type = "group";
   group_info_srv->name = "arm";
@@ -148,8 +148,8 @@ return_type XSHardwareInterface::read()
 
 return_type XSHardwareInterface::write()
 {
-  xseries_msgs::msg::JointGroupCommand group_msg;
-  xseries_msgs::msg::JointSingleCommand gripper_msg;
+  interbotix_xs_msgs::msg::JointGroupCommand group_msg;
+  interbotix_xs_msgs::msg::JointSingleCommand gripper_msg;
   group_msg.name = "arm";
   // gripper_msg.name = "gripper";
   // gripper_msg.cmd = joint_position_commands.back() * 2;
