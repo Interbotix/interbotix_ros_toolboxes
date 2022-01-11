@@ -208,8 +208,7 @@ class InterbotixHexapodXSInterface(object):
             else:
                 return False
         self.foot_points = new_foot_points
-        self.move_in_world()
-        return True
+        return self.move_in_world()
 
     ### @brief Resets the hexapod to its 'home' or 'sleep' pose
     ### @param pose_type - desired pose
@@ -330,6 +329,7 @@ class InterbotixHexapodXSInterface(object):
         self.foot_points[leg] = list(target_point)
         if blocking:
             rospy.sleep(moving_time)
+        return True
 
     ### @brief Move the hexapod 'base_link' frame in place
     ### @param x - desired 'x' component of self.T_fb
