@@ -61,8 +61,6 @@ void TorqueEnablePanel::update_robot_namespace()
 
 void TorqueEnablePanel::set_robot_namespace(const QString& robot_namespace)
 {
-    std::cout << "\n" << robot_namespace.toStdString() << "\n";
-
     srv_torque_enable = nh_.serviceClient<interbotix_xs_msgs::TorqueEnable>("/"+robot_namespace.toStdString()+"/torque_enable");
     if (!srv_torque_enable.waitForExistence(ros::Duration(0.01)))
     {
