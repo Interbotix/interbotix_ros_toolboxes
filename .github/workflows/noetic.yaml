@@ -1,12 +1,14 @@
-name: build-noetic
+name: build-xs-noetic
 
-on: # run CI on pushes and PRs to main branch
+on:
   push:
     branches:
-      main
+      - main
+      - devel
   pull_request:
     branches:
-      main
+      - main
+      - devel
 
 defaults:
   run:
@@ -23,7 +25,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Clone core and remove CATKIN_IGNOREs
         run: |
-          git clone https://github.com/Interbotix/interbotix_ros_core.git
+          git clone --branch devel https://github.com/Interbotix/interbotix_ros_core.git
           rm interbotix_ros_core/interbotix_ros_xseries/CATKIN_IGNORE
           rm interbotix_common_toolbox/interbotix_moveit_interface/CATKIN_IGNORE
           rm interbotix_xs_toolbox/CATKIN_IGNORE
