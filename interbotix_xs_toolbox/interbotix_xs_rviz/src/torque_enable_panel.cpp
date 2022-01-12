@@ -5,9 +5,9 @@
 #include <QLabel>
 #include <QTimer>
 
-#include "interbotix_rviz_interface/torque_enable_panel.hpp"
+#include "interbotix_xs_rviz/torque_enable_panel.hpp"
 
-namespace interbotix_rviz_interface
+namespace interbotix_xs_rviz
 {
 
 TorqueEnablePanel::TorqueEnablePanel (QWidget* parent)
@@ -111,7 +111,7 @@ void TorqueEnablePanel::load(const rviz::Config& config)
     }
 }
 
-} // interbotix_rviz_interface
+} // interbotix_xs_rviz
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(interbotix_rviz_interface::TorqueEnablePanel, rviz::Panel)
+PLUGINLIB_EXPORT_CLASS(interbotix_xs_rviz::TorqueEnablePanel, rviz::Panel)

@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>interbotix_rviz_interface</name>
+  <name>interbotix_xs_rviz</name>
   <version>0.0.0</version>
-  <description>The interbotix_rviz_interface package</description>
+  <description>The interbotix_xs_rviz package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
-  <author email="luke@trossenrobotics.com">Luke Schmitt</author>
+  <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 

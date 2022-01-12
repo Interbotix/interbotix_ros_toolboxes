@@ -1,9 +1,0 @@
-<library path="lib/libinterbotix_rviz_interface">
-  <class name="interbotix_rviz_interface/Torque Enable"
-         type="interbotix_rviz_interface::TorqueEnablePanel"
-         base_class_type="rviz::Panel">
-    <description>
-      A panel widget that allows the user to enable/disable torque on servos.
-    </description>
-  </class>
-</library>

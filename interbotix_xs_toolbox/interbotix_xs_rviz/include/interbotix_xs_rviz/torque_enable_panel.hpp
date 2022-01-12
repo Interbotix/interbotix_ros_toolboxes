@@ -12,7 +12,7 @@
 
 #include "interbotix_xs_msgs/TorqueEnable.h"
 
-namespace interbotix_rviz_interface
+namespace interbotix_xs_rviz
 {
 
 class TorqueEnablePanel: public rviz::Panel
@@ -74,6 +74,6 @@ protected:
 
 }; // TorqueEnablePanel
 
-} // interbotix_rviz_interface
+} // interbotix_xs_rviz
 
 #endif // TORQUE_ENABLE_PANEL_HPP
