@@ -21,13 +21,27 @@ class InterbotixRobotXSCore(object):
             self.robot_name = robot_model
         if (init_node):
             rospy.init_node(self.robot_name + "_robot_manipulation")
-        rospy.wait_for_service("/" + self.robot_name + "/set_operating_modes")
-        rospy.wait_for_service("/" + self.robot_name + "/set_motor_pid_gains")
-        rospy.wait_for_service("/" + self.robot_name + "/set_motor_registers")
-        rospy.wait_for_service("/" + self.robot_name + "/get_motor_registers")
-        rospy.wait_for_service("/" + self.robot_name + "/get_robot_info")
-        rospy.wait_for_service("/" + self.robot_name + "/torque_enable")
-        rospy.wait_for_service("/" + self.robot_name + "/reboot_motors")
+
+        # Try to find the xs_sdk services under the 'robot_name' namespace
+        # If the services can't be found after 5 seconds, we catch the exception
+        #   and gracefully exit the program with a hint
+        try:
+            rospy.wait_for_service(
+                "/" + self.robot_name + "/set_operating_modes", timeout=5.0)
+            rospy.wait_for_service("/" + self.robot_name + "/set_motor_pid_gains")
+            rospy.wait_for_service("/" + self.robot_name + "/set_motor_registers")
+            rospy.wait_for_service("/" + self.robot_name + "/get_motor_registers")
+            rospy.wait_for_service("/" + self.robot_name + "/get_robot_info")
+            rospy.wait_for_service("/" + self.robot_name + "/torque_enable")
+            rospy.wait_for_service("/" + self.robot_name + "/reboot_motors")
+        except rospy.exceptions.ROSException as e:
+            print(str(e.args[0]))
+            print((
+                "The robot '%s' is not discoverable. "
+                "Did you enter the right robot_model? "
+                "Quitting..." % robot_model))
+            exit()
+
         self.srv_set_op_modes = rospy.ServiceProxy("/" + self.robot_name + "/set_operating_modes", OperatingModes)
         self.srv_set_pids = rospy.ServiceProxy("/" + self.robot_name + "/set_motor_pid_gains", MotorGains)
         self.srv_set_reg = rospy.ServiceProxy("/" + self.robot_name + "/set_motor_registers", RegisterValues)
