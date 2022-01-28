@@ -2,17 +2,18 @@ cmake_minimum_required(VERSION 3.0.2)
 project(interbotix_xs_rviz)
 catkin_package()
 find_package(catkin REQUIRED COMPONENTS
-    rviz
-    interbotix_xs_msgs
+  rviz
+  interbotix_xs_msgs
 )
 
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 link_directories(
-    ${catkin_LIBRARY_DIRS}
+  ${catkin_LIBRARY_DIRS}
 )
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
@@ -30,14 +31,18 @@ endif()
 
 add_definitions(-DQT_NO_KEYWORDS)
 
+qt5_wrap_ui(UIC_FILES
+  src/ui/interbotix_control_panel.ui
+)
+
 ## Here we specify the list of source files.
 ## The generated MOC files are included automatically as headers.
 set(SRC_FILES
-  src/torque_enable_panel.cpp include/interbotix_xs_rviz/torque_enable_panel.hpp
+  src/interbotix_control_panel.cpp include/interbotix_xs_rviz/interbotix_control_panel.hpp
 )
 
 add_library(
-  ${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES}
+  ${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES} ${UIC_FILES}
 )
 
 target_link_libraries(
