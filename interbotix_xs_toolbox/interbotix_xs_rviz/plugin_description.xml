@@ -1,9 +1,9 @@
 <library path="lib/libinterbotix_xs_rviz">
-  <class name="interbotix_xs_rviz/Torque Enable"
-         type="interbotix_xs_rviz::TorqueEnablePanel"
+  <class name="interbotix_xs_rviz/Interbotix Control Panel"
+         type="interbotix_xs_rviz::InterbotixControlPanel"
          base_class_type="rviz::Panel">
     <description>
-      A panel widget that allows the user to enable/disable torque on X-Series servos.
+      A panel widget that allows the user to control various aspects of the X-Series robots.
     </description>
   </class>
 </library>
