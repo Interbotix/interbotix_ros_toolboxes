@@ -327,16 +327,16 @@ void InterbotixControlPanel::send_getregval_call()
 {
   if (ros::ok())
     if(srv_get_motor_registers.call(getreg_call))
-      getregval_display(getreg_call.response);
+      getregval_display(getreg_call);
 }
 
-void InterbotixControlPanel::getregval_display(interbotix_xs_msgs::RegisterValues::Response &res)
+void InterbotixControlPanel::getregval_display(interbotix_xs_msgs::RegisterValues &call)
 {
   std::vector<int32_t>::const_iterator it;
   std::stringstream s;
-  for (it = res.values.begin(); it != res.values.end(); it++)
+  for (it = call.response.values.begin(); it != call.response.values.end(); it++)
   {
-    if (it != res.values.begin())
+    if (it != call.response.values.begin())
       s << ",";
     s << *it;
   }

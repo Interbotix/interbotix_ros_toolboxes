@@ -104,7 +104,7 @@ protected Q_SLOTS:
   void getregval_change_cmd_type_single();
   void getregval_change_name();
   void getregval_change_reg_name(int);
-  void getregval_display(interbotix_xs_msgs::RegisterValues::Response&);
+  void getregval_display(interbotix_xs_msgs::RegisterValues&);
   void getregval_init();
 
 
