@@ -19,10 +19,10 @@ jobs:
     strategy:
       matrix:
         env:
-          - {ROS_DISTRO: noetic,  ROS_REPO: main, BUILDER: catkin_make, NOT_TEST_BUILD: true}
+          - {ROS_DISTRO: noetic,  ROS_REPO: main, NOT_TEST_BUILD: true}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Clone core and remove CATKIN_IGNOREs
         run: |
           git clone --branch devel https://github.com/Interbotix/interbotix_ros_core.git
