@@ -38,17 +38,28 @@ qt5_wrap_ui(UIC_FILES
 ## Here we specify the list of source files.
 ## The generated MOC files are included automatically as headers.
 set(SRC_FILES
-  src/interbotix_control_panel.cpp include/interbotix_xs_rviz/interbotix_control_panel.hpp
+  src/interbotix_control_panel.cpp
+  include/interbotix_xs_rviz/interbotix_control_panel.hpp
 )
 
 add_library(
-  ${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES} ${UIC_FILES}
+  ${PROJECT_NAME}
+  ${SRC_FILES}
+  ${HEADER_FILES}
+  ${UIC_FILES}
 )
 
 target_link_libraries(
-  ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES}
+  ${PROJECT_NAME}
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
 )
 
+add_dependencies(
+  ${PROJECT_NAME}
+  interbotix_xs_msgs_generate_messages_cpp # this fixes parallel build issue https://answers.ros.org/question/52744/how-to-specify-dependencies-with-foo_msgs-catkin-packages/
+)
+  
 install(TARGETS
   ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

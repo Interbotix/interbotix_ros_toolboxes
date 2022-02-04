@@ -14,6 +14,7 @@
 #include "interbotix_xs_msgs/TorqueEnable.h"
 #include "interbotix_xs_msgs/OperatingModes.h"
 #include "interbotix_xs_msgs/RegisterValues.h"
+#include "interbotix_xs_msgs/JointGroupCommand.h"
 
 namespace Ui
 {
@@ -45,6 +46,11 @@ public Q_SLOTS:
   void send_torque_enable_call(bool enable);
 
 
+  /** -------- Torque Tab ---------------- */
+
+  void send_home_sleep_call();
+
+
   /** -------- Reboot Tab ---------------- */
 
   void send_reboot_call();
@@ -64,6 +70,7 @@ public Q_SLOTS:
 protected Q_SLOTS:
 
   void update_robot_namespace();
+  void update_robot_info();
 
 
   /** -------- Torque Tab ---------------- */
@@ -74,6 +81,13 @@ protected Q_SLOTS:
   void torque_enable_torque();
   void torque_disable_torque();
   void torque_init();
+
+
+  /** -------- Home/Sleep Tab ------------ */
+
+  void homesleep_go_to_home();
+  void homesleep_go_to_sleep();
+  void homesleep_init();
 
 
   /** -------- Reboot Tab ---------------- */
@@ -124,6 +138,12 @@ protected:
   // The robot namespace from robot_namespace_editor_;
   std::string robot_namespace_;
 
+  // Robot info service call
+  interbotix_xs_msgs::RobotInfo robot_info_call;
+
+  // Robot info service client
+  ros::ServiceClient srv_robot_info;
+
   // enables or disables all input fields depending on the given bool
   void enable_elements(const bool enable);
 
@@ -138,6 +158,21 @@ protected:
   
   // The torque enable service call
   interbotix_xs_msgs::TorqueEnable torque_enable_call;
+
+
+  /** -------- Home/Sleep Tab ------------ */
+
+  // The home/sleep publisher
+  ros::Publisher pub_joint_group_cmd;
+  
+  // The home/sleep jointgroupcommand message
+  interbotix_xs_msgs::JointGroupCommand joint_group_cmd;
+
+  // The home/sleep vector storing the home positions
+  std::vector<float> homesleep_homevec;
+
+  // The home/sleep vector storing the sleep positions
+  std::vector<float> homesleep_sleepvec;
 
 
   /** -------- Reboot Tab ---------------- */

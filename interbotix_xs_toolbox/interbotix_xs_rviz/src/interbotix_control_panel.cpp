@@ -29,6 +29,10 @@ InterbotixControlPanel::InterbotixControlPanel(QWidget* parent)
   connect(ui_->radiobutton_torque_group_,      SIGNAL(toggled(bool)),            this, SLOT(torque_change_cmd_type_group()));
   connect(ui_->radiobutton_torque_single_,     SIGNAL(toggled(bool)),            this, SLOT(torque_change_cmd_type_single()));
   
+  // home/sleep
+  connect(ui_->button_gotohome_,               SIGNAL(clicked()),                this, SLOT(homesleep_go_to_home()));
+  connect(ui_->button_gotosleep_,              SIGNAL(clicked()),                this, SLOT(homesleep_go_to_sleep()));
+
   // reboot
   connect(ui_->lineedit_reboot_name_,          SIGNAL(editingFinished()),        this, SLOT(reboot_change_name()));
   connect(ui_->radiobutton_reboot_group_,      SIGNAL(toggled(bool)),            this, SLOT(reboot_change_cmd_type_group()));
@@ -57,11 +61,14 @@ InterbotixControlPanel::InterbotixControlPanel(QWidget* parent)
   // e-stop
   connect(ui_->button_estop_,                 SIGNAL(clicked()),                 this, SLOT(estop_button_pressed()));
 
-  // initialize the node
+  // initialize the node and some service calls
   nh_ = ros::NodeHandle("interbotix_control_panel");
+  robot_info_call.request.cmd_type = "group";
+  robot_info_call.request.name = "arm";
 
   // initialize all tabs
   torque_init();
+  homesleep_init();
   reboot_init();
   opmodes_init();
   getregval_init();
@@ -81,7 +88,7 @@ void InterbotixControlPanel::set_robot_namespace(const QString& robot_namespace)
 {
   robot_namespace_ = robot_namespace.toStdString();
 
-  // start all service clients
+  // start all service clients, publishers, and subscribers
   srv_torque_enable = nh_.serviceClient<interbotix_xs_msgs::TorqueEnable>(
     "/" + robot_namespace_ + "/torque_enable");
   srv_operating_modes = nh_.serviceClient<interbotix_xs_msgs::OperatingModes>(
@@ -90,6 +97,10 @@ void InterbotixControlPanel::set_robot_namespace(const QString& robot_namespace)
     "/" + robot_namespace_ + "/reboot_motors");
   srv_get_motor_registers = nh_.serviceClient<interbotix_xs_msgs::RegisterValues>(
     "/" + robot_namespace_ + "/get_motor_registers");
+  srv_robot_info = nh_.serviceClient<interbotix_xs_msgs::RobotInfo>(
+    "/" + robot_namespace_ + "/get_robot_info");
+  pub_joint_group_cmd = nh_.advertise<interbotix_xs_msgs::JointGroupCommand>(
+    "/" + robot_namespace_ + "/commands/joint_group", 1);
 
   if (!loaded) // wait longer if RViz is loading
   {
@@ -106,7 +117,18 @@ void InterbotixControlPanel::set_robot_namespace(const QString& robot_namespace)
       enable_elements(true);
   }
 
+  update_robot_info();
   Q_EMIT configChanged();
+}
+
+void InterbotixControlPanel::update_robot_info()
+{
+  ROS_INFO("Updating robot_info");
+  srv_robot_info.call(robot_info_call);
+  homesleep_homevec.resize(robot_info_call.response.num_joints);
+  std::fill(homesleep_homevec.begin(), homesleep_homevec.end(), 0.0f);
+  homesleep_sleepvec.resize(robot_info_call.response.num_joints);
+  homesleep_sleepvec = robot_info_call.response.joint_sleep_positions;
 }
 
 void InterbotixControlPanel::enable_elements(const bool enable)
@@ -118,6 +140,10 @@ void InterbotixControlPanel::enable_elements(const bool enable)
   ui_->lineedit_torque_name_->setEnabled(enable);
   ui_->radiobutton_torque_single_->setEnabled(enable);
   ui_->radiobutton_torque_group_->setEnabled(enable);
+
+  // home/sleep
+  ui_->button_gotohome_->setEnabled(enable);
+  ui_->button_gotosleep_->setEnabled(enable);
   
   // reboot
   ui_->lineedit_reboot_name_->setEnabled(enable);
@@ -190,6 +216,26 @@ void InterbotixControlPanel::send_torque_enable_call(bool enable)
   torque_enable_call.request.enable = enable;
   if(ros::ok())
     srv_torque_enable.call(torque_enable_call);
+}
+
+
+// -------------------------- HOME/SLEEP --------------------------------------
+
+void InterbotixControlPanel::homesleep_init()
+{
+  joint_group_cmd.name = "arm";
+}
+
+void InterbotixControlPanel::homesleep_go_to_home()
+{
+  joint_group_cmd.cmd = homesleep_homevec;
+  pub_joint_group_cmd.publish(joint_group_cmd);
+}
+
+void InterbotixControlPanel::homesleep_go_to_sleep()
+{
+  joint_group_cmd.cmd = homesleep_sleepvec;
+  pub_joint_group_cmd.publish(joint_group_cmd);
 }
 
 
