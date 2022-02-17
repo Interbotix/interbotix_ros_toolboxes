@@ -5,7 +5,7 @@ import tf2_ros
 import tf2_geometry_msgs
 from math import sin, cos, pi
 from tf.transformations import *
-from interbotix_common_modules import geometry as g
+from interbotix_common_modules import angle_manipulation as g
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import TransformStamped, Quaternion, Pose, PoseStamped, Pose2D
 
