@@ -95,8 +95,12 @@ class InterbotixArmXSInterface(object):
         # check position and velocity limits
         for x in range(self.group_info.num_joints):
             if not (self.group_info.joint_lower_limits[x] <= theta_list[x] <= self.group_info.joint_upper_limits[x]):
+                rospy.logwarn("[xs_modules] Would exceed position limits on joint %s." % x)
+                rospy.logwarn(f"[xs_modules] Limits are [{self.group_info.joint_lower_limits[x]}, {self.group_info.joint_upper_limits[x]}], value was {theta_list[x]}.")
                 return False
             if (speed_list[x] > self.group_info.joint_velocity_limits[x]):
+                rospy.logwarn("[xs_modules] Would exceed velocity limits on joint %s." % x)
+                rospy.logwarn(f"[xs_modules] Limit is {self.group_info.joint_velocity_limits[x]}, value was {theta_list[x]}.")
                 return False
         return True
 
@@ -125,6 +129,7 @@ class InterbotixArmXSInterface(object):
     def set_joint_positions(self, joint_positions, moving_time=None, accel_time=None, blocking=True):
         if (self.check_joint_limits(joint_positions)):
             self.publish_positions(joint_positions, moving_time, accel_time, blocking)
+            return True
         else:
             return False
 
@@ -202,7 +207,7 @@ class InterbotixArmXSInterface(object):
                     self.T_sb = T_sd
                 return theta_list, True
 
-        rospy.loginfo("No valid pose could be found")
+        rospy.logwarn("No valid pose could be found. Returned theta_list variable may be nonsense.")
         return theta_list, False
 
     ### @brief Command a desired end-effector pose w.r.t. the Space frame
