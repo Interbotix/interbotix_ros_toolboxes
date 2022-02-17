@@ -1,5 +1,12 @@
 import math
 from geometry_msgs.msg import Quaternion
+from warnings import warn
+
+warn(
+    ("The %s module will be deprecated in a future release. Use the "
+    "angle_manipulation.quaternion_is_valid method instead.") % __name__,
+    DeprecationWarning,
+    stacklevel=2)
 
 def quaternion_is_valid(quat, tol=10e-3):
     """Tests if a quaternion is valid
