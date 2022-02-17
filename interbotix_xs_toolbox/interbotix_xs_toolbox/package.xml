@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>interbotix_xs_toolbox</name>
+  <version>0.0.0</version>
+  <description>The interbotix_xs_toolbox metapackage</description>
+  <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
+  <license>BSD</license>
+
+  <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>interbotix_xs_modules</exec_depend>
+  <exec_depend>interbotix_xs_ros_control</exec_depend>
+  <exec_depend>interbotix_xs_rviz</exec_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
