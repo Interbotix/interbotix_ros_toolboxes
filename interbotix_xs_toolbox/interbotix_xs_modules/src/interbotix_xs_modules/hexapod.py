@@ -199,6 +199,7 @@ class InterbotixHexapodXSInterface(object):
 
     ### @brief Adjusts the hexapod's stance to be wider or narrower
     ### @param mod_value - relative distance value by which to tighten or widen the hexapod stance [m]
+    ### @return <bool> - True if function completed successfully; False otherwise
     def modify_stance(self, mod_value):
         new_foot_points = {}
         for leg, point in self.foot_points.items():
@@ -208,8 +209,8 @@ class InterbotixHexapodXSInterface(object):
             else:
                 return False
         self.foot_points = new_foot_points
-        self.move_in_world()
-        return True
+        success = self.move_in_world()
+        return success
 
     ### @brief Resets the hexapod to its 'home' or 'sleep' pose
     ### @param pose_type - desired pose
@@ -314,6 +315,7 @@ class InterbotixHexapodXSInterface(object):
     ### @param moving_time - time [sec] that each joint should spend moving
     ### @param accel_time - time [sec] that each joint should spend accelerating
     ### @param blocking - True if the function should wait 'moving_time' seconds before returning
+    ### @return <bool> - True if function completed successfully; False otherwise
     def move_leg(self, leg, p_f_inc=[0, 0, 0], moving_time=0.15, accel_time=0.075, blocking=True):
         self.leg_mode_on = True
         self.set_trajectory_time(leg, moving_time, accel_time)
@@ -330,6 +332,7 @@ class InterbotixHexapodXSInterface(object):
         self.foot_points[leg] = list(target_point)
         if blocking:
             rospy.sleep(moving_time)
+        return True
 
     ### @brief Move the hexapod 'base_link' frame in place
     ### @param x - desired 'x' component of self.T_fb
