@@ -1,4 +1,4 @@
-name: build-xs-noetic
+name: build-xs-melodic
 
 on:
   push:
@@ -15,11 +15,12 @@ defaults:
     shell: bash
 
 jobs:
-  xs-noetic:
+  xs-melodic:
     strategy:
       matrix:
         env:
-          - {ROS_DISTRO: noetic,  ROS_REPO: main, BUILDER: catkin_make, NOT_TEST_BUILD: true}
+          - {ROS_DISTRO: melodic, ROS_REPO: main, BUILDER: catkin_tools, NOT_TEST_BUILD: true}
+          - {ROS_DISTRO: melodic, ROS_REPO: main, BUILDER: catkin_make, NOT_TEST_BUILD: true}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ROS Toolboxes
