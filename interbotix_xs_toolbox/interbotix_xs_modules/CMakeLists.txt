@@ -6,7 +6,6 @@ project(interbotix_xs_modules)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   interbotix_xs_msgs
-  interbotix_xs_sdk
 )
 
 ## System dependencies are found with CMake's conventions
