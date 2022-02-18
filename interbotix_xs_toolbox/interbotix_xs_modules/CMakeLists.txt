@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.1.3)
 project(interbotix_xs_modules)
 
 ## Find catkin macros and libraries
@@ -6,7 +6,6 @@ project(interbotix_xs_modules)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   interbotix_xs_msgs
-  interbotix_xs_sdk
 )
 
 ## System dependencies are found with CMake's conventions
