@@ -146,7 +146,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineedit_torque_name_">
+              <widget class="QComboBox" name="combobox_torque_name_">
                <property name="enabled">
                 <bool>false</bool>
                </property>
@@ -156,9 +156,16 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="text">
-                <string>arm</string>
-               </property>
+               <item>
+                <property name="text">
+                 <string>arm</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>all</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
@@ -292,7 +299,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineedit_opmodes_name_">
+              <widget class="QComboBox" name="combobox_opmodes_name_">
                <property name="enabled">
                 <bool>false</bool>
                </property>
@@ -302,9 +309,11 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="text">
-                <string>arm</string>
-               </property>
+               <item>
+                <property name="text">
+                 <string>arm</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
@@ -532,7 +541,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineedit_reboot_name_">
+              <widget class="QComboBox" name="combobox_reboot_name_">
                <property name="enabled">
                 <bool>false</bool>
                </property>
@@ -542,9 +551,16 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="text">
-                <string>arm</string>
-               </property>
+               <item>
+                <property name="text">
+                 <string>arm</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>all</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
@@ -726,13 +742,26 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineedit_getregval_name_">
+              <widget class="QComboBox" name="combobox_getregval_name_">
                <property name="enabled">
                 <bool>false</bool>
                </property>
-               <property name="text">
-                <string>arm</string>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
+               <item>
+                <property name="text">
+                 <string>arm</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>all</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
@@ -765,7 +794,7 @@
              <item>
               <widget class="QLabel" name="label_getregval_reg_">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -839,6 +868,36 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_getregval_desc_">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>85</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <layout class="QHBoxLayout" name="layout_getregval_val_">
