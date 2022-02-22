@@ -123,7 +123,6 @@ void InterbotixControlPanel::set_robot_namespace(const QString& robot_namespace)
 
 void InterbotixControlPanel::update_robot_info()
 {
-  ROS_INFO("Updating robot_info");
   srv_robot_info.call(robot_info_call);
   homesleep_homevec.resize(robot_info_call.response.num_joints);
   std::fill(homesleep_homevec.begin(), homesleep_homevec.end(), 0.0f);
@@ -134,7 +133,6 @@ void InterbotixControlPanel::update_robot_info()
   qrobot_arm_joints.clear();
   for (const auto joint_name : robot_info_call.response.joint_names)
   {
-    ROS_INFO("\n%s\n", joint_name.c_str());
     robot_arm_joints.push_back(joint_name);
     qrobot_arm_joints << QString(joint_name.c_str());
   }
