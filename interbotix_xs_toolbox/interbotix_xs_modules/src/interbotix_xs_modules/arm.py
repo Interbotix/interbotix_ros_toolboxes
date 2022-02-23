@@ -95,12 +95,23 @@ class InterbotixArmXSInterface(object):
         # check position and velocity limits
         for x in range(self.group_info.num_joints):
             if not (self.group_info.joint_lower_limits[x] <= theta_list[x] <= self.group_info.joint_upper_limits[x]):
-                rospy.logwarn("[xs_modules] Would exceed position limits on joint %s." % x)
-                rospy.logwarn(f"[xs_modules] Limits are [{self.group_info.joint_lower_limits[x]}, {self.group_info.joint_upper_limits[x]}], value was {theta_list[x]}.")
+                rospy.logwarn(
+                    "[xs_modules] Would exceed position limits on joint %s." % x
+                )
+                rospy.logwarn(
+                    "[xs_modules] Limits are [%f, %f], value was %f." % 
+                    (self.group_info.joint_lower_limits[x], 
+                    self.group_info.joint_upper_limits[x], theta_list[x])
+                )
                 return False
             if (speed_list[x] > self.group_info.joint_velocity_limits[x]):
-                rospy.logwarn("[xs_modules] Would exceed velocity limits on joint %s." % x)
-                rospy.logwarn(f"[xs_modules] Limit is {self.group_info.joint_velocity_limits[x]}, value was {theta_list[x]}.")
+                rospy.logwarn(
+                    "[xs_modules] Would exceed velocity limits on joint %s." % x
+                )
+                rospy.logwarn(
+                    "[xs_modules] Limit is %f, value was %f." % 
+                    (self.group_info.joint_velocity_limits[x], theta_list[x])
+                )
                 return False
         return True
 
