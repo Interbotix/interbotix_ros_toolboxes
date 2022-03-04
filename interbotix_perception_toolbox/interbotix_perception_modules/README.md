@@ -3,12 +3,6 @@
 ## Overview
 This package contains Python modules along with supporting level ROS nodes to perform perception with any robotic arm platform. Using the tools here along with a color/depth camera, robotic arm, and AprilTag, it is possible to have the arm pick and place small objects from a tabletop-type platform using camera feedback. Examples showcasing this can be found in the *interbotix_XXXXX_perception* ROS package in any arm-related repository.
 
-<p align="center">
-  <a href=”https://www.youtube.com/watch?v=03BZ6PLFOac”>
-    <img width="410" height="auto" src="https://www.trossenrobotics.com/shared/github/github_python_perception.png">
-  </a>
-</p>
-
 ## Structure
 Below is a list and short description of each helper module. Over time, this list will grow to include others.
 
@@ -64,7 +58,7 @@ The next GUI shows the filters implemented in the Perception Pipeline in the ord
 
 - **Voxel Grid Setting** - the leaf size specifies the height, width, and length of a cube used to downsample the points output from the cropbox filter. All points within the space of that cube are averaged into just one point; this significantly reduces the number of point that the remaining filters have to operate on - resulting in faster and more efficient processing. However, the larger the cube, the coarser the pointcloud becomes...
 
-- **Segmentation Filter Settings** - these are parameters used to segment out the points representing the tabletop or ground surface; *Max Iterations* is the maximum number of iterations the sample consensus method should run (not sure, but I believe the higher the value, the more accurate the planar model representing the points is); the default value is 50 and that seems to work just fine; *Dist Thresh* is the max distance perpendicular from the calculated planar model in which a point should be considered part of the plane; the higher the value, the better the plane poitns will be segmented out at the cost of losing some of the points near the bottom of each object; the lower the value, the more the points that make up the bottom of each object are preserved at the cost of not having every planar point removed...
+- **Segmentation Filter Settings** - these are parameters used to segment out the points representing the tabletop or ground surface; *Max Iterations* is the maximum number of iterations the sample consensus method should run (not sure, but I believe the higher the value, the more accurate the planar model representing the points is); the default value is 50 and that seems to work just fine; *Dist Thresh* is the max distance perpendicular from the calculated planar model in which a point should be considered part of the plane; the higher the value, the better the plane points will be segmented out at the cost of losing some of the points near the bottom of each object; the lower the value, the more the points that make up the bottom of each object are preserved at the cost of not having every planar point removed...
 
 - **Radius Outlier Removal Settings** - these are parameters to reduce the number of 'noisy' points that have still made it through the filters above; *Radius Search* is the radial distance around any given point in the pointcloud where neighboring points should be searched. If a point has at least 'X' *Min Neighbors* in the search radius, the point is kept; otherwise, it is thrown out.
 
@@ -75,12 +69,6 @@ The next GUI shows the filters implemented in the Perception Pipeline in the ord
 - **Save configs** - this allows a user to specify a file to which to save the current settings.
 
 - **Reset Configs** - this allows a user to reset the current settings to be what they were when the file was originally loaded into the GUI.
-
-<p align="center">
-  <a href=”https://www.youtube.com/watch?v=UesfMYM4qcc”>
-    <img width="410" height="auto" src="https://www.trossenrobotics.com/shared/github/github_perception_pipeline.png">
-  </a>
-</p>
 
 
 ### Launch File Arguments
@@ -142,7 +130,7 @@ This is just a onetime error message that appears at launch when using the SR305
 This is a warning that can appear occasionally (once every 5 minutes or so) when using a RealSense camera. It just means that a frame was dropped during serial communication, but it's nothing to worry about and can be safely ignored.
 
 ##### No clusters found...
-This warning is outputted by the `get_cluster_positions` function in the InterbotixPointCloudInterface module if the algorithm could not find any clusters. Verify that you have non-reflective objects within the field of view of the camera and that the CropBox filter is not cutting them out. To check this, toggle on the 'FilteredPointCloud' display in Rviz and see if the pointcloud representation of your objects are showing up. If they are, it's possible that you need to lower the minimum cluster size threshold; turn on the 'ObjectPointCloud' and 'ObjectMarkers' displays and lower the Min Cluster Size parameter until you see small spheres at the centroid of each of your clusters.
+This warning is outputted by the `get_cluster_positions` function in the InterbotixPointCloudInterface module if the algorithm could not find any clusters. Verify that you have non-reflective objects within the field of view of the camera and that the CropBox filter is not cutting them out. To check this, toggle on the 'FilteredPointCloud' display in RViz and see if the pointcloud representation of your objects are showing up. If they are, it's possible that you need to lower the minimum cluster size threshold; turn on the 'ObjectPointCloud' and 'ObjectMarkers' displays and lower the Min Cluster Size parameter until you see small spheres at the centroid of each of your clusters.
 
 ##### Found 'x' clusters instead of 'y' clusters...
 This warning is outputted by the 'get_cluster_positions' function in the InterbotixPointCloudInterface module if the algorithm found a different number of clusters over 'num_samples' iterations (when compared to the first set of cluster positions received). Similar to the 'No clusters found...' issue, this can be resolved by tuning the Min Cluster Size parameter until the spherical object markers are steady and not flickering. This issue could also arise if the spherical object markers are flickering due to two clusters being very near each other (sometimes above or below the Cluster Tolerance threshold). To fix this, lower the cluster tolerance threshold or physically move the two objects such that they are further away from each other.
