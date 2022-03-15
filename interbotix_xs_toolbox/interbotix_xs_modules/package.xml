@@ -3,15 +3,16 @@
   <name>interbotix_xs_modules</name>
   <version>0.0.0</version>
   <description>The interbotix_xs_modules package</description>
-  <maintainer email="trsupport@trossenrobotics.com">Solomon Wiznitzer</maintainer>
+  <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
-  <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
+  <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>interbotix_xs_msgs</build_depend>
-  <build_export_depend>interbotix_xs_msgs</build_export_depend>
-  <exec_depend>interbotix_xs_msgs</exec_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <depend>interbotix_xs_msgs</depend>
+  <depend>interbotix_common_modules</depend>
+  <depend>interbotix_xs_sdk</depend>
 
   <export>
+    <build_type>ament_python</build_type>
   </export>
 </package>
