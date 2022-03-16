@@ -23,7 +23,6 @@ find_package(interbotix_xs_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(urdf REQUIRED)
 find_package(joint_trajectory_controller REQUIRED)
 
 ## COMPILE
