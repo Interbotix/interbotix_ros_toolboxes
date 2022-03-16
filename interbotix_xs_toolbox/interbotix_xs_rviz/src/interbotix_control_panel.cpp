@@ -378,7 +378,7 @@ void InterbotixControlPanel::getregval_init()
 {
   getreg_call.request.cmd_type = "group";
   getreg_call.request.name = "arm";
-  getreg_call.request.reg = "Goal_Position";
+  getreg_call.request.reg = "Operating_Mode";
 
   ui_->label_getregval_desc_->setText(QString(
     xs_register_descriptions::descriptions[

@@ -13,6 +13,27 @@ typedef struct {
     std::string units;
 } XSRegisterDescription;
 
+static XSRegisterDescription desc_operating_mode = {
+  "Operating_Mode",
+  "See the OperatingModes service definition for details.",
+  11,
+  "-"
+};
+
+static XSRegisterDescription desc_profile_velocity = {
+  "Profile_Velocity",
+  "When the Operating Mode is Velocity-based Profile, Profile Velocity sets the maximum velocity of the Profile. When the Operating Mode is Time-based Profile, Profile Velocity sets the time span to reach the velocity (the total time) of the Profile. Be aware that the Profile Velocity is to be only applied to Position Control Mode, Extended Position Control Mode or Current-based Position Control Mode on the Operating Mode.",
+  112,
+  "0.229 [rev/min]"
+};
+
+static XSRegisterDescription desc_profile_acceleration = {
+  "Profile_Acceleration",
+  "When the Operating Mode is Velocity-based Profile, Profile Acceleration sets acceleration of the Profile. When the Operating Mode is Time-based Profile, Profile Acceleration sets acceleration time of the Profile. The Profile Acceleration is to be applied in all control mode except Current Control Mode or PWM Control Mode on the Operating Mode.",
+  108,
+  "214.577 [rev/min2]"
+};
+
 static XSRegisterDescription desc_goal_position = {
   "Goal_Position",
   "The Goal Position sets desired position [pulses]. From the front view of DYNAMIXEL, CCW is an increasing direction, whereas CW is a decreasing direction. Units: 1 pulse",
@@ -71,14 +92,17 @@ static XSRegisterDescription desc_present_temperature = {
 
 static std::unordered_map<std::string, XSRegisterDescription> descriptions = 
 {
-  {"Goal_Position",       desc_goal_position},
-  {"Goal_Velocity",       desc_goal_velocity},
-  {"Goal_Current",        desc_goal_current},
-  {"Goal_PWM",            desc_goal_pwm},
-  {"Present_Position",    desc_present_position},
-  {"Present_Velocity",    desc_present_velocity},
-  {"Present_Current",     desc_present_current},
-  {"Present_Temperature", desc_present_temperature}
+  {desc_operating_mode.name,        desc_operating_mode},
+  {desc_profile_velocity.name,      desc_profile_velocity},
+  {desc_profile_acceleration.name,  desc_profile_acceleration},
+  {desc_goal_position.name,         desc_goal_position},
+  {desc_goal_velocity.name,         desc_goal_velocity},
+  {desc_goal_current.name,          desc_goal_current},
+  {desc_goal_pwm.name,              desc_goal_pwm},
+  {desc_present_position.name,      desc_present_position},
+  {desc_present_velocity.name,      desc_present_velocity},
+  {desc_present_current.name,       desc_present_current},
+  {desc_present_temperature.name,   desc_present_temperature}
 };
     
 } // namespace xs_register_descriptions
