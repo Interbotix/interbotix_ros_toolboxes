@@ -23,16 +23,16 @@ jobs:
     steps:
       - name: Checkout ROS Toolboxes
         uses: actions/checkout@v2
-          with:
-            submodules: recursive
-            path: src
+        with:
+          submodules: recursive
+          path: src
       - name: Checkout ROS Core
         uses: actions/checkout@v2
-          with:
-            repository: interbotix/interbotix_ros_core
-            ref: galactic
-            submodules: recursive
-            path: src
+        with:
+          repository: interbotix/interbotix_ros_core
+          ref: galactic
+          submodules: recursive
+          path: src
       - name: Prepare Workspace
         run: |
           rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE
