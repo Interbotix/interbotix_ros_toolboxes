@@ -25,20 +25,20 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-          path: src
+          path: src/interbotix_ros_toolboxes
       - name: Checkout ROS Core
         uses: actions/checkout@v2
         with:
           repository: interbotix/interbotix_ros_core
           ref: galactic
           submodules: recursive
-          path: src
+          path: src/interbotix_ros_core
       - name: Prepare Workspace
         run: |
           ls
           ls src
           rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE
-          rm src/interbotix_xs_toolbox/CATKIN_IGNORE
+          rm src/interbotix_ros_toolboxes/interbotix_xs_toolbox/CATKIN_IGNORE
       - name: ROS-I CI
         uses: ros-industrial/industrial_ci@master
         with:
