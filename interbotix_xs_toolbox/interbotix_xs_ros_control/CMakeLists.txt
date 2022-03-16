@@ -46,3 +46,11 @@ include_directories(
 add_executable(xs_hardware_interface src/xs_hardware_interface.cpp src/xs_hardware_interface_obj.cpp)
 target_link_libraries(xs_hardware_interface ${catkin_LIBRARIES})
 add_dependencies(xs_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+#############
+## Install ##
+#############
+
+install(TARGETS xs_hardware_interface
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
