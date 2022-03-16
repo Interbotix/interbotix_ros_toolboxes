@@ -7,7 +7,6 @@
   <license>BSD</license>
   <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <buildtool_depend>ament_python</buildtool_depend>
   <depend>interbotix_xs_msgs</depend>
   <depend>interbotix_common_modules</depend>
   <depend>interbotix_xs_sdk</depend>
