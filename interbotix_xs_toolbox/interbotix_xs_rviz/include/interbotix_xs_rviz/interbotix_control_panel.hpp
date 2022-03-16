@@ -15,6 +15,7 @@
 #include "interbotix_xs_msgs/OperatingModes.h"
 #include "interbotix_xs_msgs/RegisterValues.h"
 #include "interbotix_xs_msgs/JointGroupCommand.h"
+#include "interbotix_xs_rviz/xs_register_descriptions.h"
 
 namespace Ui
 {
@@ -140,6 +141,15 @@ protected:
 
   // Robot info service call
   interbotix_xs_msgs::RobotInfo robot_info_call;
+
+  // Vector containing joint info for the arm group
+  std::vector<std::string> robot_arm_joints;
+
+  // QStringList containing joint names for the arm group
+  QStringList qrobot_arm_joints;
+
+  // QStringList containing the groups in the robot
+  QStringList qrobot_groups = QStringList() << "arm" << "gripper" << "all";
 
   // Robot info service client
   ros::ServiceClient srv_robot_info;
