@@ -43,7 +43,6 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
-  urdf
   interbotix_xs_msgs
   sensor_msgs
   joint_trajectory_controller
