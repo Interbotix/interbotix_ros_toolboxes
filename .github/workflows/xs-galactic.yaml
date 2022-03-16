@@ -1,0 +1,45 @@
+name: build-xs-galactic
+
+on:
+  push:
+    branches:
+      - galactic
+      - galactic-devel
+  pull_request:
+    branches:
+      - galactic
+      - galactic-devel
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  xs-galactic:
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: galactic, ROS_REPO: main, NOT_TEST_BUILD: true}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ROS Toolboxes
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          path: src/interbotix_ros_toolboxes
+      - name: Checkout ROS Core
+        uses: actions/checkout@v2
+        with:
+          repository: interbotix/interbotix_ros_core
+          ref: galactic
+          submodules: recursive
+          path: src/interbotix_ros_core
+      - name: Prepare Workspace
+        run: |
+          rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE
+          rm src/interbotix_ros_toolboxes/interbotix_xs_toolbox/interbotix_xs_modules/COLCON_IGNORE
+      - name: ROS-I CI
+        uses: ros-industrial/industrial_ci@master
+        with:
+          config: ${{toJSON(matrix.env)}}
