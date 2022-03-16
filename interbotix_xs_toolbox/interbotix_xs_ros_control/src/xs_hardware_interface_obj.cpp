@@ -2,45 +2,67 @@
 
 void XSHardwareInterface::executor_cb()
 {
-  using namespace std::chrono_literals;
-
-  rclcpp::Rate r(20ms);
+  rclcpp::Rate r(loop_hz);
   while (rclcpp::ok())
   {
     executor->spin_some();
-    // r.sleep();
+    r.sleep();
   }
 }
 
 void XSHardwareInterface::init()
 {
-  nh = std::make_shared<rclcpp::Node>("control_nh");
+  nh = std::make_shared<rclcpp::Node>("xs_ros_control");
   executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
   executor->add_node(nh);
+
   std::string js_topic;
+  nh->declare_parameter<std::string>("joint_states_topic", "joint_states");
+  nh->declare_parameter<std::string>("group_name", "arm");
+  nh->declare_parameter<std::string>("gripper_name", "gripper");
+  nh->declare_parameter<double>("loop_hz", 10.0);
+
+  nh->get_parameter("joint_states_topic", js_topic);
+  nh->get_parameter("group_name", group_name);
+  nh->get_parameter("gripper_name", gripper_name);
+  nh->get_parameter("loop_hz", loop_hz);
+
   using namespace std::placeholders;
   pub_group = nh->create_publisher<interbotix_xs_msgs::msg::JointGroupCommand>("commands/joint_group", 10);
   pub_gripper = nh->create_publisher<interbotix_xs_msgs::msg::JointSingleCommand>("commands/joint_single", 10);
-  sub_joint_states = nh->create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, std::bind(&XSHardwareInterface::joint_state_cb, this, _1));
+  sub_joint_states = nh->create_subscription<sensor_msgs::msg::JointState>(js_topic, 10, std::bind(&XSHardwareInterface::joint_state_cb, this, _1));
   srv_robot_info = nh->create_client<interbotix_xs_msgs::srv::RobotInfo>("get_robot_info");
+
   auto group_info_srv = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
   auto gripper_info_srv = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
   update_thread = std::thread(&XSHardwareInterface::executor_cb, this);
+
   group_info_srv->cmd_type = "group";
-  group_info_srv->name = "arm";
-  // gripper_info_srv->cmd_type = "single";
-  // gripper_info_srv->name = "gripper";
+  group_info_srv->name = group_name;
+  gripper_info_srv->cmd_type = "single";
+  gripper_info_srv->name = gripper_name;
+
   using namespace std::chrono_literals;
-  srv_robot_info->wait_for_service(500ms);
+  if(!srv_robot_info->wait_for_service(5s)) // wait for a few seconds
+  {
+    RCLCPP_ERROR(
+      nh->get_logger(),
+      "Could not get robot_info service within timeout.");
+    exit(1);
+  }
+
   auto group_future = srv_robot_info->async_send_request(group_info_srv);
-  // auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
+  auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
+
   auto group_res = group_future.get();
-  num_joints = group_res->num_joints;
+  num_joints = group_res->num_joints + 1;
   joint_state_indices = group_res->joint_state_indices;
-  // auto grip_res = gripper_future.get();
-  // joint_state_indices.push_back(grip_res->joint_state_indices.at(0));
+
+  auto grip_res = gripper_future.get();
+  joint_state_indices.push_back(grip_res->joint_state_indices.at(0));
+
   std::vector<std::string> joint_names = group_res->joint_names;
-  // joint_names.push_back(grip_res->joint_names.at(0));
+  joint_names.push_back(grip_res->joint_names.at(0));
 
   // Resize vectors
   joint_positions.resize(num_joints);
@@ -51,8 +73,10 @@ void XSHardwareInterface::init()
 
   while (joint_states.position.size() == 0 && rclcpp::ok())
   {
-    RCLCPP_INFO(nh->get_logger(), "WAITING FOR JOINT STATES");
+    RCLCPP_INFO_ONCE(nh->get_logger(), "Waiting for joint states...");
   }
+
+  RCLCPP_INFO(nh->get_logger(), "Joint states received.");
 
   // Initialize the joint_position_commands vector to the current joint states
   for (size_t i{0}; i < num_joints; i++)
@@ -61,9 +85,7 @@ void XSHardwareInterface::init()
     joint_commands_prev.at(i) = joint_position_commands.at(i);
   }
   joint_commands_prev.resize(num_joints);
-  // gripper_cmd_prev = joint_states.position.at(joint_state_indices.back()) * 2;
-
-  // Create position joint interface
+  gripper_cmd_prev = joint_states.position.at(joint_state_indices.back()) * 2;
 }
 
 CallbackReturn XSHardwareInterface::start()
@@ -102,8 +124,8 @@ CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareIn
           hardware_interface::HW_IF_POSITION);
       return CallbackReturn::ERROR;
     }
-    return CallbackReturn::SUCCESS;
   }
+  return CallbackReturn::SUCCESS;
 }
 
 std::vector<hardware_interface::StateInterface> XSHardwareInterface::export_state_interfaces()
@@ -123,11 +145,12 @@ std::vector<hardware_interface::StateInterface> XSHardwareInterface::export_stat
   }
   return state_interfaces;
 }
+
 std::vector<hardware_interface::CommandInterface> XSHardwareInterface::export_command_interfaces()
 {
-
   std::vector<hardware_interface::CommandInterface> command_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++){
+  for (uint i = 0; i < info_.joints.size(); i++)
+  {
     command_interfaces.emplace_back(
         hardware_interface::CommandInterface(
             info_.joints[i].name, hardware_interface::HW_IF_POSITION,
@@ -150,9 +173,9 @@ return_type XSHardwareInterface::write()
 {
   interbotix_xs_msgs::msg::JointGroupCommand group_msg;
   interbotix_xs_msgs::msg::JointSingleCommand gripper_msg;
-  group_msg.name = "arm";
-  // gripper_msg.name = "gripper";
-  // gripper_msg.cmd = joint_position_commands.back() * 2;
+  group_msg.name = group_name;
+  gripper_msg.name = gripper_name;
+  gripper_msg.cmd = joint_position_commands.back() * 2;
 
   for (size_t i{0}; i < num_joints; i++)
     group_msg.cmd.push_back(joint_position_commands.at(i));
@@ -162,26 +185,24 @@ return_type XSHardwareInterface::write()
     pub_group->publish(group_msg);
     joint_commands_prev = group_msg.cmd;
   }
-  // if (gripper_cmd_prev != gripper_msg.cmd)
-  // {
-  //   pub_gripper->publish(gripper_msg);
-  //   gripper_cmd_prev = gripper_msg.cmd;
-  // }
+  if (gripper_cmd_prev != gripper_msg.cmd)
+  {
+    pub_gripper->publish(gripper_msg);
+    gripper_cmd_prev = gripper_msg.cmd;
+  }
   return return_type::OK;
 }
 
 void XSHardwareInterface::joint_state_cb(const sensor_msgs::msg::JointState &msg)
 {
   std::lock_guard<std::mutex> lck(joint_state_mtx_);
-  if (msg.position.size()== 6){
+  if (msg.position.size() == 6)
+  {
    return;
   }
   joint_states = msg;
-
 }
 
-#include "pluginlib/class_list_macros.hpp"
+#include <pluginlib/class_list_macros.hpp>
 
-PLUGINLIB_EXPORT_CLASS(
-    XSHardwareInterface,
-    hardware_interface::SystemInterface)
+PLUGINLIB_EXPORT_CLASS(XSHardwareInterface, hardware_interface::SystemInterface)

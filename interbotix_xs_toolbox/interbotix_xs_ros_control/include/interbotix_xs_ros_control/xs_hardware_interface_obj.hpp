@@ -26,7 +26,7 @@ class XSHardwareInterface: public hardware_interface::SystemInterface
 {
 public:
 
-  RCLCPP_SHARED_PTR_DEFINITIONS(XSHardwareInterface);
+  RCLCPP_SHARED_PTR_DEFINITIONS(XSHardwareInterface)
   CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
@@ -41,12 +41,10 @@ public:
 
   return_type write() override;
 
-
   std::string get_name() const final
   {
     return info_.name;
   }
-
 
   void init();
 
@@ -58,7 +56,7 @@ protected:
   std::vector<double> joint_velocities;
   std::vector<double> joint_efforts;
   std::vector<double> joint_position_commands;
-  std::vector<float> joint_commands_prev;
+  std::vector<float>  joint_commands_prev;
 
   void executor_cb();
 
