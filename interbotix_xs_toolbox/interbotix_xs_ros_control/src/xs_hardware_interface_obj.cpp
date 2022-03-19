@@ -55,7 +55,7 @@ void XSHardwareInterface::init()
   auto gripper_future = srv_robot_info->async_send_request(gripper_info_srv);
 
   auto group_res = group_future.get();
-  num_joints = group_res->num_joints + 1;
+  num_joints = group_res->num_joints;
   joint_state_indices = group_res->joint_state_indices;
 
   auto grip_res = gripper_future.get();
