@@ -17,15 +17,15 @@ void XSHardwareInterface::init()
   executor->add_node(nh);
 
   std::string js_topic;
-  nh->declare_parameter<std::string>("joint_states_topic", "joint_states");
-  nh->declare_parameter<std::string>("group_name", "arm");
-  nh->declare_parameter<std::string>("gripper_name", "gripper");
-  nh->declare_parameter<double>("loop_hz", 10.0);
+  nh->declare_parameter<std::string>("hardware_interface.joint_states_topic", "joint_states");
+  nh->declare_parameter<std::string>("hardware_interface.group_name", "arm");
+  nh->declare_parameter<std::string>("hardware_interface.gripper_name", "gripper");
+  nh->declare_parameter<double>("hardware_interface.loop_hz", 10.0);
 
-  nh->get_parameter("joint_states_topic", js_topic);
-  nh->get_parameter("group_name", group_name);
-  nh->get_parameter("gripper_name", gripper_name);
-  nh->get_parameter("loop_hz", loop_hz);
+  nh->get_parameter("hardware_interface.joint_states_topic", js_topic);
+  nh->get_parameter("hardware_interface.group_name", group_name);
+  nh->get_parameter("hardware_interface.gripper_name", gripper_name);
+  nh->get_parameter("hardware_interface.loop_hz", loop_hz);
 
   using namespace std::placeholders;
   pub_group = nh->create_publisher<interbotix_xs_msgs::msg::JointGroupCommand>("commands/joint_group", 10);
