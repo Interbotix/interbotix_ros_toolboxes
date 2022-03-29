@@ -26,7 +26,7 @@ class PointCloudTunerGui(QWidget):
                 "[pointcloudtunergui] Could not find the package "
                     "'interbotix_perception_modules'.\n"
                 "[pointcloudtunergui] Error was '%s'." % err))
-            exit(-1)
+            exit(1)
         loadUi(
             os.path.join(
                 self.pkg_path,
