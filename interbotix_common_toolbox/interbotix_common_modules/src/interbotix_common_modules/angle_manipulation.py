@@ -51,7 +51,7 @@ def eulerAnglesToRotationMatrix(theta):
 def isRotationMatrix(R):
     Rt = np.transpose(R)
     shouldBeIdentity = np.dot(Rt, R)
-    I = np.identity(3, like=R)
+    I = np.identity(3)
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < 1e-6
 
