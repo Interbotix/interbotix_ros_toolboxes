@@ -1,7 +1,7 @@
 import rospy
 import numpy as np
 import tf2_ros
-from geometry_msgs.msg import TransformStamped, Quaternion, Point
+from geometry_msgs.msg import TransformStamped, Quaternion, Point, Pose
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from interbotix_perception_modules.apriltag import InterbotixAprilTagInterface
 from interbotix_common_modules import angle_manipulation as ang
@@ -22,7 +22,7 @@ class InterbotixArmTagInterface(object):
         self.trans.child_frame_id = self.arm_base_frame
         self.trans.transform.rotation.w = 1.0
         self.rpy = [0,0,0]
-        self.apriltag = InterbotixAprilTagInterface(apriltag_ns, False)
+        self.apriltag = InterbotixAprilTagInterface(apriltag_ns, False, verbose=True)
         print("Initialized InterbotixArmTagInterface!\n")
 
     ### @brief Snaps an image of the AprilTag, then computes the transform of the robot's base_link frame w.r.t. the desired reference frame
@@ -30,6 +30,7 @@ class InterbotixArmTagInterface(object):
     ### @param arm_base_frame - desired base_link frame (either the arm's actual base_link frame or a parent frame); defaults to self.arm_base_frame if not specified
     ### @param num_samples - number of AprilTag snapshots to take before averaging them to get a more accurate pose
     ### @param position_only - if True, only the x,y,z position of the snapped AR tag will be considered; if False, the orientation of the AR tag will be used as well
+    ### @return - True if transform was found and published successfully; False otherwise
     ### @details - the 'position_only' parameter can only be set to True if there already exists a 'tf' path from the camera color frame to the AR tag frame on the arm;
     ###            it can be used to try to get a more accurate position of the AR tag than what is dictated by the URDF
     def find_ref_to_arm_base_transform(self, ref_frame=None, arm_base_frame=None, num_samples=5, position_only=False):
@@ -43,6 +44,8 @@ class InterbotixArmTagInterface(object):
         rpy = [0, 0, 0]
         for x in range(num_samples):
             ps = self.apriltag.find_pose()
+            if ps == Pose():
+                return False
             point.x += ps.position.x / float(num_samples)
             point.y += ps.position.y / float(num_samples)
             point.z += ps.position.z / float(num_samples)
@@ -87,6 +90,8 @@ class InterbotixArmTagInterface(object):
         self.trans.child_frame_id = arm_base_frame
         self.trans.header.stamp = rospy.Time.now()
         self.apriltag.pub_transforms.publish(self.trans)
+
+        return True
 
     ### @brief Helper function to lookup a transform and convert it into a 4x4 transformation matrix
     ### @param tfBuffer - tf2_ros buffer instance from which to lookup transforms from the 'tf' tree
