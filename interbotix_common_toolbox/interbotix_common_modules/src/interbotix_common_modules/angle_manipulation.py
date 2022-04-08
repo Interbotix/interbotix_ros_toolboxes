@@ -1,3 +1,7 @@
+"""
+A small library of functions to convert Euler angles to rotation matrices and visa versa
+"""
+
 import numpy as np
 import math
 

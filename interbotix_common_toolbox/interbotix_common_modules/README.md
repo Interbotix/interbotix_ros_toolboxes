@@ -9,4 +9,4 @@ Below is a list and short description of each helper module. Over time, this lis
 - [angle_manipulation](src/interbotix_xs_modules/angle_manipulation.py) - small library of functions to convert Euler angles to rotation matrices and visa versa.
 
 ## Usage
-While the modules in this package are mainly meant to be used in the other toolboxes, they can also be imported into your own Python scripts. To import, type `from interbotix_common_modules import <module>`.
+While the modules in this package are mainly meant to be used in the other toolboxes, they can also be imported into your own Python scripts. To import, type `import interbotix_common_modules.<module>` or `from interbotix_common_modules import <module>`.
