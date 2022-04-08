@@ -487,5 +487,36 @@ classdef InterbotixRobotXSCore < handle
         % joint_state_cb ROS Subscriber Callback function to get the latest JointState message
             obj.joint_states = msg;
         end
+        
+        function rotm = eul_to_rotm(obj, eul)
+            alpha = eul(1);
+            beta  = eul(2);
+            gamma = eul(3);
+            Rx = [1, 0,           0
+                  0, cos(alpha), -sin(alpha)
+                  0, sin(alpha),  cos(alpha)];
+
+            Ry = [cos(beta),  0, sin(beta)
+                  0,          1, 0
+                 -sin(beta),  0, cos(beta)];
+
+            Rz = [cos(gamma), -sin(gamma), 0
+                  sin(gamma),  cos(gamma), 0
+                  0,           0,          1];
+            rotm = Rz * (Ry * Rx);
+        end
+
+        function eul = rotm_to_eul(obj, rotm)
+            sy = sqrt(rotm(1,1) * rotm(1,1) + rotm(2,1) * rotm(2,1));
+            if sy < 1e-6
+                eul(1) = atan2(-rotm(2,3), rotm(2,2));
+                eul(2) = atan2(-rotm(3,1), sy);
+                eul(3) = 0;
+            else
+                eul(1) = atan2(rotm(3,2), rotm(3,3));
+                eul(2) = atan2(-rotm(3,1), sy);
+                eul(3) = atan2(rotm(2,1), rotm(1,1));
+            end
+        end
     end
 end
