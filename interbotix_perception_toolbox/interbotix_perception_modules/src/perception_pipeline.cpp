@@ -37,12 +37,12 @@ int plane_max_iter, ror_min_neighbors, cluster_min_size, cluster_max_size;
 void perception_pipeline()
 {
   // Convert to pcl point cloud
-  pcl::PointCloud<PointT>::Ptr cloud_raw (new pcl::PointCloud<PointT>);
-  pcl::PointCloud<PointT>::Ptr cloud_voxel_downsampled (new pcl::PointCloud<PointT>);
-  pcl::PointCloud<PointT>::Ptr cloud_cropped (new pcl::PointCloud<PointT>);
-  pcl::PointCloud<PointT>::Ptr cloud_no_plane (new pcl::PointCloud<PointT>);
-  pcl::PointCloud<PointT>::Ptr cloud_no_noise (new pcl::PointCloud<PointT>);
-  pcl::fromROSMsg (*input, *cloud_raw);
+  pcl::PointCloud<PointT>::Ptr cloud_raw(new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr cloud_voxel_downsampled(new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr cloud_cropped(new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr cloud_no_plane(new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr cloud_no_noise(new pcl::PointCloud<PointT>);
+  pcl::fromROSMsg(*input, *cloud_raw);
   if (cloud_raw->size() == 0) return;
 
   // Cropbox Filter
@@ -57,9 +57,9 @@ void perception_pipeline()
 
   // Downsample via the VoxelFilter
   pcl::VoxelGrid<PointT> vg;
-  vg.setInputCloud (cloud_cropped);
-  vg.setLeafSize (voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
-  vg.filter (*cloud_voxel_downsampled);
+  vg.setInputCloud(cloud_cropped);
+  vg.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
+  vg.filter(*cloud_voxel_downsampled);
   if(cloud_voxel_downsampled->size() < 4) return;
 
   // Convert to ROS PointCloud2 msg and publish quasi-filtered pointcloud (for debugging)
@@ -81,13 +81,13 @@ void perception_pipeline()
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
   pcl::SACSegmentation<PointT> seg;
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
+  seg.setOptimizeCoefficients(true);
+  seg.setModelType(pcl::SACMODEL_PLANE);
+  seg.setMethodType(pcl::SAC_RANSAC);
   seg.setMaxIterations(plane_max_iter);
-  seg.setDistanceThreshold (plane_dist_thresh);
-  seg.setInputCloud (cloud_voxel_downsampled);
-  seg.segment (*inliers, *coefficients);
+  seg.setDistanceThreshold(plane_dist_thresh);
+  seg.setInputCloud(cloud_voxel_downsampled);
+  seg.segment(*inliers, *coefficients);
 
   // Extract indices of the segmented plane and remove it from the cloud
   pcl::ExtractIndices<PointT> ei;
@@ -101,37 +101,37 @@ void perception_pipeline()
   pcl::RadiusOutlierRemoval<PointT> ror;
   ror.setInputCloud(cloud_no_plane);
   ror.setRadiusSearch(ror_radius_search);
-  ror.setMinNeighborsInRadius (ror_min_neighbors);
+  ror.setMinNeighborsInRadius(ror_min_neighbors);
   ror.setKeepOrganized(false);
-  ror.filter (*cloud_no_noise);
+  ror.filter(*cloud_no_noise);
   if(cloud_no_noise->size() == 0) return;
 
   // Publish the final processed pointcloud
   sensor_msgs::PointCloud2 output_2;
   pcl::toROSMsg(*cloud_no_noise, output_2);
-  pub_pc_obj.publish (output_2);
+  pub_pc_obj.publish(output_2);
 
   // Extract Clusters
-  pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-  tree->setInputCloud (cloud_no_noise);
+  pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
+  tree->setInputCloud(cloud_no_noise);
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<PointT> ec;
-  ec.setClusterTolerance (cluster_tol); // 2cm
-  ec.setMinClusterSize (cluster_min_size);
-  ec.setMaxClusterSize (cluster_max_size);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (cloud_no_noise);
-  ec.extract (cluster_indices);
+  ec.setClusterTolerance(cluster_tol); // 2cm
+  ec.setMinClusterSize(cluster_min_size);
+  ec.setMaxClusterSize(cluster_max_size);
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(cloud_no_noise);
+  ec.extract(cluster_indices);
 
   int j = 0;
   cluster_info_vector.clear();
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
   {
-    pcl::PointCloud<PointT>::Ptr cloud_cluster (new pcl::PointCloud<PointT>);
-    for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-      cloud_cluster->push_back ((*cloud_no_noise)[*pit]);
-    cloud_cluster->width = cloud_cluster->size ();
+    pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
+    for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
+      cloud_cluster->push_back((*cloud_no_noise)[*pit]);
+    cloud_cluster->width = cloud_cluster->size();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
 
@@ -238,7 +238,7 @@ bool srv_enable_pipeline(std_srvs::SetBool::Request& req, std_srvs::SetBool::Res
 int main(int argc, char** argv)
 {
   // Initialize ROS
-  ros::init (argc, argv, "pc_filter");
+  ros::init(argc, argv, "pc_filter");
   ros::NodeHandle nh;
 
   // Get parameters from the parameter server
@@ -267,10 +267,10 @@ int main(int argc, char** argv)
   ros::ServiceServer service_set_filter_params = nh.advertiseService("set_filter_params", srv_set_filter_params);
   ros::ServiceServer service_get_clusters = nh.advertiseService("get_cluster_positions", srv_get_cluster_positions);
   ros::ServiceServer service_enable_pipeline = nh.advertiseService("enable_pipeline", srv_enable_pipeline);
-  ros::Subscriber sub = nh.subscribe (cloud_topic, 1, cloud_cb);
-  pub_pc_obj = nh.advertise<sensor_msgs::PointCloud2> ("pointcloud/objects", 1);
-  pub_pc_filter = nh.advertise<sensor_msgs::PointCloud2> ("pointcloud/filtered", 1);
-  pub_marker_obj = nh.advertise<visualization_msgs::Marker>( "markers/objects", 50);
+  ros::Subscriber sub = nh.subscribe(cloud_topic, 1, cloud_cb);
+  pub_pc_obj = nh.advertise<sensor_msgs::PointCloud2>("pointcloud/objects", 1);
+  pub_pc_filter = nh.advertise<sensor_msgs::PointCloud2>("pointcloud/filtered", 1);
+  pub_marker_obj = nh.advertise<visualization_msgs::Marker>("markers/objects", 50);
   pub_marker_crop = nh.advertise<visualization_msgs::Marker>("markers/crop_box", 1);
 
   // Populate the marker object used to show the centroid of each cluster with values that will never be changed

@@ -1,6 +1,4 @@
-import math
 import rospy
-import numpy as np
 from interbotix_xs_msgs.msg import *
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 

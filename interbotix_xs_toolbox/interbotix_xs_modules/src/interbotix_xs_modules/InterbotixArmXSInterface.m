@@ -5,9 +5,6 @@ classdef InterbotixArmXSInterface < handle
         % internal ROS plumbing that drives the MATLAB API
         core InterbotixRobotXSCore
         
-        % ang - Imported Python angle_manipulation module
-        ang
-        
         % group_info - Struct containing information for the arm's group
         group_info
         
@@ -125,8 +122,6 @@ classdef InterbotixArmXSInterface < handle
                 "\nArm Group Name: %s\nMoving Time: %.2f seconds\nAcceleration Time: %.2f seconds\nDrive Mode: Time-Based-Profile\n", ...
                 group_name, opts.moving_time, opts.accel_time)
             
-            % import the angle_manipulation module
-            obj.ang = py.importlib.import_module('angle_manipulation');
             fprintf("Initialized InterbotixArmXSInterface!\n")
         end
         
@@ -635,8 +630,7 @@ classdef InterbotixArmXSInterface < handle
             % fill out the desired transformation matrix based on the pose 
             %   components
             T_sd = eye(4);
-            T_sd(1:3,1:3) = double( ...
-                obj.ang.eulerAnglesToRotationMatrix([pose.roll, pose.pitch, pose.yaw]));
+            T_sd(1:3,1:3) = obj.core.eul_to_rotm([pose.roll, pose.pitch, pose.yaw]);
             T_sd(1:3, 4) = [pose.x, pose.y, pose.z];
 
             % set the pose matrix
@@ -705,9 +699,9 @@ classdef InterbotixArmXSInterface < handle
             end
 
             % build transform to virtual frame
-            rpy = double(obj.ang.rotationMatrixToEulerAngles(obj.T_sb(1:3,1:3)));
+            rpy = obj.core.rotm_to_eul(obj.T_sb(1:3,1:3));
             T_sy = eye(4);
-            T_sy(1:3,1:3) = double(obj.ang.eulerAnglesToRotationMatrix([0.0, 0.0, rpy(3)]));
+            T_sy(1:3,1:3) = obj.core.eul_to_rotm([0.0, 0.0, rpy(3)]);
             T_yb = TransInv(T_sy) * obj.T_sb;
             rpy(3) = 0.0;
 
@@ -745,7 +739,7 @@ classdef InterbotixArmXSInterface < handle
                 rpy(1) = rpy(1) + inc * pose.roll;
                 rpy(2) = rpy(2) + inc * pose.pitch;
                 rpy(3) = rpy(3) + inc * pose.yaw;
-                T_yb(1:3,1:3) = double(obj.ang.eulerAnglesToRotationMatrix(rpy));
+                T_yb(1:3,1:3) = obj.core.eul_to_rotm(rpy);
 
                 % update the frame with the next transform
                 T_sd = T_sy * T_yb;

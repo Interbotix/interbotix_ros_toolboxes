@@ -4,7 +4,7 @@ import yaml
 import rospy
 import rospkg
 from geometry_msgs.msg import TransformStamped
-from interbotix_common_modules.geometry import quaternion_is_valid
+from interbotix_common_modules.angle_manipulation import quaternion_is_valid
 from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection 
 from interbotix_perception_modules.apriltag import InterbotixAprilTagInterface as AprilTag
 
@@ -63,7 +63,7 @@ class LandmarkFinder(object):
         # load landmarks from filepath
         if self.landmarks.load(self.lm_config_filepath):
             # set tags seen in landmark file
-            self.valid_tags = [l.id_ for l in self.landmarks.data.values()]
+            self.valid_tags = [l.get_id() for l in self.landmarks.data.values()]
             rospy.loginfo("Loaded landmarks from " + self.lm_config_filepath)
 
     def _save_landmarks(self, tags=None):

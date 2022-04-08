@@ -38,7 +38,7 @@ class InterbotixRobotXSCore(object):
             print(str(e.args[0]))
             print((
                 "The robot '%s' is not discoverable. "
-                "Did you enter the right robot_model? "
+                "Did you enter the correct robot_name parameter? "
                 "Quitting..." % robot_model))
             exit()
 
