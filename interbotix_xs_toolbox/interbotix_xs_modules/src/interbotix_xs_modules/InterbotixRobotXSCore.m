@@ -96,13 +96,17 @@ classdef InterbotixRobotXSCore < handle
             obj.srv_reboot = rossvcclient(...
                 "/" + obj.robot_name + "/reboot_motors", ...
                 "interbotix_xs_msgs/Reboot");
-            waitForServer(obj.srv_set_op_modes)
-            waitForServer(obj.srv_set_pids)
-            waitForServer(obj.srv_set_reg)
-            waitForServer(obj.srv_get_reg)
-            waitForServer(obj.srv_get_info)
-            waitForServer(obj.srv_torque)
-            waitForServer(obj.srv_reboot)
+            try
+                waitForServer(obj.srv_set_op_modes, "Timeout", 5.0)
+                waitForServer(obj.srv_set_pids)
+                waitForServer(obj.srv_set_reg)
+                waitForServer(obj.srv_get_reg)
+                waitForServer(obj.srv_get_info)
+                waitForServer(obj.srv_torque)
+                waitForServer(obj.srv_reboot)
+            catch ME
+                error("\nThe robot '%s' is not discoverable. Did you enter the correct robot_name parameter?\n", robot_model)
+            end
             % create publishers and subscribers
             obj.pub_group  = rospublisher( ...
                 "/" + obj.robot_name + "/commands/joint_group", ...
