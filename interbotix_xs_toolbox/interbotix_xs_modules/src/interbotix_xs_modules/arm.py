@@ -5,8 +5,8 @@ import modern_robotics as mr
 from interbotix_xs_msgs.msg import *
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
-from interbotix_common_modules import angle_manipulation as ang
-from interbotix_xs_modules import mr_descriptions as mrd
+import interbotix_common_modules.angle_manipulation as ang
+import interbotix_xs_modules.mr_descriptions as mrd
 from interbotix_xs_modules.core import InterbotixRobotXSCore
 from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 
@@ -23,7 +23,7 @@ from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 ### @param gripper_pressure_upper_limit - largest 'effort' that should be applied to the gripper if gripper_pressure is set to 1; it should be low enough that the motor doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
 ### @param init_node - set to True if the InterbotixRobotXSCore class should initialize the ROS node - this is the most Pythonic approach; to incorporate a robot into an existing ROS node though, set to False
 class InterbotixManipulatorXS(object):
-    def __init__(self, robot_model, group_name="arm", gripper_name="gripper", robot_name=None, moving_time=2.0, accel_time=0.3, use_gripper=True, gripper_pressure=0.5, gripper_pressure_lower_limit=150, gripper_pressure_upper_limit=350, init_node=True):
+    def __init__(self, robot_model, group_name="arm", gripper_name="gripper", robot_name=None, moving_time=2.0, accel_time=0.3, gripper_pressure=0.5, gripper_pressure_lower_limit=150, gripper_pressure_upper_limit=350, init_node=True):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node)
         self.arm = InterbotixArmXSInterface(self.dxl, robot_model, group_name, moving_time, accel_time)
         if gripper_name is not None:
