@@ -5,9 +5,10 @@
   <description>The interbotix_common_modules package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
-  <!-- <url type="website">http://wiki.ros.org/interbotix_common_modules</url> -->
   <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
   <depend>geometry_msgs</depend>
+  <depend>tf_transformations</depend>
+  <depend>python3-numpy</depend>
   <export>
     <build_type>ament_python</build_type>
   </export>
