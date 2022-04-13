@@ -9,7 +9,7 @@ import math
 from geometry_msgs.msg import Quaternion, QuaternionStamped
 from tf_transformations import euler_matrix, euler_from_matrix
 
-def transInv(T: np.ndarray) -> np.ndarray[np.float32]:
+def transInv(T: np.ndarray) -> np.ndarray:
     """Inverts a homogeneous transformation matrix
     
     :param T: The homogeneous transformation matrix to invert
@@ -19,7 +19,7 @@ def transInv(T: np.ndarray) -> np.ndarray[np.float32]:
     Rt = np.array(R).T
     return np.r_[np.c_[Rt, -np.dot(Rt, p)], [[0, 0, 0, 1]]]
 
-def yawToRotationMatrix(yaw: float) -> np.ndarray[np.float32]:
+def yawToRotationMatrix(yaw: float) -> np.ndarray:
     """Calculates 2D Rotation Matrix given a desired yaw angle
     
     :param yaw: A yaw rotation
@@ -30,7 +30,7 @@ def yawToRotationMatrix(yaw: float) -> np.ndarray[np.float32]:
                     ])
     return R_z
 
-def poseToTransformationMatrix(pose: List[float]) -> np.ndarray[np.float32]:
+def poseToTransformationMatrix(pose: List[float]) -> np.ndarray:
     """Transform a Six Element Pose vector to a Transformation Matrix
     
     :param pose: A list of 6 floats in the format [x, y, z, roll, pitch, yaw]
@@ -41,7 +41,7 @@ def poseToTransformationMatrix(pose: List[float]) -> np.ndarray[np.float32]:
     mat[:3, 3] = pose[:3]
     return mat
 
-def eulerAnglesToRotationMatrix(theta: List[float]) -> np.ndarray[np.float32]:
+def eulerAnglesToRotationMatrix(theta: List[float]) -> np.ndarray:
     """Calculates rotation matrix given euler angles in 'xyz' sequence
     
     :param theta: list of 3 euler angles
