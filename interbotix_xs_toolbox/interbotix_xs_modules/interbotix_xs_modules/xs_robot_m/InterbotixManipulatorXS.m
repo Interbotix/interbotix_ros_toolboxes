@@ -107,7 +107,7 @@ classdef InterbotixManipulatorXS < handle
                         delete(group_timers);
                         fprintf("All group timers deleted successfully.\n")
                     else
-                        fprintf("No timers to delete in group.\n")
+                        fprintf("\nNo timers to delete in group.\n")
                     end
                     if ~isempty(gripper_timers)
                         stop(gripper_timers)
@@ -115,7 +115,7 @@ classdef InterbotixManipulatorXS < handle
                         delete(gripper_timers);
                         fprintf("All gripper timers deleted successfully.\n")
                     else
-                        fprintf("No timers to delete in gripper.\n")
+                        fprintf("\nNo timers to delete in gripper.\n")
                     end
                     fprintf("All timers in manipulator stopped and deleted.\n")
                 else
@@ -127,6 +127,5 @@ classdef InterbotixManipulatorXS < handle
                 rethrow(ME)
             end
         end
-
     end
 end

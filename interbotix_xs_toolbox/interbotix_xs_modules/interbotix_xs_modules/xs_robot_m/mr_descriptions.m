@@ -1,9 +1,15 @@
-% Modern Robotics Descriptions for all Interbotix Arms.
-% 
-% Note: 
-%     The end-effector is positioned at `<robot_name>/ee_gripper_link` and 
-%     the Space frame is positioned at `<robot_name>/base_link`.
-%
+% Modern Robotics Descriptions for all Interbotix X-Series Arms
+
+% This module contains properties required by the Modern Robotics library to perform
+% kinematic calculations such as the Joint Screw Axes and Home Configuration for each
+% X-Series robot.
+
+% Note that the end-effector is positioned at '<robot_name>/ee_gripper_link' and that the
+% Space frame is positioned at '<robot_name>/base_link'.
+
+% To calculate your own MR Description, check out the kinematics_from_description package:
+%     https://github.com/Interbotix/kinematics_from_description
+
 
 classdef mr_descriptions
     properties (Constant)

@@ -78,7 +78,7 @@ classdef InterbotixGripperXS < handle
                         delete(gripper_timers);
                         fprintf("All gripper timers deleted successfully.\n")
                     else
-                        fprintf("No timers to delete in gripper.\n")
+                        fprintf("\nNo timers to delete in gripper.\n")
                     end
                     fprintf("All timers stopped and deleted.\n")
                 else
