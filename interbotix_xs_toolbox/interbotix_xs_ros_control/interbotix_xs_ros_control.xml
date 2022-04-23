@@ -2,8 +2,6 @@
   <class name="interbotix_xs_ros_control/XSHardwareInterface"
          type="XSHardwareInterface"
          base_class_type="hardware_interface::SystemInterface">
-    <description>
-      The ROS2 Control minimal robot protocol. This is example for start porting the robot from ROS 1.
-    </description>
+    <description>A ROS2 System Interface for Interbotix X-Series robots.</description>
   </class>
 </library>

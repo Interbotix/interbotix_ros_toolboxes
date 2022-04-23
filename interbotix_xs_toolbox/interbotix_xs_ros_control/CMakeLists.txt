@@ -15,7 +15,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -25,20 +24,20 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(joint_trajectory_controller REQUIRED)
 
-## COMPILE
-set(LIBRARY_NAME "interbotix_xs_ros_control")
 add_library(
-  ${LIBRARY_NAME}
+  ${PROJECT_NAME}
   SHARED
   src/xs_hardware_interface_obj.cpp
 )
+
 target_include_directories(
-  ${LIBRARY_NAME}
+  ${PROJECT_NAME}
   PRIVATE
   include
 )
+
 ament_target_dependencies(
-  ${LIBRARY_NAME}
+  ${PROJECT_NAME}
   hardware_interface
   pluginlib
   rclcpp
@@ -50,34 +49,18 @@ ament_target_dependencies(
 
 pluginlib_export_plugin_description_file(hardware_interface interbotix_xs_ros_control.xml)
 
-# INSTALL
 install(
-  TARGETS ${LIBRARY_NAME}
-  DESTINATION lib
-)
-install(
-  DIRECTORY include/
+  DIRECTORY include
   DESTINATION include
 )
-
-# install(DIRECTORY
-#   launch
-#   config
-#   DESTINATION share/${PROJECT_NAME}/
-# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-## EXPORTS
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${LIBRARY_NAME}
-)
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(
   hardware_interface
   pluginlib
