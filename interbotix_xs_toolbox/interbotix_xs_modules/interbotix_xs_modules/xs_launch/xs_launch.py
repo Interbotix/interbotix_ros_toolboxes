@@ -1,76 +1,106 @@
-from typing import List, Optional, Tuple, Text
-from launch import SomeSubstitutionsType
+# Copyright 2022 Trossen Robotics
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
+from typing import List, Optional, Text, Tuple, Union
+
+from launch import SomeSubstitutionsType
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
     Command,
     FindExecutable,
     LaunchConfiguration,
-    TextSubstitution,
     PathJoinSubstitution,
+    TextSubstitution,
 )
 from launch_ros.substitutions import FindPackageShare
 
 # Tuple of valid Interbotix X-Series arm models
 _XSARM_MODELS = (
-    "px100",
-    "px150",
-    "rx150",
-    "rx200",
-    "wx200",
-    "wx250",
-    "wx250s",
-    "vx250",
-    "vx300",
-    "vx300s",
-    "mobile_px100",
-    "mobile_wx200",
-    "mobile_wx250s",
+    'px100',
+    'px150',
+    'rx150',
+    'rx200',
+    'wx200',
+    'wx250',
+    'wx250s',
+    'vx250',
+    'vx300',
+    'vx300s',
+    'mobile_px100',
+    'mobile_wx200',
+    'mobile_wx250s',
 )
 
 # Tuple of valid Interbotix LoCoBot models
 _XSLOCOBOT_MODELS = (
-    "locobot_base",
-    "locobot_px100",
-    "locobot_wx200",
-    "locobot_wx250s",
+    'locobot_base',
+    'locobot_px100',
+    'locobot_wx200',
+    'locobot_wx250s',
 )
 
 
 class DeclareInterbotixXSArmRobotDescriptionLaunchArgument(DeclareLaunchArgument):
-    """A modified DeclareLaunchArgument object used to generate a URDF of the robot
-    
-    :param default_value: The default model given to the parent DeclareLaunchArgument;
-        if you want to override this value, it must follow the convention in this
-        object's source
-    """
+    """Generate a URDF of a robot through a modified DeclareLaunchArgument object."""
+
     def __init__(
         self,
         *,
         default_value: Optional[SomeSubstitutionsType] = Command([
-            FindExecutable(name="xacro"), " ",
+            FindExecutable(name='xacro'), ' ',
             PathJoinSubstitution([
-                FindPackageShare("interbotix_xsarm_descriptions"),
-                "urdf",
-                LaunchConfiguration("robot_model")
-            ]), ".urdf.xacro ",
-            "robot_name:=", LaunchConfiguration("robot_name"), " ",
-            "base_link_frame:=", LaunchConfiguration("base_link_frame"), " ",
-            "show_ar_tag:=", LaunchConfiguration("show_ar_tag"), " ",
-            "show_gripper_bar:=", LaunchConfiguration("show_gripper_bar"), " ",
-            "show_gripper_fingers:=", LaunchConfiguration("show_gripper_fingers"), " ",
-            "use_world_frame:=", LaunchConfiguration("use_world_frame"), " ",
-            "external_urdf_loc:=", LaunchConfiguration("external_urdf_loc"), " ",
-            "load_gazebo_configs:=", LaunchConfiguration("load_gazebo_configs"), " ",
-            "hardware_type:=", LaunchConfiguration("hardware_type"), " ",
+                FindPackageShare('interbotix_xsarm_descriptions'),
+                'urdf',
+                LaunchConfiguration('robot_model')
+            ]), '.urdf.xacro ',
+            'robot_name:=', LaunchConfiguration('robot_name'), ' ',
+            'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
+            'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
+            'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
+            'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
+            'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
+            'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
+            'load_gazebo_configs:=', LaunchConfiguration('load_gazebo_configs'), ' ',
+            'hardware_type:=', LaunchConfiguration('hardware_type'), ' ',
         ]),
         **kwargs
     ) -> None:
+        """
+        Construct the modified DeclareLaunchArgument object.
+
+        :param default_value: The default model given to the parent DeclareLaunchArgument; if you
+        want to override this value, it must follow the convention in this object's source
+        """
         super().__init__(
-            name="robot_description",
+            name='robot_description',
             default_value=default_value,
             description=(
-                "URDF of the robot; this is typically generated by the xacro command"
+                'URDF of the robot; this is typically generated by the xacro command'
             ),
             choices=None,
             **kwargs
@@ -114,16 +144,18 @@ def construct_semantic_robot_description_command(
 
 def declare_interbotix_xsarm_robot_description_launch_arguments(
     *,
-    base_link_frame_default: Text = "base_link",
-    show_ar_tag_default: Text = "false",
-    show_gripper_bar_default: Text = "true",
-    show_gripper_fingers_default: Text = "true",
-    use_world_frame_default: Text = "true",
-    external_urdf_loc_default: Text = "",
-    load_gazebo_configs_default: Text = "false",
-    hardware_type_default: Text = "actual",
+    base_link_frame_default: Text = 'base_link',
+    show_ar_tag_default: Text = 'false',
+    show_gripper_bar_default: Text = 'true',
+    show_gripper_fingers_default: Text = 'true',
+    use_world_frame_default: Text = 'true',
+    external_urdf_loc_default: Text = '',
+    load_gazebo_configs_default: Text = 'false',
+    hardware_type_default: Text = 'actual',
 ) -> List[DeclareLaunchArgument]:
-    """Returns the `robot_description` DeclareLaunchArgument and its requried children
+    """
+    Return the `robot_description` DeclareLaunchArgument and its requried children.
+
     DeclareLaunchArgument objects:
         - `base_link_frame`
         - `show_ar_tag`
@@ -134,94 +166,93 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
         - `load_gazebo_configs`
         - `hardware_type`
 
-    :details: Include this in your LaunchDescription by appending its output to your 
+    :details: Include this in your LaunchDescription by appending its output to the
         list of DeclareLaunchArguments
     """
     return [
         DeclareLaunchArgument(
-            "base_link_frame",
+            'base_link_frame',
             default_value=TextSubstitution(text=base_link_frame_default),
             description=(
-                "name of the 'root' link on the arm; typically 'base_link', but can be "
-                "changed if attaching the arm to a mobile base that already has a "
-                "'base_link' frame"
+                "name of the 'root' link on the arm; typically 'base_link', but can be changed if "
+                "attaching the arm to a mobile base that already has a 'base_link' frame"
             ),
         ),
         DeclareLaunchArgument(
-            "show_ar_tag",
+            'show_ar_tag',
             default_value=show_ar_tag_default,
             description=(
-                "if true, the AR tag mount is included in the 'robot_description'"
-                " parameter; if false, it is left out; set to true if using the AR tag "
-                "mount in your project"
+                "if true, the AR tag mount is included in the 'robot_description' parameter; if "
+                'false, it is left out; set to true if using the AR tag mount in your project'
             ),
         ),
         DeclareLaunchArgument(
-            "show_gripper_bar",
+            'show_gripper_bar',
             default_value=show_gripper_bar_default,
             description=(
-                "if true, the gripper_bar link is included in the 'robot_description' "
-                "parameter; if false, the gripper_bar and finger links are not loaded. "
-                "Set to false if you have a custom gripper attachment"
+                "if true, the gripper_bar link is included in the 'robot_description' parameter; "
+                'if false, the gripper_bar and finger links are not loaded. Set to false if you '
+                'have a custom gripper attachment'
             ),
         ),
         DeclareLaunchArgument(
-            "show_gripper_fingers",
+            'show_gripper_fingers',
             default_value=show_gripper_fingers_default,
             description=(
-                "if true, the gripper fingers are included in the 'robot_description' "
-                "parameter; if false, the gripper finger links are not loaded. Set to "
-                "false if you have custom gripper fingers"
+                "if true, the gripper fingers are included in the 'robot_description' parameter; "
+                'if false, the gripper finger links are not loaded. Set to false if you have '
+                'custom gripper fingers'
             ),
         ),
         DeclareLaunchArgument(
-            "use_world_frame",
+            'use_world_frame',
             default_value=use_world_frame_default,
             description=(
                 "set this to true if you would like to load a 'world' frame to the "
-                "'robot_description' parameter which is located exactly at the "
-                "'base_link' frame of the robot; if using multiple robots or if you "
-                "would like to attach the 'base_link' frame of the robot to a different "
-                "frame, set this to false"
+                "'robot_description' parameter which is located exactly at the 'base_link' frame "
+                'of the robot; if using multiple robots or if you would like to attach the '
+                "'base_link' frame of the robot to a different frame, set this to false"
             ),
         ),
         DeclareLaunchArgument(
-            "external_urdf_loc",
+            'external_urdf_loc',
             default_value=TextSubstitution(text=external_urdf_loc_default),
             description=(
-                "the file path to the custom urdf.xacro file that you would like to "
-                "include in the Interbotix robot's urdf.xacro file"
+                'the file path to the custom urdf.xacro file that you would like to include in the'
+                " Interbotix robot's urdf.xacro file"
             ),
         ),
         DeclareLaunchArgument(
-            "load_gazebo_configs",
+            'load_gazebo_configs',
             default_value=load_gazebo_configs_default,
             description=(
-                "set this to true if Gazebo is being used; it makes sure to include "
-                "Gazebo related configs in the 'robot_description' parameter so that the"
-                " robot models show up black in Gazebo"
+                'set this to true if Gazebo is being used; it makes sure to include Gazebo related'
+                " configs in the 'robot_description' parameter so that the robot models show up "
+                'black in Gazebo'
             ),
         ),
         DeclareLaunchArgument(
-            "hardware_type",
+            'hardware_type',
             choices=(
-                "actual",
-                "fake",
-                # "gazebo",
+                'actual',
+                'fake',
+                # 'gazebo',
             ),
             default_value=hardware_type_default,
             description=(
-                "launch MoveIt with the physical robot, a fake robot, or a robot "
-                "simulated in Gazebo"
+                'launch MoveIt with the physical robot, a fake robot, or a robot simulated in '
+                'Gazebo'
             ),
         ),
         DeclareInterbotixXSArmRobotDescriptionLaunchArgument(),
     ]
 
+
 def get_interbotix_xsarm_models() -> Tuple[str]:
-    """Get the tuple of valid Interbotix X-Series arm models"""
+    """Get the tuple of valid Interbotix X-Series arm models."""
     return _XSARM_MODELS
 
+
 def get_interbotix_xslocobot_models() -> Tuple[str]:
-    """Get the tuple of valid Interbotix LoCoBot models"""
+    """Get the tuple of valid Interbotix LoCoBot models."""
     return _XSLOCOBOT_MODELS
