@@ -77,6 +77,41 @@ class DeclareInterbotixXSArmRobotDescriptionLaunchArgument(DeclareLaunchArgument
         )
 
 
+def construct_semantic_robot_description_command(
+    robot_model: str,
+    config_path: Union[PathJoinSubstitution, str],
+) -> Command:
+    """
+    Construct the semantic robot description launch.substitutions.Command required by MoveIt.
+
+    :param robot_model: The performed robot_model LaunchConfiguration
+    :param config_path: The absolute path to the parent directory of the directory containing the
+        srdf
+    :return: A launch.substitutions.Command containing info to build the srdf
+
+    :details: The LaunchConfigurations used in this method must already have been declared. This
+        can be done by using the declare_interbotix_xsarm_robot_description_launch_arguments method
+        to declare the robot_description launch args.
+    """
+    return Command([
+        PathJoinSubstitution([
+            FindExecutable(name='xacro')
+        ]),
+        ' ',
+        config_path,
+        f'/srdf/{robot_model}.srdf.xacro', ' ',
+        'robot_name:=', LaunchConfiguration('robot_name'), ' ',
+        'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
+        'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
+        'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
+        'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
+        'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
+        'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
+        'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
+        'load_gazebo_configs:=', LaunchConfiguration('load_gazebo_configs'), ' ',
+    ])
+
+
 def declare_interbotix_xsarm_robot_description_launch_arguments(
     *,
     base_link_frame_default: Text = "base_link",
