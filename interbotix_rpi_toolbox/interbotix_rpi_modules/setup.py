@@ -1,12 +1,29 @@
-## ! DO NOT MANUALLY INVOKE THIS setup.py, USE CATKIN INSTEAD
-
-from distutils.core import setup
-from catkin_pkg.python_setup import generate_distutils_setup
-
-# fetch values from package.xml
-setup_args = generate_distutils_setup(
-    packages=['interbotix_rpi_modules'],
-    package_dir={'': 'src'},
+from setuptools import (
+    setup,
 )
 
-setup(**setup_args)
+package_name = 'interbotix_rpi_modules'
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=[
+        'setuptools',
+    ],
+    zip_safe=True,
+    maintainer='Luke Schmitt',
+    maintainer_email='luke@trossenrobotics.com',
+    description='The interbotix_rpi_modules package',
+    license='BSD',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+        ],
+    },
+)
