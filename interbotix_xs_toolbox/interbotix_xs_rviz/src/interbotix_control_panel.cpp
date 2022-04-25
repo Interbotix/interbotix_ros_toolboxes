@@ -154,24 +154,24 @@ void InterbotixControlPanel::onInitialize()
   robot_info_req->name = NAME_ALL;
 
   torque_enable_req->cmd_type = CMD_TYPE_GROUP;
-  torque_enable_req->name = NAME_ALL;
+  torque_enable_req->name = NAME_ARM;
 
   joint_group_cmd.name = NAME_ALL;
 
   reboot_req->cmd_type = CMD_TYPE_GROUP;
-  reboot_req->name = NAME_ALL;
+  reboot_req->name = NAME_ARM;
   reboot_req->smart_reboot = false;
   reboot_req->enable = true;
 
   opmodes_req->cmd_type = CMD_TYPE_GROUP;
-  opmodes_req->name = NAME_ALL;
+  opmodes_req->name = NAME_ARM;
   opmodes_req->mode = "position";
   opmodes_req->profile_type = "time";
   opmodes_req->profile_velocity = 2000;
   opmodes_req->profile_acceleration = 300;
 
   getreg_req->cmd_type = CMD_TYPE_GROUP;
-  getreg_req->name = NAME_ALL;
+  getreg_req->name = NAME_ARM;
   getreg_req->reg = "Goal_Position";
 
   ui_->label_getregval_desc_->setText(
