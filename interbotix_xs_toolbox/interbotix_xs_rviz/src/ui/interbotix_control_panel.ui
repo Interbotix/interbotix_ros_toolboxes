@@ -10,6 +10,24 @@
     <height>290</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>401</width>
+    <height>315</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -27,6 +45,19 @@
        </item>
        <item>
         <widget class="QLineEdit" name="lineedit_robot_namespace_"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushbutton_robot_namespace_">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Update</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

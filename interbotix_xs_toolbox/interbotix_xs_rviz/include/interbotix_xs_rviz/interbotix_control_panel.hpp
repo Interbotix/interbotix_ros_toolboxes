@@ -1,45 +1,98 @@
-#pragma once
+// Copyright 2022 Trossen Robotics
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the the copyright holder nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+#ifndef INTERBOTIX_XS_RVIZ__INTERBOTIX_CONTROL_PANEL_HPP_
+#define INTERBOTIX_XS_RVIZ__INTERBOTIX_CONTROL_PANEL_HPP_
+
+#include <string>
+#include <vector>
 
 #ifndef Q_MOC_RUN
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <rviz/panel.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/exceptions.hpp"
 #endif
 
-#include <QLineEdit>
-#include <QPushButton>
+#include "rviz_common/panel.hpp"
+#include "rviz_common/display_context.hpp"
+#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 
-#include "interbotix_xs_msgs/Reboot.h"
-#include "interbotix_xs_msgs/RobotInfo.h"
-#include "interbotix_xs_msgs/TorqueEnable.h"
-#include "interbotix_xs_msgs/OperatingModes.h"
-#include "interbotix_xs_msgs/RegisterValues.h"
-#include "interbotix_xs_msgs/JointGroupCommand.h"
-#include "interbotix_xs_rviz/xs_register_descriptions.h"
+#include "QLineEdit"
+#include "QPushButton"
+
+#include "interbotix_xs_msgs/srv/reboot.hpp"
+#include "interbotix_xs_msgs/srv/robot_info.hpp"
+#include "interbotix_xs_msgs/srv/torque_enable.hpp"
+#include "interbotix_xs_msgs/srv/operating_modes.hpp"
+#include "interbotix_xs_msgs/srv/register_values.hpp"
+#include "interbotix_xs_msgs/msg/joint_group_command.hpp"
+#include "interbotix_xs_rviz/xs_register_descriptions.hpp"
 
 namespace Ui
 {
 class InterbotixControlPanelUI;
-} // namespace Ui
+}  // namespace Ui
 
 namespace interbotix_xs_rviz
 {
 
-class InterbotixControlPanel : public rviz::Panel
-{
+inline static const std::string CMD_TYPE_GROUP = "group";
+inline static const std::string CMD_TYPE_SINGLE = "single";
+inline static const std::string NAME_ARM = "arm";
+inline static const std::string NAME_ALL = "all";
 
+static const rclcpp::Logger LOGGER = rclcpp::get_logger(
+  "interbotix_xs_rviz.interbotix_control_panel");
+
+using TorqueEnable = interbotix_xs_msgs::srv::TorqueEnable;
+using RobotInfo = interbotix_xs_msgs::srv::RobotInfo;
+using RegisterValues = interbotix_xs_msgs::srv::RegisterValues;
+using Reboot = interbotix_xs_msgs::srv::Reboot;
+using OperatingModes = interbotix_xs_msgs::srv::OperatingModes;
+
+using JointGroupCommand = interbotix_xs_msgs::msg::JointGroupCommand;
+
+
+class InterbotixControlPanel : public rviz_common::Panel
+{
   Q_OBJECT
 
 public:
-  InterbotixControlPanel(QWidget* parent = 0);
+  explicit InterbotixControlPanel(QWidget * parent = 0);
   ~InterbotixControlPanel();
 
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
+  void onInitialize() override;
+  void onEnable();
+  void onDisable();
+
+  void load(const rviz_common::Config & config) override;
+  void save(rviz_common::Config config) const override;
 
 public Q_SLOTS:
-
-  void set_robot_namespace(const QString& robot_namespace);
+  bool set_robot_namespace(const QString & robot_namespace);
 
 
   /** -------- Torque Tab ---------------- */
@@ -66,10 +119,7 @@ public Q_SLOTS:
 
   void send_getregval_call();
 
-
-
 protected Q_SLOTS:
-
   void update_robot_namespace();
   void update_robot_info();
 
@@ -119,7 +169,7 @@ protected Q_SLOTS:
   void getregval_change_cmd_type_single();
   void getregval_change_name();
   void getregval_change_reg_name(int);
-  void getregval_display(interbotix_xs_msgs::RegisterValues&);
+  void getregval_display(const RegisterValues::Response::SharedPtr &);
   void getregval_init();
 
 
@@ -127,20 +177,21 @@ protected Q_SLOTS:
 
   void estop_button_pressed();
 
-
 protected:
-
   // The GUI for this RViz panel
-  Ui::InterbotixControlPanelUI* ui_;
+  Ui::InterbotixControlPanelUI * ui_;
 
-  // ROS Node
-  ros::NodeHandle nh_;
+  // This node is a pointer to the node run by RViz (unused)
+  rclcpp::Node::SharedPtr node_;
+
+  // This node will be spun to use publishers and service calls
+  rclcpp::Node::SharedPtr client_node_;
 
   // The robot namespace from robot_namespace_editor_;
   std::string robot_namespace_;
 
   // Robot info service call
-  interbotix_xs_msgs::RobotInfo robot_info_call;
+  RobotInfo::Request::SharedPtr robot_info_req;
 
   // Vector containing joint info for the arm group
   std::vector<std::string> robot_arm_joints;
@@ -148,11 +199,14 @@ protected:
   // QStringList containing joint names for the arm group
   QStringList qrobot_arm_joints;
 
+  // Vector containing joint info for the arm group
+  std::vector<std::string> robot_groups;
+
   // QStringList containing the groups in the robot
-  QStringList qrobot_groups = QStringList() << "arm" << "gripper" << "all";
+  QStringList qrobot_groups;
 
   // Robot info service client
-  ros::ServiceClient srv_robot_info;
+  rclcpp::Client<RobotInfo>::SharedPtr srv_robot_info;
 
   // enables or disables all input fields depending on the given bool
   void enable_elements(const bool enable);
@@ -164,19 +218,19 @@ protected:
   /** -------- Torque Enable Tab -------- */
 
   // The torque_enable service client
-  ros::ServiceClient srv_torque_enable;
-  
+  rclcpp::Client<TorqueEnable>::SharedPtr srv_torque_enable;
+
   // The torque enable service call
-  interbotix_xs_msgs::TorqueEnable torque_enable_call;
+  TorqueEnable::Request::SharedPtr torque_enable_req;
 
 
   /** -------- Home/Sleep Tab ------------ */
 
   // The home/sleep publisher
-  ros::Publisher pub_joint_group_cmd;
-  
+  rclcpp::Publisher<JointGroupCommand>::SharedPtr pub_joint_group_cmd;
+
   // The home/sleep jointgroupcommand message
-  interbotix_xs_msgs::JointGroupCommand joint_group_cmd;
+  JointGroupCommand joint_group_cmd;
 
   // The home/sleep vector storing the home positions
   std::vector<float> homesleep_homevec;
@@ -188,35 +242,36 @@ protected:
   /** -------- Reboot Tab ---------------- */
 
   // The reboot_motors service client
-  ros::ServiceClient srv_reboot_motors;
+  rclcpp::Client<Reboot>::SharedPtr srv_reboot_motors;
 
   // The reboot motors service call
-  interbotix_xs_msgs::Reboot reboot_call;
+  Reboot::Request::SharedPtr reboot_req;
 
 
   /** -------- Operating Modes Tab ------- */
 
   // The operating_modes service client
-  ros::ServiceClient srv_operating_modes;
+  rclcpp::Client<OperatingModes>::SharedPtr srv_operating_modes;
 
   // The operating modes service call
-  interbotix_xs_msgs::OperatingModes opmodes_call;
+  OperatingModes::Request::SharedPtr opmodes_req;
 
 
   /** -------- Get Register Values Tab --- */
 
   // The get_motor_registers service client
-  ros::ServiceClient srv_get_motor_registers;
+  rclcpp::Client<RegisterValues>::SharedPtr srv_get_motor_registers;
 
   // The get_motor_registers service call
-  interbotix_xs_msgs::RegisterValues getreg_call;
+  RegisterValues::Request::SharedPtr getreg_req;
 
 
   /** -------- Emergency Stop Tab -------- */
 
   // sends the emergency button service call
   void send_system_call();
+};  // InterbotixControlPanel
 
-}; // InterbotixControlPanel
+}  // namespace interbotix_xs_rviz
 
-} // namespace interbotix_control_panel
+#endif  // INTERBOTIX_XS_RVIZ__INTERBOTIX_CONTROL_PANEL_HPP_
