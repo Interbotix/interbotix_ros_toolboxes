@@ -26,8 +26,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_OBJ_HPP_
-#define INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_OBJ_HPP_
+#ifndef INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_HPP_
+#define INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_HPP_
 
 #include <memory>
 #include <string>
@@ -53,6 +53,9 @@ using hardware_interface::return_type;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using RobotInfo = interbotix_xs_msgs::srv::RobotInfo;
 using hardware_interface::HW_IF_POSITION;
+
+namespace interbotix_xs_ros_control
+{
 
 class XSHardwareInterface : public hardware_interface::SystemInterface
 {
@@ -156,4 +159,6 @@ protected:
   sensor_msgs::msg::JointState joint_states;
 };
 
-#endif  // INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_OBJ_HPP_
+}  // namespace interbotix_xs_ros_control
+
+#endif  // INTERBOTIX_XS_ROS_CONTROL__XS_HARDWARE_INTERFACE_HPP_

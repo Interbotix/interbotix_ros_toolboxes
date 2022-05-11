@@ -26,13 +26,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <interbotix_xs_ros_control/xs_hardware_interface_obj.hpp>
+#include <interbotix_xs_ros_control/xs_hardware_interface.hpp>
 
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
+namespace interbotix_xs_ros_control
+{
 
 CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareInfo & info)
 {
@@ -60,17 +62,14 @@ CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareIn
     std::bind(&XSHardwareInterface::joint_state_cb, this, std::placeholders::_1));
   srv_robot_info = nh->create_client<interbotix_xs_msgs::srv::RobotInfo>("get_robot_info");
 
-  // create thread that spins the executor for the pubs, subs, and services
-  update_thread = std::thread(&XSHardwareInterface::executor_cb, this);
-
   using namespace std::chrono_literals;
 
   // wait for a few seconds for the xs_sdk services to load
   if (!srv_robot_info->wait_for_service(5s)) {
-    RCLCPP_ERROR(
+    RCLCPP_FATAL(
       nh->get_logger(),
       "Could not get robot_info service within timeout.");
-    exit(1);
+    throw std::runtime_error("Could not get robot_info service within timeout.");
   }
 
   // set up RobotInfo service requests, call, and await responses
@@ -98,6 +97,9 @@ CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareIn
   joint_efforts.resize(num_joints);
   joint_position_commands.resize(num_joints);
   joint_commands_prev.resize(num_joints);
+
+  // create thread that spins the executor for the pubs, subs, and services
+  update_thread = std::thread(&XSHardwareInterface::executor_cb, this);
 
   while (joint_states.position.size() == 0 && rclcpp::ok()) {
     RCLCPP_INFO_ONCE(nh->get_logger(), "Waiting for joint states...");
@@ -228,6 +230,9 @@ void XSHardwareInterface::joint_state_cb(const sensor_msgs::msg::JointState & ms
   joint_states = msg;
 }
 
-#include "pluginlib/class_list_macros.hpp"  // NOLINT
+}  // namespace interbotix_xs_ros_control
 
-PLUGINLIB_EXPORT_CLASS(XSHardwareInterface, hardware_interface::SystemInterface)
+#include "pluginlib/class_list_macros.hpp"  // NOLINT
+PLUGINLIB_EXPORT_CLASS(
+  interbotix_xs_ros_control::XSHardwareInterface,
+  hardware_interface::SystemInterface)
