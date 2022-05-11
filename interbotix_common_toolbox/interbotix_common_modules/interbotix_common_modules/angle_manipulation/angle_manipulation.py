@@ -29,14 +29,14 @@
 """A small library of functions to convert Euler angles to rotation matrices and vice versa."""
 
 import math
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from geometry_msgs.msg import Quaternion, QuaternionStamped
 import numpy as np
-from tf_transformations import euler_from_matrix, euler_matrix
+from tf_transformations import euler_from_matrix, euler_matrix, quaternion_from_euler
 
 
-def transInv(T: np.ndarray) -> np.ndarray:
+def trans_inv(T: np.ndarray) -> np.ndarray:
     """
     Invert a homogeneous transformation matrix.
 
@@ -48,7 +48,7 @@ def transInv(T: np.ndarray) -> np.ndarray:
     return np.r_[np.c_[Rt, -np.dot(Rt, p)], [[0, 0, 0, 1]]]
 
 
-def yawToRotationMatrix(yaw: float) -> np.ndarray:
+def yaw_to_rotation_matrix(yaw: float) -> np.ndarray:
     """
     Calculate 2D Rotation Matrix given a desired yaw angle.
 
@@ -61,7 +61,7 @@ def yawToRotationMatrix(yaw: float) -> np.ndarray:
     return R_z
 
 
-def poseToTransformationMatrix(pose: List[float]) -> np.ndarray:
+def pose_to_transformation_matrix(pose: List[float]) -> np.ndarray:
     """
     Transform a Six Element Pose vector to a Transformation Matrix.
 
@@ -69,12 +69,12 @@ def poseToTransformationMatrix(pose: List[float]) -> np.ndarray:
     :return: A 4x4 homogeneous transformation matrix
     """
     mat = np.identity(4)
-    mat[:3, :3] = eulerAnglesToRotationMatrix(pose[3:])
+    mat[:3, :3] = euler_angles_to_rotation_matrix(pose[3:])
     mat[:3, 3] = pose[:3]
     return mat
 
 
-def eulerAnglesToRotationMatrix(theta: List[float]) -> np.ndarray:
+def euler_angles_to_rotation_matrix(theta: List[float]) -> np.ndarray:
     """
     Calculate rotation matrix given euler angles in 'xyz' sequence.
 
@@ -84,7 +84,11 @@ def eulerAnglesToRotationMatrix(theta: List[float]) -> np.ndarray:
     return euler_matrix(theta[0], theta[1], theta[2], axes='sxyz')[:3, :3]
 
 
-def rotationMatrixToEulerAngles(R) -> List[float]:
+def euler_angles_to_quaternion(theta: List[float]) -> Tuple[float, float, float]:
+    return quaternion_from_euler(theta[0], theta[1], theta[2], axes='sxyz')
+
+
+def rotation_matrix_to_euler_angles(R: np.ndarray) -> List[float]:
     """
     Calculate euler angles given rotation matrix in 'xyz' sequence.
 
@@ -102,7 +106,7 @@ def quaternion_is_valid(
     Test if a quaternion is valid.
 
     :param quat: Quaternion to check validity of
-    :param tol: tolerance with which to check validity
+    :param tol: (optional) tolerance with which to check validity
     :return: `True` if quaternion is valid, `False` otherwise
     :raises: `TypeError` if quat is not a valid type
     """

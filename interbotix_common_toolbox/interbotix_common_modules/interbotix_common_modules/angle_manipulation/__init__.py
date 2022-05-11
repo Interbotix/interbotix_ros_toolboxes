@@ -27,19 +27,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from .angle_manipulation import (
-    eulerAnglesToRotationMatrix,
-    poseToTransformationMatrix,
+    euler_angles_to_quaternion,
+    euler_angles_to_rotation_matrix,
+    pose_to_transformation_matrix,
     quaternion_is_valid,
-    rotationMatrixToEulerAngles,
-    transInv,
-    yawToRotationMatrix,
+    rotation_matrix_to_euler_angles,
+    trans_inv,
+    yaw_to_rotation_matrix,
 )
 
 __all__ = [
-    'eulerAnglesToRotationMatrix',
-    'poseToTransformationMatrix',
+    'euler_angles_to_rotation_matrix',
+    'euler_angles_to_quaternion',
+    'pose_to_transformation_matrix',
     'quaternion_is_valid',
-    'rotationMatrixToEulerAngles',
-    'transInv',
-    'yawToRotationMatrix',
+    'rotation_matrix_to_euler_angles',
+    'trans_inv',
+    'yaw_to_rotation_matrix',
 ]
