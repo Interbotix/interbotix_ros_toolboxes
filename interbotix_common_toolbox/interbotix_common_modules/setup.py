@@ -18,6 +18,8 @@ setup(
         'setuptools',
     ],
     zip_safe=True,
+    author_email='trsupport@trossenrobotics.com',
+    author='Solomon Wiznitzer',
     maintainer='Luke Schmitt',
     maintainer_email='luke@trossenrobotics.com',
     description='The interbotix_common_modules package',

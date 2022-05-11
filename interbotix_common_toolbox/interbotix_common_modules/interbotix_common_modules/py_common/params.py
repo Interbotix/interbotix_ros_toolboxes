@@ -25,3 +25,25 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+
+import yaml
+
+
+def save_to_ros_params_file(params: dict, filepath: str, namespace: str = None) -> None:
+    """Save parameter dictionary to a file."""
+    with open(filepath, 'w') as yamlfile:
+        yaml.dump(
+            {
+                f'{namespace if namespace is not None else "/**"}':
+                    {'ros__parameters': params}
+            },
+            yamlfile,
+            default_flow_style=False
+        )
+
+
+def load_from_ros_params_file(filepath: str, namespace: str = None) -> dict:
+    """Load parameter dictionary from a file."""
+    with open(filepath, 'r') as yamlfile:
+        filestream = yaml.safe_load(yamlfile)
+    return filestream[f'{namespace if namespace is not None else "/**"}']['ros__parameters']
