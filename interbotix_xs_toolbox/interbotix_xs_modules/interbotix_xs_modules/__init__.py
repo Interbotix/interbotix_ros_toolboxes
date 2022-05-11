@@ -33,10 +33,12 @@ This library contains modules used to control and command Interbotix X-Series Ro
 along with useful helper methods and objects specific to them.
 """
 
+from . import xs_common
 from . import xs_launch
 from . import xs_robot
 
 __all__ = [
+    'xs_common',
     'xs_launch',
     'xs_robot',
 ]

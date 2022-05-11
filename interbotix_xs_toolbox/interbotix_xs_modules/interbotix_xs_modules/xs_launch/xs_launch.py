@@ -39,31 +39,6 @@ from launch.substitutions import (
 )
 from launch_ros.substitutions import FindPackageShare
 
-# Tuple of valid Interbotix X-Series arm models
-_XSARM_MODELS = (
-    'px100',
-    'px150',
-    'rx150',
-    'rx200',
-    'wx200',
-    'wx250',
-    'wx250s',
-    'vx250',
-    'vx300',
-    'vx300s',
-    'mobile_px100',
-    'mobile_wx200',
-    'mobile_wx250s',
-)
-
-# Tuple of valid Interbotix LoCoBot models
-_XSLOCOBOT_MODELS = (
-    'locobot_base',
-    'locobot_px100',
-    'locobot_wx200',
-    'locobot_wx250s',
-)
-
 
 class DeclareInterbotixXSArmRobotDescriptionLaunchArgument(DeclareLaunchArgument):
     """Generate a URDF of a robot through a modified DeclareLaunchArgument object."""
@@ -246,13 +221,3 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
         ),
         DeclareInterbotixXSArmRobotDescriptionLaunchArgument(),
     ]
-
-
-def get_interbotix_xsarm_models() -> Tuple[str]:
-    """Get the tuple of valid Interbotix X-Series arm models."""
-    return _XSARM_MODELS
-
-
-def get_interbotix_xslocobot_models() -> Tuple[str]:
-    """Get the tuple of valid Interbotix LoCoBot models."""
-    return _XSLOCOBOT_MODELS

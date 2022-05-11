@@ -26,19 +26,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Declutter X-Series Python launch files.
+"""Provide common methods and constants that are specific to Interbotix X-Series robots."""
 
-The `xs_launch` module helps declutter Interbotix X-Series Python launch files by providing useful
-helper functions and classes.
-"""
-
-from .xs_launch import (
-    construct_semantic_robot_description_command,
-    declare_interbotix_xsarm_robot_description_launch_arguments,
+from .xs_common import (
+    get_interbotix_xsarm_joints,
+    get_interbotix_xsarm_models,
+    get_interbotix_xslocobot_models,
 )
 
 __all__ = [
-    'construct_semantic_robot_description_command',
-    'declare_interbotix_xsarm_robot_description_launch_arguments',
+    'get_interbotix_xsarm_joints',
+    'get_interbotix_xsarm_models',
+    'get_interbotix_xslocobot_models',
 ]
