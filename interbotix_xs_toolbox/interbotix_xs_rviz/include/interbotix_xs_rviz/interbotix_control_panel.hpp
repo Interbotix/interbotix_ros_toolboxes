@@ -39,7 +39,7 @@ public:
 
 public Q_SLOTS:
 
-  void set_robot_namespace(const QString& robot_namespace);
+  bool set_robot_namespace(const QString& robot_namespace);
 
 
   /** -------- Torque Tab ---------------- */
@@ -148,8 +148,11 @@ protected:
   // QStringList containing joint names for the arm group
   QStringList qrobot_arm_joints;
 
+  // Vector containing joint info for the arm group
+  std::vector<std::string> robot_groups;
+
   // QStringList containing the groups in the robot
-  QStringList qrobot_groups = QStringList() << "arm" << "gripper" << "all";
+  QStringList qrobot_groups;
 
   // Robot info service client
   ros::ServiceClient srv_robot_info;
@@ -165,7 +168,7 @@ protected:
 
   // The torque_enable service client
   ros::ServiceClient srv_torque_enable;
-  
+
   // The torque enable service call
   interbotix_xs_msgs::TorqueEnable torque_enable_call;
 
@@ -174,7 +177,7 @@ protected:
 
   // The home/sleep publisher
   ros::Publisher pub_joint_group_cmd;
-  
+
   // The home/sleep jointgroupcommand message
   interbotix_xs_msgs::JointGroupCommand joint_group_cmd;
 
