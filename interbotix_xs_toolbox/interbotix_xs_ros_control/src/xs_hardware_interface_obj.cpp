@@ -21,6 +21,7 @@ void XSHardwareInterface::init()
   pub_gripper = nh.advertise<interbotix_xs_msgs::JointSingleCommand>("commands/joint_single", 1);
   sub_joint_states = nh.subscribe(js_topic, 1, &XSHardwareInterface::joint_state_cb, this);
   srv_robot_info = nh.serviceClient<interbotix_xs_msgs::RobotInfo>("get_robot_info");
+
   interbotix_xs_msgs::RobotInfo group_info_srv, gripper_info_srv;
   group_info_srv.request.cmd_type = "group";
   group_info_srv.request.name = group_name;
@@ -29,6 +30,7 @@ void XSHardwareInterface::init()
   srv_robot_info.waitForExistence();
   srv_robot_info.call(group_info_srv);
   srv_robot_info.call(gripper_info_srv);
+
   num_joints = group_info_srv.response.num_joints + 1;
   joint_state_indices = group_info_srv.response.joint_state_indices;
   joint_state_indices.push_back(gripper_info_srv.response.joint_state_indices.at(0));
@@ -109,7 +111,7 @@ void XSHardwareInterface::write(ros::Duration elapsed_time)
   interbotix_xs_msgs::JointGroupCommand group_msg;
   interbotix_xs_msgs::JointSingleCommand gripper_msg;
   group_msg.name = group_name;
-  gripper_msg.name = "gripper";
+  gripper_msg.name = gripper_name;
   gripper_msg.cmd = joint_position_commands.back() * 2;
 
   position_joint_saturation_interface.enforceLimits(elapsed_time);
