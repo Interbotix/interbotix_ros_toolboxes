@@ -28,7 +28,7 @@
 
 from typing import List, Optional, Text, Union
 
-from launch import SomeSubstitutionsType
+from launch import LaunchContext, SomeSubstitutionsType
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
     Command,
@@ -222,3 +222,20 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
         ),
         DeclareInterbotixXSArmRobotDescriptionLaunchArgument(),
     ]
+
+
+def determine_use_sim_time_param(
+    context: LaunchContext,
+    hardware_type_launch_arg: LaunchConfiguration
+) -> Union[TextSubstitution, LaunchConfiguration]:
+    """
+    Set `use_sim_time` parameter to 'true' if using simulated hardware.
+
+    :param context: The launch context
+    :param hardware_type: The `hardware_type` LaunchConfiguration
+    :return: True if hardware is simulated, the `use_sim_time` LaunchConfiguration otherwise
+    """
+    if hardware_type_launch_arg.perform(context) in ('gz_classic'):
+        return TextSubstitution(text='true')
+    else:
+        return LaunchConfiguration('use_sim_time')
