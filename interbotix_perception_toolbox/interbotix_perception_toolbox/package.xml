@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>interbotix_perception_toolbox</name>
   <version>0.0.0</version>
   <description>The interbotix_perception_toolbox metapackage</description>
@@ -8,10 +9,15 @@
 
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <exec_depend>interbotix_perception_modules</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>interbotix_perception_modules</depend>
+  <depend>interbotix_perception_msgs</depend>
+  <depend>interbotix_perception_pipelines</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
-    <metapackage/>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
