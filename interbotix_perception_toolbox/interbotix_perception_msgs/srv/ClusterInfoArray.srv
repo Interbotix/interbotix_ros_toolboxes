@@ -4,4 +4,4 @@
 # number of objects seen by the camera
 
 ---
-interbotix_perception_modules/ClusterInfo[] clusters
+interbotix_perception_msgs/ClusterInfo[] clusters
