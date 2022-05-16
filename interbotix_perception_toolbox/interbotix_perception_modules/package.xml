@@ -8,8 +8,6 @@
   <license>BSD</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <depend>apriltag_ros</depend>
   <depend>cv_bridge</depend>
   <depend>pcl_conversions</depend>
