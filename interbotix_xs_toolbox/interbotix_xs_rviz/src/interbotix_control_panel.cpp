@@ -207,10 +207,10 @@ void InterbotixControlPanel::update_robot_namespace()
     enable_elements(true);
     update_robot_info();
     Q_EMIT configChanged();
-  } else {
     RCLCPP_DEBUG(
       LOGGER, "Updated namespace to '%s'.",
       ui_->lineedit_robot_namespace_->text().toStdString().c_str());
+  } else {
     enable_elements(false);
   }
 }
