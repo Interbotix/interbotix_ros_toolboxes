@@ -27,9 +27,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """
-Contains the `InterbotixManipulatorXS` and `InterbotixArmXSInterface` classes.
+Contains classes used to control Interbotix X-Series Arms.
 
-These two classes can be used to control an X-Series standalone arm using Python.
+These classes can be used to control an X-Series standalone arm using Python.
 """
 
 import math
@@ -55,6 +55,10 @@ from rclpy.constants import S_TO_NS
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+
+REV: float = 2 * np.pi
+"""One complete revolution of a joint (2*pi)"""
 
 
 class InterbotixManipulatorXS:
@@ -201,9 +205,6 @@ class InterbotixArmXSInterface:
         self.future_group_info = self.core.srv_get_info.call_async(
             RobotInfo.Request(cmd_type='group', name=group_name)
         )
-
-    def initialize(self) -> None:
-        """Initialize the InterbotixArmXSInterface object."""
         while rclpy.ok() and not self.future_group_info.done():
             rclpy.spin_until_future_complete(self.core, self.future_group_info)
             rclpy.spin_once(self.core)
@@ -213,16 +214,17 @@ class InterbotixArmXSInterface:
             self.core.get_logger().error(
                 "Please set the group's 'profile_type' to 'time'."
             )
+            exit(1)
         if self.group_info.mode != 'position':
             self.core.get_logger().error(
                 "Please set the group's 'operating mode' to 'position'."
             )
+            exit(1)
 
-        self.initial_guesses = [[0.0] * self.group_info.num_joints for _ in range(3)]
+        self.initial_guesses = [[0.0] * self.group_info.num_joints] * 3
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
         self.joint_commands = []
-        self.rev = 2 * math.pi
 
         # update joint_commands with the present joint positions
         for name in self.group_info.joint_names:
@@ -230,7 +232,7 @@ class InterbotixArmXSInterface:
                 self.core.joint_states.position[self.core.js_index_map[name]]
             )
         # get the initial transform between the space and body frames
-        self.update_Tsb()
+        self._update_Tsb()
         self.set_trajectory_time(self.moving_time, self.accel_time)
 
         # build the info index map between joint names and their index
@@ -238,17 +240,18 @@ class InterbotixArmXSInterface:
             zip(self.group_info.joint_names, range(self.group_info.num_joints))
         )
 
-        print(
+        self.core.get_logger().info(
             (
-                f'Arm Group Name: {self.group_name}\n'
-                f'Moving Time: {self.moving_time:.2f} seconds\n'
-                f'Acceleration Time: {self.accel_time:.2f} seconds\n'
-                f'Drive Mode: Time-Based-Profile'
+                '\n'
+                f'\tArm Group Name: {self.group_name}\n'
+                f'\tMoving Time: {self.moving_time:.2f} seconds\n'
+                f'\tAcceleration Time: {self.accel_time:.2f} seconds\n'
+                f'\tDrive Mode: Time-Based-Profile'
             )
         )
-        print('Initialized InterbotixArmXSInterface!\n')
+        self.core.get_logger().info('Initialized InterbotixArmXSInterface!')
 
-    def publish_positions(
+    def _publish_commands(
         self,
         positions: List[float],
         moving_time: float = None,
@@ -276,7 +279,7 @@ class InterbotixArmXSInterface:
             time.sleep(
                 self.moving_time
             )  # TODO: once released, use rclpy.clock().sleep_for()
-        self.update_Tsb()
+        self._update_Tsb()
 
     def set_trajectory_time(
         self,
@@ -323,7 +326,7 @@ class InterbotixArmXSInterface:
                 timeout_sec=0.1
             )
 
-    def check_joint_limits(self, positions: List[float]) -> bool:
+    def _check_joint_limits(self, positions: List[float]) -> bool:
         """
         Ensure the desired arm group's joint positions are within their limits.
 
@@ -348,7 +351,7 @@ class InterbotixArmXSInterface:
                 return False
         return True
 
-    def check_single_joint_limit(self, joint_name: str, position: float) -> bool:
+    def _check_single_joint_limit(self, joint_name: str, position: float) -> bool:
         """
         Ensure a desired position for a given joint is within its limits.
 
@@ -391,8 +394,8 @@ class InterbotixArmXSInterface:
         :return: `True` if position was commanded; `False` if it wasn't due to being outside limits
         """
         self.core.get_logger().debug(f'setting {joint_positions=}')
-        if self.check_joint_limits(joint_positions):
-            self.publish_positions(joint_positions, moving_time, accel_time, blocking)
+        if self._check_joint_limits(joint_positions):
+            self._publish_commands(joint_positions, moving_time, accel_time, blocking)
             return True
         else:
             return False
@@ -413,7 +416,7 @@ class InterbotixArmXSInterface:
             until the robot finishes moving
         """
         self.core.get_logger().debug('Going to home pose')
-        self.publish_positions(
+        self._publish_commands(
             positions=[0] * self.group_info.num_joints,
             moving_time=moving_time,
             accel_time=accel_time,
@@ -436,7 +439,7 @@ class InterbotixArmXSInterface:
             until the robot finishes moving
         """
         self.core.get_logger().debug('Going to sleep pose')
-        self.publish_positions(
+        self._publish_commands(
             positions=self.group_info.joint_sleep_positions,
             moving_time=moving_time,
             accel_time=accel_time,
@@ -468,7 +471,7 @@ class InterbotixArmXSInterface:
         self.core.get_logger().debug(
             f'Setting joint {joint_name} to position={position}'
         )
-        if not self.check_single_joint_limit(joint_name, position):
+        if not self._check_single_joint_limit(joint_name, position):
             return False
         self.set_trajectory_time(moving_time, accel_time)
         self.joint_commands[self.core.js_index_map[joint_name]] = position
@@ -476,7 +479,7 @@ class InterbotixArmXSInterface:
         self.core.pub_single.publish(single_command)
         if blocking:
             time.sleep(self.moving_time)
-        self.update_Tsb()
+        self._update_Tsb()
         return True
 
     def set_ee_pose_matrix(
@@ -523,27 +526,14 @@ class InterbotixArmXSInterface:
 
             # Check to make sure a solution was found and that no joint limits were violated
             if success:
-                for x in range(len(theta_list)):
-                    if theta_list[x] <= -self.rev:
-                        theta_list[x] %= -self.rev
-                    elif theta_list[x] >= self.rev:
-                        theta_list[x] %= self.rev
-
-                    if round(theta_list[x], 3) < round(
-                        self.group_info.joint_lower_limits[x], 3
-                    ):
-                        theta_list[x] += self.rev
-                    elif round(theta_list[x], 3) > round(
-                        self.group_info.joint_upper_limits[x], 3
-                    ):
-                        theta_list[x] -= self.rev
-                solution_found = self.check_joint_limits(theta_list)
+                theta_list = self._wrap_theta_list(theta_list)
+                solution_found = self._check_joint_limits(theta_list)
             else:
                 solution_found = False
 
             if solution_found:
                 if execute:
-                    self.publish_positions(
+                    self._publish_commands(
                         theta_list, moving_time, accel_time, blocking
                     )
                     self.T_sb = T_sd
@@ -603,7 +593,7 @@ class InterbotixArmXSInterface:
             )
         )
         T_sd = np.identity(4)
-        T_sd[:3, :3] = ang.eulerAnglesToRotationMatrix([roll, pitch, yaw])
+        T_sd[:3, :3] = ang.euler_angles_to_rotation_matrix([roll, pitch, yaw])
         T_sd[:3, 3] = [x, y, z]
         return self.set_ee_pose_matrix(
             T_sd, custom_guess, execute, moving_time, accel_time, blocking
@@ -664,9 +654,9 @@ class InterbotixArmXSInterface:
                 )
             )
             return False
-        rpy = ang.rotationMatrixToEulerAngles(self.T_sb[:3, :3])
+        rpy = ang.rotation_matrix_to_euler_angles(self.T_sb[:3, :3])
         T_sy = np.identity(4)
-        T_sy[:3, :3] = ang.eulerAnglesToRotationMatrix([0.0, 0.0, rpy[2]])
+        T_sy[:3, :3] = ang.euler_angles_to_rotation_matrix([0.0, 0.0, rpy[2]])
         T_yb = np.dot(mr.TransInv(T_sy), self.T_sb)
         rpy[2] = 0.0
         if moving_time is None:
@@ -689,7 +679,7 @@ class InterbotixArmXSInterface:
             rpy[0] += inc * roll
             rpy[1] += inc * pitch
             rpy[2] += inc * yaw
-            T_yb[:3, :3] = ang.eulerAnglesToRotationMatrix(rpy)
+            T_yb[:3, :3] = ang.euler_angles_to_rotation_matrix(rpy)
             T_sd = np.dot(T_sy, T_yb)
             theta_list, success = self.set_ee_pose_matrix(
                 T_sd, joint_positions, False, blocking=False
@@ -727,6 +717,21 @@ class InterbotixArmXSInterface:
             self.set_trajectory_time(moving_time, accel_time)
 
         return success
+
+    def _wrap_theta_list(self, theta_list: List[np.ndarray]) -> List[np.ndarray]:
+        """
+        Wrap an array of joint commands to [-pi, pi) and between the joint limits.
+
+        :param theta_list: array of floats to wrap
+        :return: array of floats wrapped between [-pi, pi)
+        """
+        theta_list = (theta_list + np.pi) % REV - np.pi
+        for x in range(len(theta_list)):
+            if round(theta_list[x], 3) < round(self.group_info.joint_lower_limits[x], 3):
+                theta_list[x] += REV
+            elif round(theta_list[x], 3) > round(self.group_info.joint_upper_limits[x], 3):
+                theta_list[x] -= REV
+        return theta_list
 
     def get_joint_commands(self) -> List[float]:
         """
@@ -783,9 +788,9 @@ class InterbotixArmXSInterface:
             self.joint_commands.append(
                 self.core.joint_states.position[self.core.js_index_map[name]]
             )
-        self.update_Tsb()
+        self._update_Tsb()
 
-    def update_Tsb(self) -> None:
+    def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
         self.core.get_logger().debug('Updating T_sb')
         self.T_sb = mr.FKinSpace(

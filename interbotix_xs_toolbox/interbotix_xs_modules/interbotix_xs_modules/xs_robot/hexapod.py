@@ -293,7 +293,7 @@ class InterbotixHexapodXSInterface:
                 None)
             T_bc = np.identity(4)
             T_bc[:3, 3] = joint_object.origin.xyz
-            T_bc[:3, :3] = ang.eulerAnglesToRotationMatrix(joint_object.origin.rpy)
+            T_bc[:3, :3] = ang.euler_angles_to_rotation_matrix(joint_object.origin.rpy)
             self.T_bc[leg] = T_bc
 
         femur_joint = next(
@@ -373,7 +373,7 @@ class InterbotixHexapodXSInterface:
         )
 
         R_cfcm = np.identity(3)
-        R_cfcm[:2, :2] = ang.yawToRotationMatrix(theta[0])
+        R_cfcm[:2, :2] = ang.yaw_to_rotation_matrix(theta[0])
 
         p_femur = [x, 0, z]
         p_cm = np.add(p_femur, [self.coxa_length, 0, 0])
@@ -400,12 +400,12 @@ class InterbotixHexapodXSInterface:
         :return: 3-element list and boolean specifying the required joint angles and if the
             function was successful respectively
         """
-        p_b = np.dot(ang.transInv(self.T_fb), np.r_[p_f, 1])
-        p_cf = np.dot(ang.transInv(self.T_bc[leg]), p_b)
+        p_b = np.dot(ang.trans_inv(self.T_fb), np.r_[p_f, 1])
+        p_cf = np.dot(ang.trans_inv(self.T_bc[leg]), p_b)
         theta_1 = math.atan2(p_cf[1], p_cf[0])
 
         R_cfcm = np.identity(3)
-        R_cfcm[:2, :2] = ang.yawToRotationMatrix(theta_1)
+        R_cfcm[:2, :2] = ang.yaw_to_rotation_matrix(theta_1)
 
         p_cm = np.dot(R_cfcm.T, p_cf[:3])
         p_cm[0] += mod_value
@@ -479,7 +479,7 @@ class InterbotixHexapodXSInterface:
         """
         self.t_sf.transform.translation.x = self.T_sf[0, 3]
         self.t_sf.transform.translation.y = self.T_sf[1, 3]
-        rpy = ang.rotationMatrixToEulerAngles(self.T_sf[:3, :3])
+        rpy = ang.rotation_matrix_to_euler_angles(self.T_sf[:3, :3])
         q = quaternion_from_euler(rpy[0], rpy[1], rpy[2])
         self.t_sf.transform.rotation = Quaternion(q[0], q[1], q[2], q[3])
         self.t_sf.header.stamp = self.core.get_clock().now() + Duration(seconds=moving_time)
@@ -499,7 +499,7 @@ class InterbotixHexapodXSInterface:
         self.t_fb.transform.translation.x = self.T_fb[0, 3]
         self.t_fb.transform.translation.y = self.T_fb[1, 3]
         self.t_fb.transform.translation.z = self.T_fb[2, 3]
-        rpy = ang.rotationMatrixToEulerAngles(self.T_fb[:3, :3])
+        rpy = ang.rotation_matrix_to_euler_angles(self.T_fb[:3, :3])
         q = quaternion_from_euler(rpy[0], rpy[1], rpy[2])
         self.t_fb.transform.rotation = Quaternion(q[0], q[1], q[2], q[3])
         self.t_fb.header.stamp = (
@@ -672,14 +672,14 @@ class InterbotixHexapodXSInterface:
         if z is not None:
             self.T_fb[2, 3] = z
 
-        rpy = ang.rotationMatrixToEulerAngles(self.T_fb[:3, :3])
+        rpy = ang.rotation_matrix_to_euler_angles(self.T_fb[:3, :3])
         if roll is not None:
             rpy[0] = roll
         if pitch is not None:
             rpy[1] = pitch
         if yaw is not None:
             rpy[2] = yaw
-        self.T_fb[:3, :3] = ang.eulerAnglesToRotationMatrix(rpy)
+        self.T_fb[:3, :3] = ang.euler_angles_to_rotation_matrix(rpy)
         for leg, point in self.foot_points.items():
             if not self.update_joint_command(point, leg):
                 self.T_fb = T_fb
@@ -754,9 +754,9 @@ class InterbotixHexapodXSInterface:
                 temp_point = [aug_inc * x_stride, aug_inc * y_stride, 0]
                 world_point = np.dot(self.T_sf[:3, :3], temp_point)
                 self.T_sf[:3, 3] += world_point
-                rpy = ang.rotationMatrixToEulerAngles(self.T_sf[:3, :3])
+                rpy = ang.rotation_matrix_to_euler_angles(self.T_sf[:3, :3])
                 rpy[2] += aug_inc * yaw_stride
-                self.T_sf[:3, :3] = ang.eulerAnglesToRotationMatrix(rpy)
+                self.T_sf[:3, :3] = ang.euler_angles_to_rotation_matrix(rpy)
                 self.core.pub_group.publish(self.hexapod_command)
                 self.update_tsf_transform(mp)
 
@@ -796,10 +796,10 @@ class InterbotixHexapodXSInterface:
             new_point = []
             T_osc = np.identity(4)
             if (leg == 'right_front' or leg == 'right_back' or leg == 'left_middle'):
-                T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, -yaw_inc])
+                T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, -yaw_inc])
                 p_f = [-x_inc, -y_inc, 0 if self.step_cntr < self.num_steps/2.0 else foot_height]
             else:
-                T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, yaw_inc])
+                T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, yaw_inc])
                 p_f = [x_inc, y_inc, 0 if self.step_cntr > self.num_steps/2.0 else foot_height]
             T_osc[:3, 3] = p_f
             new_point = np.dot(T_osc, np.r_[self.foot_points[leg], 1])
@@ -845,7 +845,7 @@ class InterbotixHexapodXSInterface:
             yaw_inc = self.ripple_incs[pair] * yaw_stride
             p_f = [x_inc, y_inc, z_inc]
             T_osc[:3, 3] = p_f
-            T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, yaw_inc])
+            T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, yaw_inc])
             for leg in self.ripple_legs[pair]:
                 new_point = np.dot(T_osc, np.r_[self.foot_points[leg], 1])
                 success = self.update_joint_command(new_point[:3], leg)
@@ -898,7 +898,7 @@ class InterbotixHexapodXSInterface:
             yaw_inc = self.wave_incs[leg] * yaw_stride
             p_f = [x_inc, y_inc, z_inc]
             T_osc[:3, 3] = p_f
-            T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, yaw_inc])
+            T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, yaw_inc])
             new_point = np.dot(T_osc, np.r_[self.foot_points[leg], 1])
             success = self.update_joint_command(new_point[:3], leg)
             if not success:
@@ -997,10 +997,10 @@ class InterbotixHexapodXSInterface:
                     for leg, point in self.foot_points.items():
                         T_osc = np.identity(4)
                         if leg not in set:
-                            T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, -yaw_inc])
+                            T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, -yaw_inc])
                             p_f = [-x_inc, -y_inc, 0]
                         else:
-                            T_osc[:3, :3] = ang.eulerAnglesToRotationMatrix([0, 0, yaw_inc])
+                            T_osc[:3, :3] = ang.euler_angles_to_rotation_matrix([0, 0, yaw_inc])
                             p_f = [x_inc, y_inc, 0]
                         T_osc[:3, 3] = p_f
                         new_point = np.dot(T_osc, np.r_[self.foot_points[leg], 1])
@@ -1013,9 +1013,9 @@ class InterbotixHexapodXSInterface:
                     temp_point = [aug_inc * x_stride, aug_inc * y_stride, 0]
                     world_point = np.dot(self.T_sf[:3, :3], temp_point)
                     self.T_sf[:3, 3] += world_point
-                    rpy = ang.rotationMatrixToEulerAngles(self.T_sf[:3, :3])
+                    rpy = ang.rotation_matrix_to_euler_angles(self.T_sf[:3, :3])
                     rpy[2] += aug_inc * yaw_stride
-                    self.T_sf[:3, :3] = ang.eulerAnglesToRotationMatrix(rpy)
+                    self.T_sf[:3, :3] = ang.euler_angles_to_rotation_matrix(rpy)
                     self.core.pub_group.publish(self.hexapod_command)
                     self.update_tsf_transform(mp)
                     inc_prev = inc
@@ -1057,7 +1057,7 @@ class InterbotixHexapodXSInterface:
 
         :return: 3-element-list containing the 2D pose of the hexapod (as [x, y, theta])
         """
-        rpy = ang.rotationMatrixToEulerAngles(self.T_sf[:3, :3])
+        rpy = ang.rotation_matrix_to_euler_angles(self.T_sf[:3, :3])
         return [self.T_sf[0, 3], self.T_sf[1, 3], rpy[2]]
 
     def get_body_pose(self):

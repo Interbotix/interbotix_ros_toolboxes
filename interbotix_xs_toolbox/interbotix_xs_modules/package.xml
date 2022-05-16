@@ -8,6 +8,8 @@
   <license>BSD</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
+  <buildtool_depend>ament_python</buildtool_depend>
+
   <exec_depend>interbotix_xs_msgs</exec_depend>
   <exec_depend>interbotix_common_modules</exec_depend>
   <exec_depend>interbotix_xs_sdk</exec_depend>

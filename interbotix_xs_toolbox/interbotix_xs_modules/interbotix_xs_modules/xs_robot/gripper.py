@@ -151,7 +151,7 @@ class InterbotixGripperXSInterface:
             RobotInfo.Request(cmd_type='single', name=gripper_name)
         )
         self.gripper_moving: bool = False
-        self.gripper_command = JointSingleCommand(name='gripper')
+        self.gripper_command = JointSingleCommand(name=gripper_name)
         self.gripper_pressure_lower_limit = gripper_pressure_lower_limit
         self.gripper_pressure_upper_limit = gripper_pressure_upper_limit
 
@@ -165,32 +165,30 @@ class InterbotixGripperXSInterface:
             timer_period_sec=0.02, callback=self.gripper_state
         )
 
-    def initialize(self) -> None:
-        """Initialize the InterbotixGripperXSInterface object."""
         while rclpy.ok() and not self.future_gripper_info.done():
             rclpy.spin_until_future_complete(self.core, self.future_gripper_info)
             rclpy.spin_once(self.core)
 
         self.gripper_info: RobotInfo.Response = self.future_gripper_info.result()
-        self.left_finger_index = self.core.js_index_map[
-            self.gripper_info.joint_names[0]
-        ]
+        self.left_finger_index = self.core.js_index_map[self.gripper_info.joint_names[0]]
         self.left_finger_lower_limit = self.gripper_info.joint_lower_limits[0]
         self.left_finger_upper_limit = self.gripper_info.joint_upper_limits[0]
 
-        if self.gripper_info.mode != 'current' and self.gripper_info.mode != 'pwm':
+        if self.gripper_info.mode not in ('current', 'pwm'):
             self.core.get_logger().err(
                 "Please set the gripper's 'operating mode' to 'pwm' or 'current'."
             )
+            exit(1)
 
         time.sleep(0.5)
-        print(
+        self.core.get_logger().info(
             (
-                f'Gripper Name: {self.gripper_name}\n'
-                f'Gripper Pressure: {self.gripper_pressure*100}%'
+                '\n'
+                f'\tGripper Name: {self.gripper_name}\n'
+                f'\tGripper Pressure: {self.gripper_pressure*100}%'
             )
         )
-        print('Initialized InterbotixGripperXSInterface!\n')
+        self.core.get_logger().info('Initialized InterbotixGripperXSInterface!')
 
     def gripper_state(self) -> None:
         """Stop the gripper moving past its limits when in PWM mode using a ROS Timer Callback."""
@@ -242,7 +240,7 @@ class InterbotixGripperXSInterface:
             self.gripper_pressure_upper_limit - self.gripper_pressure_lower_limit
         )
 
-    def grasp(self, delay: float = 1.0) -> None:
+    def release(self, delay: float = 1.0) -> None:
         """
         Open the gripper (when in 'pwm' control mode).
 
@@ -250,7 +248,7 @@ class InterbotixGripperXSInterface:
         """
         self.gripper_controller(self.gripper_value, delay)
 
-    def release(self, delay: float = 1.0) -> None:
+    def grasp(self, delay: float = 1.0) -> None:
         """
         Close the gripper (when in 'pwm' control mode).
 

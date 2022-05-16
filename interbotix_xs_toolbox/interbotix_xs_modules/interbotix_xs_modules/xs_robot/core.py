@@ -150,9 +150,6 @@ class InterbotixRobotXSCore(Node):
             self.joint_state_cb,
             10,
         )
-
-    def initialize(self) -> None:
-        """Initialize the InterbotixRobotXSCore object."""
         self.get_logger().debug((
                 'Trying to find joint states on topic '
                 f"'/{self.robot_name}/{self.joint_state_topic}'..."
@@ -164,8 +161,14 @@ class InterbotixRobotXSCore(Node):
         self.js_index_map = dict(
             zip(self.joint_states.name, range(len(self.joint_states.name)))
         )
-        print(f'Robot Name: {self.robot_name}\n' f'Robot Model: {self.robot_model}')
-        print('Initialized InterbotixRobotXSCore!\n')
+        self.get_logger().info(
+            (
+                '\n'
+                f'\tRobot Name: {self.robot_name}\n'
+                f'\tRobot Model: {self.robot_model}'
+            )
+        )
+        self.get_logger().info('Initialized InterbotixRobotXSCore!')
 
     def robot_set_operating_modes(
         self,
