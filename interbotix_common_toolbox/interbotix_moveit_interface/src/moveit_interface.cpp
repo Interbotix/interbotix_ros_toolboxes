@@ -1,17 +1,42 @@
-#include "interbotix_moveit_interface/moveit_interface_obj.h"
+// Copyright 2022 Trossen Robotics
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the the copyright holder nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-int main( int argc, char** argv )
+#include "interbotix_moveit_interface/moveit_interface_obj.hpp"
+
+#include <memory>
+
+int main(int argc, char ** argv)
 {
-    ros::init(argc, argv, "moveit_interface");
-    // We need two spinners to run the InterbotixMoveItInterface node
-    //    - One spinner allows ROS messages to be processed during the blocking 'move_group.move()' command
-    //    - Another spinner allows ROS messages to be processed during a blocking service call (since planning
-    //      can take some time and the service does not return until the planning is done)
-    ros::AsyncSpinner spinner(2);
-    spinner.start();
-    ros::NodeHandle n;
-    // Create instance of MoveIt interface
-    InterbotixMoveItInterface interface(&n);
-    ros::waitForShutdown();
-    return 0;
+  rclcpp::init(argc, argv);
+  rclcpp::NodeOptions node_options;
+  node_options.automatically_declare_parameters_from_overrides(true);
+  auto node = std::make_shared<rclcpp::Node>("interbotix_moveit_node", node_options);
+  auto moveit_interface = std::make_shared<interbotix::InterbotixMoveItInterface>(node);
+  rclcpp::shutdown();
+  return 0;
 }

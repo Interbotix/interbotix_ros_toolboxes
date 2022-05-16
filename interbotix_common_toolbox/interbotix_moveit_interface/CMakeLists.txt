@@ -1,77 +1,70 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(interbotix_moveit_interface)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  message_generation
-  moveit_commander
-  moveit_ros_planning_interface
-  moveit_visual_tools
-  roscpp
-  rospy
-  std_msgs
-  tf
-)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-################################################
-## Declare ROS messages, services and actions ##
-################################################
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  MoveItPlan.srv
-)
+find_package(ament_cmake REQUIRED)
+find_package(interbotix_moveit_interface_msgs REQUIRED)
+find_package(moveit_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(moveit_ros_planning_interface REQUIRED)
+find_package(moveit_visual_tools REQUIRED)
+find_package(rclcpp REQUIRED)
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-  std_msgs  # Or other packages containing msgs
-)
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-catkin_package(
- INCLUDE_DIRS include
- CATKIN_DEPENDS geometry_msgs message_runtime moveit_commander moveit_ros_planning_interface moveit_visual_tools roscpp rospy std_msgs tf
+set(
+  MOVEIT_INTERFACE_DEPENDENCIES
+    interbotix_moveit_interface_msgs
+    moveit_msgs
+    geometry_msgs
+    moveit_ros_planning_interface
+    moveit_visual_tools
+    rclcpp
 )
 
 ###########
 ## Build ##
 ###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ executable
-## Specify libraries to link a library or executable target against
-## Add cmake target dependencies of the executable
 add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
-target_link_libraries(moveit_interface ${catkin_LIBRARIES})
-add_dependencies(moveit_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ament_target_dependencies(moveit_interface ${MOVEIT_INTERFACE_DEPENDENCIES})
 
 #############
 ## Install ##
 #############
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-catkin_install_python(PROGRAMS
-  scripts/moveit_interface_gui
-  scripts/moveit_python_interface
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(
+  TARGETS
+    moveit_interface
+  DESTINATION
+    lib/${PROJECT_NAME}
 )
+
+# Install Python executables
+install(
+  PROGRAMS
+    scripts/moveit_interface_gui
+    # scripts/moveit_python_interface
+  DESTINATION
+    lib/${PROJECT_NAME}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()
