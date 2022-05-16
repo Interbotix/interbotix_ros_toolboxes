@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         env:
-          - {ROS_DISTRO: galactic, ROS_REPO: main, NOT_TEST_BUILD: true}
+          - {ROS_DISTRO: galactic, ROS_REPO: main}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ROS Toolboxes
