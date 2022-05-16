@@ -39,6 +39,7 @@ from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_msgs.msg import JointSingleCommand
 from interbotix_xs_msgs.srv import RobotInfo
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 
 
@@ -56,33 +57,36 @@ class InterbotixGripperXS:
         joint_state_topic: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
+        start_on_init: bool = True,
     ) -> None:
         """
         Construct the Standalone Interbotix Gripper Module.
 
         :param robot_model: Interbotix Arm model (ex. 'wx200' or 'vx300s')
-        :param gripper_name: name of the gripper joint as defined in the 'motor_config'
-            yaml file; typically, this is 'gripper'
-        :param robot_name: defaults to value given to 'robot_model'; this can be
-            customized to best suit the user's needs
-        :param gripper_pressure: fraction from 0 - 1 where '0' means the gripper
-            operates at 'gripper_pressure_lower_limit' and '1' means the gripper
-            operates at 'gripper_pressure_upper_limit'
-        :param gripper_pressure_lower_limit: lowest 'effort' that should be applied to
-            the gripper if gripper_pressure is set to 0; it should be high enough to
-            open/close the gripper (~150 PWM or ~400 mA current)
-        :param gripper_pressure_upper_limit: largest 'effort' that should be applied to
-            the gripper if gripper_pressure is set to 1; it should be low enough that
-            the motor doesn't 'overload' when gripping an object for a few seconds (~350
-            PWM or ~900 mA)
-        :param joint_state_topic: (optional) the specifc JointState topic output by the
-            xs_sdk node
-        :logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO,
-            WARN, ERROR, or FATAL. defaults to INFO
-        :node_name: (optional) name to give to the core started by this class, defaults
-            to 'robot_manipulation'
-        :details: note that this module doesn't really have any use case except in
-            controlling just the gripper joint on an Interbotix Arm.
+        :param gripper_name: name of the gripper joint as defined in the 'motor_config' yaml file;
+            typically, this is 'gripper'
+        :param robot_name: defaults to value given to 'robot_model'; this can be customized to best
+            suit the user's needs
+        :param gripper_pressure: fraction from 0 - 1 where '0' means the gripper operates at
+            'gripper_pressure_lower_limit' and '1' means the gripper operates at
+            'gripper_pressure_upper_limit'
+        :param gripper_pressure_lower_limit: lowest 'effort' that should be applied to the gripper
+            if gripper_pressure is set to 0; it should be high enough to open/close the gripper
+            (~150 PWM or ~400 mA current)
+        :param gripper_pressure_upper_limit: largest 'effort' that should be applied to the gripper
+            if gripper_pressure is set to 1; it should be low enough that the motor doesn't
+            'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
+        :param joint_state_topic: (optional) the specifc JointState topic output by the xs_sdk node
+        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+            ERROR, or FATAL. defaults to INFO
+        :param node_name: (optional) name to give to the core started by this class, defaults to
+            'robot_manipulation'
+        :param start_on_init: (optional) set to `True` to start running the spin thread after the
+            object is built; set to `False` if intending to sub-class this. If set to `False`,
+            either call the `start()` method later on, or add the core to an executor in another
+            thread.
+        :details: note that this module doesn't really have any use case except in controlling just
+            the gripper joint on an Interbotix Arm.
         """
         self.core = InterbotixRobotXSCore(
             robot_model,
@@ -99,22 +103,27 @@ class InterbotixGripperXS:
             gripper_pressure_upper_limit,
         )
 
-        rclpy.spin_once(self.core)
-        self.core.initialize()
-        rclpy.spin_once(self.core)
-        self.gripper.initialize()
-        # TODO: is this the best way to do this?
-        self._execution_thread = Thread(target=rclpy.spin, args=(self.core,))
+        if start_on_init:
+            self.start()
+
+    def start(self) -> None:
+        """Start a background thread that builds and spins an executor."""
+        self._execution_thread = Thread(target=self.run)
         self._execution_thread.start()
 
-    def shutdown(self):
-        """Destroy the node and shuts down all threads and processes."""
+    def run(self) -> None:
+        """Thread target."""
+        self.ex = MultiThreadedExecutor()
+        self.ex.add_node(self.core)
+        while rclpy.ok():
+            self.ex.spin()
+
+    def shutdown(self) -> None:
+        """Destroy the node and shut down all threads and processes."""
         self.core.destroy_node()
         rclpy.shutdown()
+        self._execution_thread.join()
         time.sleep(0.5)
-        self._execution_thread.join(timeout=5.0)
-        if self._execution_thread.is_alive():
-            print('Taking a long time to destroy. Press Ctrl+C twice to exit.')
 
 
 class InterbotixGripperXSInterface:

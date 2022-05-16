@@ -112,9 +112,10 @@ class InterbotixManipulatorXS:
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
-        :start_on_init: (optional) set to `True` to start running the spin thread after the object
-            is built; set to `False` if intending to sub-class this. If set to `False`, either call
-            the `start()` method later on, or add the core to an executor in another thread.
+        :param start_on_init: (optional) set to `True` to start running the spin thread after the
+            object is built; set to `False` if intending to sub-class this. If set to `False`,
+            either call the `start()` method later on, or add the core to an executor in another
+            thread.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
@@ -139,14 +140,6 @@ class InterbotixManipulatorXS:
                 gripper_pressure_lower_limit=gripper_pressure_lower_limit,
                 gripper_pressure_upper_limit=gripper_pressure_upper_limit,
             )
-
-        # TODO: is this the best way to do this?
-        rclpy.spin_once(self.core)
-        self.core.initialize()
-        rclpy.spin_once(self.core)
-        self.arm.initialize()
-        if self.gripper is not None:
-            self.gripper.initialize()
 
         if start_on_init:
             self.start()
