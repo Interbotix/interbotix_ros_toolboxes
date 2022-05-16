@@ -13,9 +13,9 @@ Links to other repositories that use this repo include:
 ### Build Status
 #### X-Series Core Build Status
 
-![build-xs-melodic Status](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-melodic.yaml/badge.svg)
-![build-xs-noetic Status](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-noetic.yaml/badge.svg)
-
+[![build-xs-melodic](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-melodic.yaml/badge.svg)](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-melodic.yaml)
+[![build-xs-noetic](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-noetic.yaml/badge.svg)](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-noetic.yaml)
+[![build-xs-galactic](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-galactic.yaml/badge.svg)](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-galactic.yaml)
 ## Repo Structure
 ```
 GitHub Landing Page: Explains repository structure and contains a single directory for each type of toolbox.

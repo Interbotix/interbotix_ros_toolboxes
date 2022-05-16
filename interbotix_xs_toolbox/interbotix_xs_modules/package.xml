@@ -1,15 +1,24 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>interbotix_xs_modules</name>
   <version>0.0.0</version>
   <description>The interbotix_xs_modules package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
-  <author email="solomon@trossenrobotics.com">Solomon Wiznitzer</author>
+  <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <depend>interbotix_xs_msgs</depend>
-  <depend>interbotix_common_modules</depend>
-  <depend>interbotix_xs_sdk</depend>
+  <exec_depend>interbotix_xs_msgs</exec_depend>
+  <exec_depend>interbotix_common_modules</exec_depend>
+  <exec_depend>interbotix_xs_sdk</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
+  <!-- <exec_depend>kobuki_ros_interfaces</exec_depend> -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

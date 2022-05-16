@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>interbotix_xs_rviz</name>
   <version>0.0.0</version>
   <description>The interbotix_xs_rviz package</description>
@@ -7,21 +8,25 @@
   <license>BSD</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>interbotix_xs_msgs</build_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>qtbase5-dev</build_depend>
-  <build_depend>rviz</build_depend>
 
-  <build_export_depend>interbotix_xs_msgs</build_export_depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rviz_common</depend>
+  <depend>interbotix_xs_msgs</depend>
+  <depend>interbotix_xs_sdk</depend>
+  <depend>rviz2</depend>
 
-  <exec_depend>interbotix_xs_msgs</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
-  <exec_depend>rviz</exec_depend>
+
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
     <rviz plugin="${prefix}/plugin_description.xml"/>
   </export>
 </package>
