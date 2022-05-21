@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - galactic
-      - galactic-devel
+      - ros2-devel
   pull_request:
     branches:
       - galactic
-      - galactic-devel
+      - ros2-devel
   workflow_dispatch:
 
 defaults:
