@@ -19,7 +19,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>interbotix_xs_msgs</depend>
   <depend>interbotix_perception_msgs</depend>
-  <depend>interbotix_perception_pipeline</depend>
+  <depend>interbotix_perception_pipelines</depend>
   <depend>interbotix_common_modules</depend>
   <depend>visualization_msgs</depend>
   <depend>std_srvs</depend>
