@@ -106,57 +106,77 @@ def generate_launch_description():
                 'config',
                 'tags.yaml'
             ]),
-            description='',
+            description='filepath to the AprilTag tags configuration file.',
         ),
         DeclareLaunchArgument(
             'camera_frame',
             default_value='camera_color_optical_frame',
-            description='',
+            description='the camera frame in which the AprilTag will be detected.',
         ),
         DeclareLaunchArgument(
             'apriltag_ns',
             default_value='apriltag',
-            description='',
+            description='namespace where the AprilTag related nodes and parameters are located.',
         ),
         DeclareLaunchArgument(
             'camera_color_topic',
             default_value='camera/color/image_raw',
-            description='',
+            description='the absolute ROS topic name to subscribe to color images.',
         ),
         DeclareLaunchArgument(
             'camera_info_topic',
             default_value='camera/color/camera_info',
-            description='',
+            description='the absolute ROS topic name to subscribe to the camera color info.',
         ),
         DeclareLaunchArgument(
             'armtag_ns',
             default_value='armtag',
-            description='',
+            description='namespace where the Armtag related nodes and parameters are located.',
         ),
         DeclareLaunchArgument(
             'ref_frame',
             default_value='camera_color_optical_frame',
-            description='',
+            description=(
+                'the reference frame that the armtag node should use when publishing a static '
+                'transform for where the arm is relative to the camera.'
+            ),
         ),
         DeclareLaunchArgument(
             'arm_base_frame',
             default_value='base_link',
-            description='',
+            description=(
+                'the child frame that the armtag node should use when publishing a static '
+                'transform for where the arm is relative to the camera.'
+            ),
         ),
         DeclareLaunchArgument(
             'arm_tag_frame',
             default_value='ar_tag_link',
-            description='',
+            description=(
+                'name of the frame on the arm where the AprilTag is located (defined in the URDF '
+                'usually).'
+            ),
         ),
         DeclareLaunchArgument(
             'use_armtag_tuner_gui',
             default_value='false',
-            description='',
+            choices=('true', 'false'),
+            description=(
+                'whether to show a GUI that a user can use to publish the `ref_frame` to '
+                '`arm_base_frame` transform.'
+            ),
         ),
         DeclareLaunchArgument(
             'position_only',
             default_value='false',
-            description='',
+            choices=('true', 'false'),
+            description=(
+                'whether only the position component of the detected AprilTag pose should be used '
+                'when calculating the `ref_frame` to `arm_base_frame` transform; this should only '
+                'be set to `true` if a TF chain already exists connecting the camera and arm '
+                '`base_link` frame, and you just want to use the AprilTag to refine the pose '
+                'further.'
+            ),
         ),
     ]
 

@@ -44,25 +44,25 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'load_transforms',
             default_value='true',
+            choices=('true', 'false'),
             description=(
-                'whether or not the static_trans_pub node should publish any poses '
-                'stored in a static_transforms config file at startup'
+                'whether or not the static_trans_pub node should publish any poses stored in a '
+                'static_transforms config file at startup.'
             ),
         ),
         DeclareLaunchArgument(
             'save_transforms',
             default_value='true',
+            choices=('true', 'false'),
             description=(
                 'whether or not the static_trans_pub node should save all TFs to a '
-                'static_transforms config file'
+                'static_transforms config file.'
             ),
         ),
         DeclareLaunchArgument(
             'transform_filename',
             default_value=TextSubstitution(text='static_transforms.yaml'),
-            description=(
-                'the filename under which the transforms should be saved'
-            ),
+            description='the filename to which the transforms should be saved.',
         ),
         DeclareLaunchArgument(
             'transform_filepath',
@@ -71,9 +71,7 @@ def generate_launch_description():
                 'config',
                 LaunchConfiguration('transform_filename')
             ]),
-            description=(
-                'the filepath under which the transforms should be saved'
-            ),
+            description='the absolute filepath to which the transforms should be saved.',
         ),
     ])
 

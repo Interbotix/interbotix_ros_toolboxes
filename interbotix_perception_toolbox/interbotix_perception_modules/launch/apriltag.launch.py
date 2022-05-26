@@ -92,27 +92,27 @@ def generate_launch_description():
                 'config',
                 'tags.yaml'
             ]),
-            description='',
+            description='filepath to the AprilTag tags configuration file.',
         ),
         DeclareLaunchArgument(
             'camera_frame',
             default_value='camera_color_optical_frame',
-            description='',
+            description='the camera frame in which the AprilTag will be detected.',
         ),
         DeclareLaunchArgument(
             'apriltag_ns',
             default_value='apriltag',
-            description='',
+            description='namespace where the AprilTag related nodes and parameters are located.',
         ),
         DeclareLaunchArgument(
             'camera_color_topic',
             default_value='camera/color/image_raw',
-            description='',
+            description='the absolute ROS topic name to subscribe to color images.',
         ),
         DeclareLaunchArgument(
             'camera_info_topic',
             default_value='camera/color/camera_info',
-            description='',
+            description='the absolute ROS topic name to subscribe to the camera color info.',
         ),
     ]
 

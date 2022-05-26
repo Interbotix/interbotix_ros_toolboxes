@@ -88,9 +88,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'filter_ns',
             default_value='pc_filter',
-            description=(
-                'namespace where the pointcloud related nodes and parameters are located'
-            ),
+            description='namespace where the pointcloud related nodes and parameters are located.',
         ),
         DeclareLaunchArgument(
             'filter_params',
@@ -99,31 +97,28 @@ def generate_launch_description():
                 'config',
                 'filter_params.yaml'
             ]),
-            description=(
-                'file location of the parameters used to tune the perception pipeline filters'
-            ),
+            description='filepath of the parameters used to tune the perception pipeline filters.',
         ),
         DeclareLaunchArgument(
             'use_pointcloud_tuner_gui',
             default_value='false',
-            description=(
-                'whether to show a GUI that a user can use to tune filter parameters'
-            ),
+            choices=('true', 'false'),
+            description='whether to show a GUI that a user can use to tune filter parameters.',
         ),
         DeclareLaunchArgument(
             'enable_pipeline',
             default_value='false',
             description=(
                 'whether to enable the perception pipeline filters to run continuously; to save '
-                'computer processing power, this should be set to false unless you are actively '
-                'trying to tune the filter parameters; if false, the pipeline will only run if the'
-                ' `get_cluster_positions` ROS service is called'
+                'computer processing power, this should be set to `false` unless you are actively '
+                'trying to tune the filter parameters; if `false`, the pipeline will only run if '
+                'the `get_cluster_positions` ROS service is called.'
             ),
         ),
         DeclareLaunchArgument(
             'cloud_topic',
             default_value='camera/depth/color/points',
-            description='the absolute ROS topic name to subscribe to raw pointcloud data',
+            description='the absolute ROS topic name to subscribe to raw pointcloud data.',
         ),
     ]
 

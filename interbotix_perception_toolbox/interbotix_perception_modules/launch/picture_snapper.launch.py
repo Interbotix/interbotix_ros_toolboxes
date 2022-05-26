@@ -46,21 +46,19 @@ def generate_launch_description():
             default_value='apriltag',
             description=(
                 'namespace under which the picture_snapper node can find the '
-                'apriltag_ros_single_image_server_node'
+                'apriltag_ros_single_image_server_node.'
             ),
         ),
         DeclareLaunchArgument(
             'camera_color_topic',
             default_value='/camera/color/image_raw',
-            description=(
-                'topic in which the picture_snapper node can find the raw image message'
-            ),
+            description='topic in which the picture_snapper node can find the raw image message.',
         ),
         DeclareLaunchArgument(
             'camera_info_topic',
             default_value='/camera/color/camera_info',
             description=(
-                'topic in which the picture_snapper node can find the camera_info message'
+                'topic in which the picture_snapper node can find the camera_info message.'
             ),
         ),
     ])
