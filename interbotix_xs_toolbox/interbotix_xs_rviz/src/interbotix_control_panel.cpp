@@ -60,6 +60,8 @@ void InterbotixControlPanel::onInitialize()
   // robot namespace
   connect(
     ui_->pushbutton_robot_namespace_, SIGNAL(clicked()), this, SLOT(update_robot_namespace()));
+  connect(
+    ui_->lineedit_robot_namespace_, SIGNAL(returnPressed()), this, SLOT(update_robot_namespace()));
 
   // torque
   connect(
@@ -69,10 +71,10 @@ void InterbotixControlPanel::onInitialize()
   connect(ui_->button_torque_disable_, SIGNAL(clicked()), this, SLOT(torque_disable_torque()));
   connect(
     ui_->radiobutton_torque_group_, SIGNAL(toggled(bool)), this,
-    SLOT(torque_change_cmd_type_group()));
+    SLOT(torque_change_cmd_type()));
   connect(
     ui_->radiobutton_torque_single_, SIGNAL(toggled(bool)), this,
-    SLOT(torque_change_cmd_type_single()));
+    SLOT(torque_change_cmd_type()));
 
   // home/sleep
   connect(ui_->button_gotohome_, SIGNAL(clicked()), this, SLOT(homesleep_go_to_home()));
@@ -84,10 +86,10 @@ void InterbotixControlPanel::onInitialize()
     SLOT(reboot_change_name()));
   connect(
     ui_->radiobutton_reboot_group_, SIGNAL(toggled(bool)), this,
-    SLOT(reboot_change_cmd_type_group()));
+    SLOT(reboot_change_cmd_type()));
   connect(
     ui_->radiobutton_reboot_single_, SIGNAL(toggled(bool)), this,
-    SLOT(reboot_change_cmd_type_single()));
+    SLOT(reboot_change_cmd_type()));
   connect(
     ui_->checkbox_smart_reboot_, SIGNAL(toggled(bool)), this,
     SLOT(reboot_change_smartreboot(bool)));
@@ -103,10 +105,10 @@ void InterbotixControlPanel::onInitialize()
     SLOT(opmodes_change_name()));
   connect(
     ui_->radiobutton_opmodes_group_, SIGNAL(toggled(bool)), this,
-    SLOT(opmodes_change_cmd_type_group()));
+    SLOT(opmodes_change_cmd_type()));
   connect(
     ui_->radiobutton_opmodes_single_, SIGNAL(toggled(bool)), this,
-    SLOT(opmodes_change_cmd_type_single()));
+    SLOT(opmodes_change_cmd_type()));
   connect(
     ui_->combobox_opmodes_mode_, SIGNAL(currentIndexChanged(int)), this,
     SLOT(opmodes_change_mode(int)));
@@ -127,10 +129,10 @@ void InterbotixControlPanel::onInitialize()
     SLOT(getregval_change_name()));
   connect(
     ui_->radiobutton_getregval_group_, SIGNAL(toggled(bool)), this,
-    SLOT(getregval_change_cmd_type_group()));
+    SLOT(getregval_change_cmd_type()));
   connect(
     ui_->radiobutton_getregval_single_, SIGNAL(toggled(bool)), this,
-    SLOT(getregval_change_cmd_type_single()));
+    SLOT(getregval_change_cmd_type()));
   connect(
     ui_->combobox_getregval_reg_, SIGNAL(currentIndexChanged(int)), this,
     SLOT(getregval_change_reg_name(int)));
@@ -154,24 +156,20 @@ void InterbotixControlPanel::onInitialize()
   robot_info_req->name = NAME_ALL;
 
   torque_enable_req->cmd_type = CMD_TYPE_GROUP;
-  torque_enable_req->name = NAME_ARM;
 
   joint_group_cmd.name = NAME_ALL;
 
   reboot_req->cmd_type = CMD_TYPE_GROUP;
-  reboot_req->name = NAME_ARM;
   reboot_req->smart_reboot = false;
   reboot_req->enable = true;
 
   opmodes_req->cmd_type = CMD_TYPE_GROUP;
-  opmodes_req->name = NAME_ARM;
   opmodes_req->mode = "position";
   opmodes_req->profile_type = "time";
   opmodes_req->profile_velocity = 2000;
   opmodes_req->profile_acceleration = 300;
 
   getreg_req->cmd_type = CMD_TYPE_GROUP;
-  getreg_req->name = NAME_ARM;
   getreg_req->reg = "Goal_Position";
 
   ui_->label_getregval_desc_->setText(
@@ -180,6 +178,25 @@ void InterbotixControlPanel::onInitialize()
         ui_->combobox_getregval_reg_->currentText().toStdString()
       ].description.c_str()
   ));
+
+  // we assume that the namespace will be the first topic segment in a namespaced topic
+  // like this: `/namespace/command/joint_group`
+  // we can extract that namespace and add it to a qlineedit completer
+  std::smatch ns_match;
+  // loop through each topic, get the topic name
+  for (auto const & [topic, _] : client_node_->get_topic_names_and_types()) {
+    // check for matches in the topic using regular expressions
+    if (std::regex_search(topic.begin(), topic.end(), ns_match, ns_regex)) {
+      auto this_match = QString(ns_match[1].str().c_str());
+      // check if the match is already in the list
+      if (potential_ns_list.filter(this_match).size() == 0) {
+        // if not in the list, add to the list
+        potential_ns_list << this_match;
+      }
+    }
+  }
+  // ns_completer = new QCompleter(potential_ns_list);
+  ui_->lineedit_robot_namespace_->setCompleter(new QCompleter(potential_ns_list));
 
   RCLCPP_INFO(LOGGER, "Successfully initialized InterbotixControlPanel!");
 }
@@ -206,6 +223,7 @@ void InterbotixControlPanel::update_robot_namespace()
   if (set_robot_namespace(ui_->lineedit_robot_namespace_->text())) {
     enable_elements(true);
     update_robot_info();
+    update_dropdowns();
     Q_EMIT configChanged();
     RCLCPP_DEBUG(
       LOGGER, "Updated namespace to '%s'.",
@@ -250,33 +268,56 @@ bool InterbotixControlPanel::set_robot_namespace(const QString & robot_namespace
 void InterbotixControlPanel::update_robot_info()
 {
   // send RobotInfo req and spin until complete
-  auto result_robot_info = srv_robot_info->async_send_request(robot_info_req);
+  auto result_robot_info_future = srv_robot_info->async_send_request(robot_info_req);
   if (rclcpp::spin_until_future_complete(
-      client_node_, result_robot_info,
+      client_node_, result_robot_info_future,
       100ms) != rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(LOGGER, "Failed to get robot_info service response.");
     return;
   }
-  // fill home and sleep positions
-  homesleep_homevec.resize(result_robot_info.get()->num_joints);
-  std::fill(homesleep_homevec.begin(), homesleep_homevec.end(), 0.0f);
-  homesleep_sleepvec.resize(result_robot_info.get()->num_joints);
-  homesleep_sleepvec = result_robot_info.get()->joint_sleep_positions;
+  auto result_robot_info = result_robot_info_future.get();
 
-  // fill joint and group vectors
-  robot_arm_joints.clear();
-  qrobot_arm_joints.clear();
+  // clear vectors and maps containing robot information
+  robot_joints.clear();
+  qrobot_joints.clear();
   robot_groups.clear();
   qrobot_groups.clear();
-  for (const auto joint_name : result_robot_info.get()->joint_names) {
-    robot_arm_joints.push_back(joint_name);
-    qrobot_arm_joints << QString(joint_name.c_str());
+  map_group_to_info.clear();
+
+  // fill vectors/list containing all joints/groups
+  robot_joints.reserve(result_robot_info->num_joints);
+  robot_joints = result_robot_info->joint_names;
+  qrobot_joints.reserve(result_robot_info->num_joints);
+  for (const auto joint_name : robot_joints) {
+    qrobot_joints << QString(joint_name.c_str());
   }
-  for (const auto group_name : result_robot_info.get()->name) {
-    RCLCPP_DEBUG(LOGGER, "Found robot group '%s'.", group_name.c_str());
-    robot_groups.push_back(group_name);
-    qrobot_groups << QString(group_name.c_str());
+  map_group_to_info[NAME_ALL] = result_robot_info;
+  // loop through groups in the robot_info response
+  robot_groups.push_back(NAME_ALL);
+  qrobot_groups.push_back(QString(NAME_ALL.c_str()));
+  for (const auto & group : result_robot_info->name) {
+    // get info for groups that are not NAME_ALL
+    if (group != NAME_ALL) {
+      robot_info_req->name = group;
+      auto result_group_info_future = srv_robot_info->async_send_request(robot_info_req);
+      if (rclcpp::spin_until_future_complete(
+          client_node_, result_group_info_future,
+          100ms) != rclcpp::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(
+          LOGGER,
+          "Failed to get robot_info service response for group '%s'.",
+          group.c_str());
+        return;
+      }
+      auto result_group_info = result_group_info_future.get();
+      // add this group to the robot_groups vector
+      robot_groups.push_back(group);
+      qrobot_groups.push_back(QString(group.c_str()));
+      // add this group's joints to map
+      map_group_to_info[group] = result_group_info;
+    }
   }
 }
 
@@ -292,6 +333,7 @@ void InterbotixControlPanel::enable_elements(const bool enable)
   // home/sleep
   ui_->button_gotohome_->setEnabled(enable);
   ui_->button_gotosleep_->setEnabled(enable);
+  ui_->combobox_homesleep_name_->setEnabled(enable);
 
   // reboot
   ui_->radiobutton_reboot_single_->setEnabled(enable);
@@ -323,24 +365,29 @@ void InterbotixControlPanel::enable_elements(const bool enable)
   ui_->button_estop_->setEnabled(false);
 }
 
+void InterbotixControlPanel::update_dropdowns()
+{
+  homesleep_init();
+  torque_change_cmd_type();
+  opmodes_change_cmd_type();
+  getregval_change_cmd_type();
+  reboot_change_cmd_type();
+}
 
 // -------------------------- TORQUE ------------------------------------------
 
-void InterbotixControlPanel::torque_change_cmd_type_group()
+void InterbotixControlPanel::torque_change_cmd_type()
 {
   if (ui_->radiobutton_torque_group_->isChecked()) {
     torque_enable_req->cmd_type = CMD_TYPE_GROUP;
     ui_->combobox_torque_name_->clear();
+    ui_->combobox_torque_name_->addItem(QString(SELECT.c_str()));
     ui_->combobox_torque_name_->addItems(qrobot_groups);
-  }
-}
-
-void InterbotixControlPanel::torque_change_cmd_type_single()
-{
-  if (ui_->radiobutton_torque_single_->isChecked()) {
+  } else if (ui_->radiobutton_torque_single_->isChecked()) {
     torque_enable_req->cmd_type = CMD_TYPE_SINGLE;
     ui_->combobox_torque_name_->clear();
-    ui_->combobox_torque_name_->addItems(qrobot_arm_joints);
+    ui_->combobox_torque_name_->addItem(QString(SELECT.c_str()));
+    ui_->combobox_torque_name_->addItems(qrobot_joints);
   }
 }
 
@@ -361,6 +408,9 @@ void InterbotixControlPanel::torque_disable_torque()
 
 void InterbotixControlPanel::send_torque_enable_call(bool enable)
 {
+  if (torque_enable_req->name == SELECT) {
+    return;
+  }
   torque_enable_req->enable = enable;
   auto result = srv_torque_enable->async_send_request(torque_enable_req);
   if (rclcpp::spin_until_future_complete(
@@ -374,36 +424,50 @@ void InterbotixControlPanel::send_torque_enable_call(bool enable)
 
 // -------------------------- HOME/SLEEP --------------------------------------
 
+void InterbotixControlPanel::homesleep_init()
+{
+  ui_->combobox_homesleep_name_->clear();
+  ui_->combobox_homesleep_name_->addItem(QString(SELECT.c_str()));
+  ui_->combobox_homesleep_name_->addItems(qrobot_groups);
+}
+
 void InterbotixControlPanel::homesleep_go_to_home()
 {
-  joint_group_cmd.cmd = homesleep_homevec;
+  auto name = ui_->combobox_homesleep_name_->currentText().toStdString();
+  if (name == SELECT) {
+    return;
+  }
+  joint_group_cmd.name = name;
+  joint_group_cmd.cmd = std::vector<float>(map_group_to_info.at(name)->num_joints, 0.0);
   pub_joint_group_cmd->publish(joint_group_cmd);
 }
 
 void InterbotixControlPanel::homesleep_go_to_sleep()
 {
-  joint_group_cmd.cmd = homesleep_sleepvec;
+  auto name = ui_->combobox_homesleep_name_->currentText().toStdString();
+  if (name == SELECT) {
+    return;
+  }
+  joint_group_cmd.name = name;
+  joint_group_cmd.cmd = map_group_to_info.at(name)->joint_sleep_positions;
   pub_joint_group_cmd->publish(joint_group_cmd);
 }
 
 
 // --------------------------  REBOOT -----------------------------------------
 
-void InterbotixControlPanel::reboot_change_cmd_type_group()
+void InterbotixControlPanel::reboot_change_cmd_type()
 {
   if (ui_->radiobutton_reboot_group_->isChecked()) {
     reboot_req->cmd_type = CMD_TYPE_GROUP;
     ui_->combobox_reboot_name_->clear();
+    ui_->combobox_reboot_name_->addItem(QString(SELECT.c_str()));
     ui_->combobox_reboot_name_->addItems(qrobot_groups);
-  }
-}
-
-void InterbotixControlPanel::reboot_change_cmd_type_single()
-{
-  if (ui_->radiobutton_reboot_single_->isChecked()) {
+  } else if (ui_->radiobutton_reboot_single_->isChecked()) {
     reboot_req->cmd_type = CMD_TYPE_SINGLE;
     ui_->combobox_reboot_name_->clear();
-    ui_->combobox_reboot_name_->addItems(qrobot_arm_joints);
+    ui_->combobox_reboot_name_->addItem(QString(SELECT.c_str()));
+    ui_->combobox_reboot_name_->addItems(qrobot_joints);
   }
 }
 
@@ -424,6 +488,9 @@ void InterbotixControlPanel::reboot_change_enable(bool checked)
 
 void InterbotixControlPanel::send_reboot_call()
 {
+  if (reboot_req->name == SELECT) {
+    return;
+  }
   auto result = srv_reboot_motors->async_send_request(reboot_req);
   if (rclcpp::spin_until_future_complete(
       client_node_, result,
@@ -436,21 +503,18 @@ void InterbotixControlPanel::send_reboot_call()
 
 // --------------------------  OpModes ----------------------------------------
 
-void InterbotixControlPanel::opmodes_change_cmd_type_group()
+void InterbotixControlPanel::opmodes_change_cmd_type()
 {
   if (ui_->radiobutton_opmodes_group_->isChecked()) {
     opmodes_req->cmd_type = CMD_TYPE_GROUP;
     ui_->combobox_opmodes_name_->clear();
+    ui_->combobox_opmodes_name_->addItem(QString(SELECT.c_str()));
     ui_->combobox_opmodes_name_->addItems(qrobot_groups);
-  }
-}
-
-void InterbotixControlPanel::opmodes_change_cmd_type_single()
-{
-  if (ui_->radiobutton_opmodes_single_->isChecked()) {
+  } else if (ui_->radiobutton_opmodes_single_->isChecked()) {
     opmodes_req->cmd_type = CMD_TYPE_SINGLE;
     ui_->combobox_opmodes_name_->clear();
-    ui_->combobox_opmodes_name_->addItems(qrobot_arm_joints);
+    ui_->combobox_opmodes_name_->addItem(QString(SELECT.c_str()));
+    ui_->combobox_opmodes_name_->addItems(qrobot_joints);
   }
 }
 
@@ -481,6 +545,9 @@ void InterbotixControlPanel::opmodes_change_profile_acc()
 
 void InterbotixControlPanel::send_opmodes_call()
 {
+  if (opmodes_req->name == SELECT) {
+    return;
+  }
   auto result = srv_operating_modes->async_send_request(opmodes_req);
   if (rclcpp::spin_until_future_complete(
       client_node_, result,
@@ -493,21 +560,18 @@ void InterbotixControlPanel::send_opmodes_call()
 // --------------------------- GetReg -----------------------------------------
 
 
-void InterbotixControlPanel::getregval_change_cmd_type_group()
+void InterbotixControlPanel::getregval_change_cmd_type()
 {
   if (ui_->radiobutton_getregval_group_->isChecked()) {
     getreg_req->cmd_type = CMD_TYPE_GROUP;
     ui_->combobox_getregval_name_->clear();
+    ui_->combobox_getregval_name_->addItem(QString(SELECT.c_str()));
     ui_->combobox_getregval_name_->addItems(qrobot_groups);
-  }
-}
-
-void InterbotixControlPanel::getregval_change_cmd_type_single()
-{
-  if (ui_->radiobutton_getregval_single_->isChecked()) {
+  } else if (ui_->radiobutton_getregval_single_->isChecked()) {
     getreg_req->cmd_type = CMD_TYPE_SINGLE;
     ui_->combobox_getregval_name_->clear();
-    ui_->combobox_getregval_name_->addItems(qrobot_arm_joints);
+    ui_->combobox_getregval_name_->addItem(QString(SELECT.c_str()));
+    ui_->combobox_getregval_name_->addItems(qrobot_joints);
   }
 }
 
@@ -527,6 +591,9 @@ void InterbotixControlPanel::getregval_change_reg_name(int index)
 
 void InterbotixControlPanel::send_getregval_call()
 {
+  if (getreg_req->name == SELECT) {
+    return;
+  }
   auto result = srv_get_motor_registers->async_send_request(getreg_req);
   if (rclcpp::spin_until_future_complete(
       client_node_, result,
@@ -563,7 +630,7 @@ void InterbotixControlPanel::estop_button_pressed()
 void InterbotixControlPanel::send_system_call()
 {
   // TOOD(LSinterbotix): can't easily kill ros2 nodes using system calls
-  RCLCPP_WARN(LOGGER, "The e-stop is not yet implemented due to ROS2 limitations.");
+  RCLCPP_WARN(LOGGER, "The e-stop is not yet implemented due to ROS 2 limitations.");
   // system(("rosnode kill /" + robot_namespace_ + "/xs_sdk").c_str());
 }
 

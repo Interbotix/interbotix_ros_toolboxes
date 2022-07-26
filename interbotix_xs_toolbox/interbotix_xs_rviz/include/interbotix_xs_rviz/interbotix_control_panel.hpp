@@ -29,7 +29,10 @@
 #ifndef INTERBOTIX_XS_RVIZ__INTERBOTIX_CONTROL_PANEL_HPP_
 #define INTERBOTIX_XS_RVIZ__INTERBOTIX_CONTROL_PANEL_HPP_
 
+#include <memory>
+#include <regex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #ifndef Q_MOC_RUN
@@ -41,6 +44,7 @@
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 
+#include "QCompleter"
 #include "QLineEdit"
 #include "QPushButton"
 
@@ -62,8 +66,11 @@ namespace interbotix_xs_rviz
 
 inline static const std::string CMD_TYPE_GROUP = "group";
 inline static const std::string CMD_TYPE_SINGLE = "single";
-inline static const std::string NAME_ARM = "arm";
 inline static const std::string NAME_ALL = "all";
+inline static const std::string SELECT = "Select:";
+inline static const std::regex ns_regex(
+  "^\\/([a-zA-Z0-9_]+)\\/",
+  std::regex_constants::ECMAScript);
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger(
   "interbotix_xs_rviz.interbotix_control_panel");
@@ -127,8 +134,7 @@ protected Q_SLOTS:
 
   /** -------- Torque Tab ---------------- */
 
-  void torque_change_cmd_type_single();
-  void torque_change_cmd_type_group();
+  void torque_change_cmd_type();
   void torque_change_name();
   void torque_enable_torque();
   void torque_disable_torque();
@@ -144,8 +150,7 @@ protected Q_SLOTS:
 
   /** -------- Reboot Tab ---------------- */
 
-  void reboot_change_cmd_type_single();
-  void reboot_change_cmd_type_group();
+  void reboot_change_cmd_type();
   void reboot_change_name();
   void reboot_change_smartreboot(bool checked);
   void reboot_change_enable(bool checked);
@@ -154,8 +159,7 @@ protected Q_SLOTS:
 
   /** -------- Operating Modes Tab ------- */
 
-  void opmodes_change_cmd_type_group();
-  void opmodes_change_cmd_type_single();
+  void opmodes_change_cmd_type();
   void opmodes_change_name();
   void opmodes_change_mode(int);
   void opmodes_change_profile_type(int);
@@ -166,8 +170,7 @@ protected Q_SLOTS:
 
   /** -------- Get Register Values Tab --- */
 
-  void getregval_change_cmd_type_group();
-  void getregval_change_cmd_type_single();
+  void getregval_change_cmd_type();
   void getregval_change_name();
   void getregval_change_reg_name(int);
   void getregval_display(const RegisterValues::Response::SharedPtr &);
@@ -194,14 +197,17 @@ protected:
   // Robot info service call
   RobotInfo::Request::SharedPtr robot_info_req;
 
-  // Vector containing joint info for the arm group
-  std::vector<std::string> robot_arm_joints;
+  // Mapping between group names and their robot_info responses
+  std::unordered_map<std::string, RobotInfo::Response::SharedPtr> map_group_to_info;
 
-  // QStringList containing joint names for the arm group
-  QStringList qrobot_arm_joints;
+  // Vector containing the joints in the robot
+  std::vector<std::string> robot_joints;
 
-  // Vector containing joint info for the arm group
+  // Vector containing the groups in the robot
   std::vector<std::string> robot_groups;
+
+  // QStringList containing the joints in the robot
+  QStringList qrobot_joints;
 
   // QStringList containing the groups in the robot
   QStringList qrobot_groups;
@@ -209,8 +215,13 @@ protected:
   // Robot info service client
   rclcpp::Client<RobotInfo>::SharedPtr srv_robot_info;
 
+  QStringList potential_ns_list;
+  QCompleter * ns_completer;
+
   // enables or disables all input fields depending on the given bool
   void enable_elements(const bool enable);
+
+  void update_dropdowns();
 
   // whether or not the panel has been loaded fully
   bool loaded = false;
@@ -232,13 +243,6 @@ protected:
 
   // The home/sleep jointgroupcommand message
   JointGroupCommand joint_group_cmd;
-
-  // The home/sleep vector storing the home positions
-  std::vector<float> homesleep_homevec;
-
-  // The home/sleep vector storing the sleep positions
-  std::vector<float> homesleep_sleepvec;
-
 
   /** -------- Reboot Tab ---------------- */
 
