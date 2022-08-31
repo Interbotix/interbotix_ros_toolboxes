@@ -78,10 +78,10 @@ public:
   CallbackReturn stop();
 
   /// @brief Read data, updates joint_position vector from the joint_states
-  return_type read() override;
+  return_type read(const rclcpp::Time &, const rclcpp::Duration &) override;
 
   /// @brief Write data, publishes to the /commands/ topics
-  return_type write() override;
+  return_type write(const rclcpp::Time &, const rclcpp::Duration &) override;
 
   /// @brief Returns the name of this hardware interface
   /// @return The name of this hardware interface

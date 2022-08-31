@@ -191,7 +191,7 @@ std::vector<hardware_interface::CommandInterface> XSHardwareInterface::export_co
   return command_interfaces;
 }
 
-return_type XSHardwareInterface::read()
+return_type XSHardwareInterface::read(const rclcpp::Time &, const rclcpp::Duration &)
 {
   std::lock_guard<std::mutex> lck(joint_state_mtx_);
   for (size_t i = 0; i < num_joints; i++) {
@@ -200,7 +200,7 @@ return_type XSHardwareInterface::read()
   return return_type::OK;
 }
 
-return_type XSHardwareInterface::write()
+return_type XSHardwareInterface::write(const rclcpp::Time &, const rclcpp::Duration &)
 {
   interbotix_xs_msgs::msg::JointGroupCommand group_msg;
   interbotix_xs_msgs::msg::JointSingleCommand gripper_msg;
