@@ -22,7 +22,7 @@ jobs:
         env:
           - {ROS_DISTRO: noetic,  ROS_REPO: main, BUILDER: catkin_tools, NOT_TEST_BUILD: true}
           - {ROS_DISTRO: noetic,  ROS_REPO: main, BUILDER: catkin_make, NOT_TEST_BUILD: true}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout ROS Toolboxes
         uses: actions/checkout@v2
