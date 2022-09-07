@@ -32,6 +32,7 @@ from launch import LaunchContext, SomeSubstitutionsType
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
     Command,
+    EnvironmentVariable,
     FindExecutable,
     LaunchConfiguration,
     PathJoinSubstitution,
@@ -96,6 +97,7 @@ class DeclareInterbotixXSLoCoBotRobotDescriptionLaunchArgument(DeclareLaunchArgu
                 'locobot.urdf.xacro'
             ]), ' ',
             'arm_model:=', LaunchConfiguration('arm_model'), ' ',
+            'base_model:=', LaunchConfiguration('base_type'), ' ',
             'robot_model:=', LaunchConfiguration('robot_model'), ' ',
             'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
@@ -285,6 +287,7 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
     Return the `robot_description` DeclareLaunchArgument and its requried children.
 
     DeclareLaunchArgument objects:
+        - `base_type`
         - `use_gripper`
         - `show_ar_tag`
         - `show_gripper_bar`
@@ -297,6 +300,12 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
         DeclareLaunchArguments
     """
     return [
+        DeclareLaunchArgument(
+            'base_type',
+            default_value=EnvironmentVariable('INTERBOTIX_XSLOCOBOT_BASE_TYPE'),
+            choices=('kobuki', 'create3'),
+            description='the base type of the LoCoBot.',
+        ),
         DeclareLaunchArgument(
             'use_gripper',
             default_value=TextSubstitution(text=use_gripper),
