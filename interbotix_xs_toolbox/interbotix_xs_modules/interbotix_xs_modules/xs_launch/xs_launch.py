@@ -100,7 +100,6 @@ class DeclareInterbotixXSLoCoBotRobotDescriptionLaunchArgument(DeclareLaunchArgu
             'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'base_model:=', LaunchConfiguration('base_type'), ' ',
             'robot_model:=', LaunchConfiguration('robot_model'), ' ',
-            'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
             'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
             'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',

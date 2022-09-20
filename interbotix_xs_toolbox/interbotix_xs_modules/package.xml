@@ -10,7 +10,6 @@
 
   <exec_depend>interbotix_xs_msgs</exec_depend>
   <exec_depend>interbotix_common_modules</exec_depend>
-  <exec_depend>interbotix_xs_sdk</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
   <!-- <exec_depend>kobuki_ros_interfaces</exec_depend> -->
   <exec_depend>launch</exec_depend>
