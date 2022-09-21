@@ -92,7 +92,7 @@ class InterbotixLocobotKobukiXS(object):
         # Create PointCloud Interface if using perception
         if rospy.has_param("/" + robot_name + "/use_perception") and rospy.get_param("/" + robot_name + "/use_perception"):
             self.pcl = InterbotixPointCloudInterface(
-                robot_name=robot_name + "/pc_filter",
+                filter_ns=robot_name + "/pc_filter",
                 init_node=False
             )
         # Create Arm and Gripper interfaces if LoCoBot has an arm (if arm_model was specified)
