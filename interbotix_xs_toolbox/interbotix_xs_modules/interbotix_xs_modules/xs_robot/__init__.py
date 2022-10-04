@@ -37,16 +37,16 @@ from . import arm
 from . import core
 from . import gripper
 # from . import hexapod
-# from . import locobot
+from . import locobot
 from . import mr_descriptions
-# from . import turret
+from . import turret
 
 __all__ = [
     'arm',
     'core',
     'gripper',
     # 'hexapod',
-    # 'locobot',
+    'locobot',
     'mr_descriptions',
-    # 'turret',
+    'turret',
 ]

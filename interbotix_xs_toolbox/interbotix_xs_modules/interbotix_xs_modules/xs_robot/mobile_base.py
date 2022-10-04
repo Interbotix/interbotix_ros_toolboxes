@@ -1,0 +1,271 @@
+# Copyright 2022 Trossen Robotics
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+"""
+Contains an abstract class used to control a mobile base for Interbotix X-Series LoCoBots.
+
+These classes should be used to build out mobile bases for Interbotix X-Series LoCoBots.
+"""
+
+from abc import ABC, abstractmethod
+import time
+from typing import List
+
+from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Twist, Vector3
+from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
+from nav2_msgs.action import NavigateToPose
+from nav_msgs.msg import Odometry
+from rclpy.action import ActionClient
+from rclpy.duration import Duration
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Header
+from tf_transformations import euler_from_quaternion, quaternion_from_euler
+
+
+class InterbotixMobileBaseInterface(ABC):
+
+    def __init__(
+        self,
+        core: InterbotixRobotXSCore,
+        robot_name: str,
+        topic_base_joint_states: str,
+        topic_cmd_vel: str = 'cmd_vel',
+        nav_timeout_sec: float = 300.0,
+        use_nav: bool = False,
+    ):
+        """
+        Construct the InterbotixKobukiInterface object.
+
+        :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
+            plumbing that drives the Python API
+        :param robot_name: namespace of the Kobuki node (a.k.a the name of the Interbotix LoCoBot)
+        :param topic_base_joint_states: name of the joints states topic that contains the states of
+            the base. defaults to `'mobile_base/joint_states'`
+        :param topic_cmd_vel: name of the twist topic to which velocity commands should be
+            published. defaults to `'cmd_vel'`
+        :param nav_timeout_sec: length of time in seconds after which to cancel a navigation goal.
+            defaults to `300` (five minutes)
+        :param use_nav: whether or not to enable navigation features. requires that nav2 be
+            launched. defaults to `False`
+        """
+        self.core = core
+        self.robot_name = robot_name
+        self.nav_timeout_sec = nav_timeout_sec
+        self.use_nav = use_nav
+        self.odom = Odometry()
+        self.base_states = JointState()
+
+        self.pub_base_twist = self.core.create_publisher(
+            msg_type=Twist,
+            topic=topic_cmd_vel,
+            qos_profile=1,
+        )
+        self.sub_base_states = self.core.create_subscription(
+            msg_type=JointState,
+            topic=topic_base_joint_states,
+            callback=self._base_states_cb,
+        )
+        self.sub_base_odom = self.core.create_subscription(
+            msg_type=Odometry,
+            topic='odom',
+            callback=self._base_odom_cb,
+        )
+        self.client_base_nav_to_pose = ActionClient(
+            node=self.core,
+            action_type=NavigateToPose,
+            action_name='navigate_to_pose'
+        )
+
+        time.sleep(0.5)
+        self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
+
+    def command_velocity_xyaw(
+        self,
+        x: float = 0,
+        yaw: float = 0,
+        timeout_sec: float = 1.0
+    ) -> None:
+        """
+        Command a twist (velocity) message to move the robot.
+
+        :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward). defaults
+            to 0
+        :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis. defaults to 0
+        """
+        self.command_velocity(
+            twist=Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)),
+            timeout_sec=timeout_sec,
+        )
+
+    def command_velocity(self, twist: Twist = Twist(), timeout_sec: float = 1.0) -> None:
+        """
+        Command a twist (velocity) message to move the robot.
+
+        :param twist: desired twist. defaults to empty Twist message (all zeros)
+        """
+        time_start = self.core.get_clock().now()
+        r = self.core.create_rate(frequency=10)
+        while (self.core.get_clock().now() < (time_start + timeout_sec)):
+            self.pub_base_twist.publish(twist)
+            r.sleep()
+        self.pub_base_twist.publish(Twist())
+
+    def command_pose(
+        self,
+        goal_pose: Pose,
+        behavior_tree: str = '',
+        blocking=False,
+        frame_id: str = 'map',
+    ) -> bool:
+        if not self.use_nav:
+            self.core.get_logger().error('`use_nav` set to `False`. Will not execute navigation.')
+            return False
+        goal = NavigateToPose.Goal(
+            goal=self._stamp_pose(pose=goal_pose, frame_id=frame_id),
+            behavior_tree=behavior_tree
+        )
+
+        future_send_nav_to_pose_goal = self.client_base_nav_to_pose.send_goal_async(
+            goal=goal,
+            feedback_callback=self._nav_to_pose_feedback_cb,
+        )
+
+        self.core.robot_spin_once_until_future_complete(future_send_nav_to_pose_goal)
+        self.goal_handle = future_send_nav_to_pose_goal.result()
+
+        if not self.goal_handle.accepted:
+            self.core.get_logger().error(
+                f'Navigation goal [{goal_pose.position.x}, {goal_pose.position.y}] was rejected.'
+            )
+            return False
+        self.future_nav = self.goal_handle.get_result_async()
+        if blocking:
+            while not self.is_nav_complete():
+                fb = self.get_nav_to_pose_feedback()
+                if Duration.from_msg(fb.navigation_time > Duration(seconds=self.nav_timeout_sec)):
+                    self.core.get_logger().error(
+                        f'Navigation time ({fb.navigation_time}) exceeds timeout '
+                        f'({self.nav_timeout_sec}). Cancelling navigation goal.'
+                    )
+                    future_cancel_nav_to_pose_goal = self.goal_handle.cancel_goal_async()
+                    self.core.robot_spin_once_until_future_complete(
+                        future=future_cancel_nav_to_pose_goal
+                    )
+                return False
+        return True
+
+    def command_pose_xyyaw(
+        self,
+        x: float,
+        y: float,
+        yaw: float = 0.0,
+        behavior_tree: str = '',
+        blocking=False,
+        frame_id='map',
+    ) -> bool:
+        q = quaternion_from_euler(0, 0, yaw)
+        return self.command_pose(
+            goal_pose=Pose(
+                position=Point(x=x, y=y),
+                orientation=Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])),
+            behavior_tree=behavior_tree,
+            blocking=blocking,
+            frame_id=frame_id,
+        )
+
+    def _stamp_pose(self, pose: Pose, frame_id: str = 'map') -> PoseStamped:
+        return PoseStamped(
+            pose=pose,
+            header=Header(
+                frame_id=frame_id,
+                stamp=self.core.get_clock().now().to_msg(),
+            )
+        )
+
+    def _nav_to_pose_feedback_cb(self, msg: NavigateToPose.Feedback) -> None:
+        self.nav_to_pose_feedback = msg
+
+    def get_nav_to_pose_feedback(self) -> NavigateToPose.Feedback:
+        return self.nav_to_pose_feedback
+
+    def is_nav_complete(self):
+        if not self.future_nav:
+            return True
+        self.core.robot_spin_once_until_future_complete(future=self.future_nav, timeout_sec=0.1)
+        if self.future_nav.result():
+            self.nav_status = self.future_nav.result().status
+            if self.nav_status != GoalStatus.STATUS_SUCCEEDED:
+                self.core.get_logger().error(f"Navigation failed with status '{self.nav_status}'.")
+                return True
+        else:
+            return False
+
+    def get_base_states(self) -> JointState:
+        return self.base_states
+
+    def _base_states_cb(self, msg: JointState) -> None:
+        """
+        Update the base joint states.
+
+        :param msg: ROS JointState message
+        """
+        self.base_states = msg
+
+    def _base_odom_cb(self, msg: Odometry) -> None:
+        """
+        Update the odometry of the robot.
+
+        :param msg: ROS Odometry message
+        """
+        self.odom = msg
+
+    def get_odom_xytheta(self) -> List[float]:
+        """
+        Get the 2D pose of the robot w.r.t. the robot 'odom' frame in [x, y, theta].
+
+        :return: list containing the [x, y, theta] of the robot w.r.t. the odom frame
+        """
+        return [
+            self.odom.pose.pose.position.x,
+            self.odom.pose.pose.position.y,
+            euler_from_quaternion((
+                self.odom.pose.pose.orientation.x,
+                self.odom.pose.pose.orientation.y,
+                self.odom.pose.pose.orientation.z,
+                self.odom.pose.pose.orientation.w
+            ))[2]
+        ]
+
+    @abstractmethod
+    def reset_odom(self, *args, **kwargs) -> None:
+        """Reset odometry to zero."""
+
+    @abstractmethod
+    def play_sound(self, *args, **kwargs) -> None:
+        """Publish a sound or sounds using the base."""

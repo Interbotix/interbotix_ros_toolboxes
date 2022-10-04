@@ -26,48 +26,72 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from time import time
-from typing import List
+"""
+Contains classes used to control the Interbotix X-Series LoCoBots.
 
-from geometry_msgs.msg import PoseStamped, Quaternion, Twist, Vector3
+These classes can be used to control a Interbotix X-Series LoCoBots using Python.
+"""
+
+from enum import Enum
+from threading import Thread
+import time
+
 from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 from interbotix_xs_modules.xs_robot.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
+from interbotix_xs_modules.xs_robot.create3 import InterbotixCreate3Interface
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
+from interbotix_xs_modules.xs_robot.kobuki import InterbotixKobukiInterface
 from interbotix_xs_modules.xs_robot.turret import InterbotixTurretXSInterface
-from kobuki_ros_interfaces.msg import AutoDockingAction, AutoDockingGoal, Sound
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from nav_msgs.msg import Odometry
 import rclpy
-from rclpy.action import ActionClient
-from rclpy.duration import Duration
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Empty
-from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.logging import LoggingSeverity
 
-raise NotImplementedError('The locobot module is not yet compatible with ROS2')
+
+class BaseType(Enum):
+    """Enum representing the available base types for an Interbotix LoCoBot."""
+
+    KOBUKI = 0
+    CREATE3 = 1
 
 
 class InterbotixLocobotXS:
-    """Standalone Module to control an Interbotix Locobot."""
+    """Standalone Module to control an Interbotix LoCoBot."""
 
     def __init__(
         self,
         robot_model: str,
         arm_model: str = None,
+        use_base: bool = False,
+        use_perception: bool = False,
+        use_armtag: bool = False,
+        base_type: BaseType = BaseType.CREATE3,
         arm_group_name: str = 'arm',
         gripper_name: str = 'gripper',
         turret_group_name: str = 'camera',
-        robot_name: str = 'locobot',
+        robot_name: str = '',
         dxl_joint_states: str = 'dynamixel/joint_states',
-        kobuki_joint_states: str = 'mobile_base/joint_states',
-        use_move_base_action: bool = False,
+        topic_base_joint_states: str = 'mobile_base/joint_states',
+        topic_cmd_vel: str = 'cmd_vel',
+        use_nav: bool = False,
+        logging_level: LoggingSeverity = LoggingSeverity.INFO,
+        node_name: str = 'robot_manipulation',
+        start_on_init: bool = True,
+        args=None,
     ):
         """
         Construct the Standalone InterbotixLocobotXS object.
 
         :param robot_model: Interbotix Locobot model (ex. 'locobot_px100' or 'locobot_base')
+        :param arm_model: (optional) the model of arm used on the LoCoBot. defaults to `None`
+        :param use_base: (optional) `True` to use the LoCoBot's base; `False` otherwise. defaults
+            to `False`
+        :param use_base: (optional) `True` to use perception; `False` otherwise. defaults to
+            `False`
+        :param use_base: (optional) `True` to use the LoCoBot's armtag; `False` otherwise. defaults
+            to `False`
+        :param base_type: (optional) the base type of the LoCoBot. defaults to `BaseType.CREATE3`
         :param arm_group_name: (optional) joint group name that contains the 'arm' joints as
             defined in the 'motor_config' yaml file
         :param gripper_name: (optional) name of the gripper joint as defined in the 'motor_config'
@@ -79,37 +103,50 @@ class InterbotixLocobotXS:
             'locobot1' and 'locobot2')
         :param dxl_joint_states: (optional) name of the joint states topic that contains just the
             states of the dynamixel servos
-        :param kobuki_joint_states: (optional) name of the joints states topic that contains the
-            states of the Kobuki's two wheels
-        :param use_move_base_action: (optional) whether or not Move-Base's Action Server should be
-            used instead of the Topic interface; set to `True` to make the 'move_to_pose' function
-            block until the robot reaches its goal pose
+        :param topic_base_joint_states: (optional) name of the joints states topic that contains
+            the states of the base. defaults to `'mobile_base/joint_states'`
+        :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should
+            be published. defaults to `'cmd_vel'`
+        :param use_nav: (optional) whether or not to enable navigation features. requires that nav2
+            be launched. defaults to `False`
+        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+            ERROR, or FATAL. defaults to INFO
+        :param node_name: (optional) name to give to the core started by this class, defaults to
+            'robot_manipulation'
+        :param start_on_init: (optional) set to `True` to start running the spin thread after the
+            object is built; set to `False` if intending to sub-class this. If set to `False`,
+            either call the `start()` method later on, or add the core to an executor in another
+            thread.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
             robot_name=robot_name,
-            joint_states_topic=dxl_joint_states
+            topic_joint_states=dxl_joint_states,
+            logging_level=logging_level,
+            node_name=node_name,
+            args=args
         )
         self.camera = InterbotixTurretXSInterface(
             core=self.core,
-            group_name=turret_group_name
+            turret_name=turret_group_name
         )
-        self.core.declare_parameter(f'/{robot_name}/use_base')
-        self.core.declare_parameter(f'/{robot_name}/use_perception')
-        self.core.declare_parameter(f'/{robot_name}/use_armtag')
-        use_base = self.core.get_parameter(
-            f'/{robot_name}/use_base').get_parameter_value().bool_value
-        use_perception = self.core.get_parameter(
-            f'/{robot_name}/use_perception').get_parameter_value().bool_value
-        use_armtag = self.core.get_parameter(
-            f'/{robot_name}/use_armtag').get_parameter_value().bool_value
         if use_base:
-            self.base = InterbotixKobukiInterface(
-                core=self.core,
-                robot_name=robot_name,
-                kobuki_joint_states=kobuki_joint_states,
-                use_mode_base_actions=use_move_base_action,
-            )
+            if base_type == BaseType.KOBUKI:
+                self.base = InterbotixKobukiInterface(
+                    core=self.core,
+                    robot_name=robot_name,
+                    topic_base_joint_states=topic_base_joint_states,
+                    topic_cmd_vel=topic_cmd_vel,
+                    use_nav=use_nav,
+                )
+            elif base_type == BaseType.CREATE3:
+                self.base = InterbotixCreate3Interface(
+                    core=self.core,
+                    robot_name=robot_name,
+                    topic_base_joint_states=topic_base_joint_states,
+                    topic_cmd_vel=topic_cmd_vel,
+                    use_nav=use_nav,
+                )
         if use_perception:
             self.pcl = InterbotixPointCloudInterface(filter_ns=f'{robot_name}/pc_filter')
         if arm_model is not None:
@@ -126,223 +163,24 @@ class InterbotixLocobotXS:
                     init_node=False
                 )
 
+        if start_on_init:
+            self.start()
 
-class InterbotixKobukiInterface:
-    """Definition of the Interbotix Kobuki Module."""
+    def start(self) -> None:
+        """Start a background thread that builds and spins an executor."""
+        self._execution_thread = Thread(target=self.run)
+        self._execution_thread.start()
 
-    def __init__(
-        self,
-        core: InterbotixRobotXSCore,
-        robot_name: str,
-        kobuki_joint_states: str,
-        use_move_base_action: bool,
-    ):
-        """
-        Construct the InterbotixKobukiInterface object.
+    def run(self) -> None:
+        """Thread target."""
+        self.ex = MultiThreadedExecutor()
+        self.ex.add_node(self.core)
+        while rclpy.ok():
+            self.ex.spin()
 
-        :param core: reference to the InterbotixRobotXSCore class containing the
-            internal ROS plumbing that drives the Python API
-        :param robot_name: namespace of the Kobuki node (a.k.a the name of the Interbotix LoCoBot)
-        :param kobuki_joint_states: name of the joints states topic that contains the states of the
-            Kobuki's two wheels
-        :param use_move_base_action: whether or not Move-Base's Action Server should be used
-            instead of the Topic interface; set to `True` to make the 'move_to_pose' function block
-            until the robot reaches its goal pose
-        """
-        self.core = core
-        self.robot_name = robot_name
-        self.odom = None
-        self.wheel_states = None
-        self.use_move_base_action = use_move_base_action
-        if (self.use_move_base_action):
-            self.mb_client = ActionClient(
-                node=self,
-                action_type=MoveBaseAction,
-                action_name=f'/{self.robot_name}/move_base',
-            )
-            self.mb_client.wait_for_server()
-        # ROS Publisher to command twists to the Kobuki base
-        self.pub_base_command = self.core.create_publisher(
-            Twist,
-            f'/{self.robot_name}/mobile_base/commands/velocity',
-            1
-        )
-        # ROS Publisher to reset the base odometry
-        self.pub_base_reset = self.core.create_publisher(
-            Empty,
-            f'/{self.robot_name}/mobile_base/commands/reset_odometry',
-            1
-        )
-        self.pub_base_sound = self.core.create_publisher(
-            Sound,
-            f'/{self.robot_name}/mobile_base/commands/sound',
-            1
-        )
-        self.pub_base_pose = self.core.create_publisher(
-            PoseStamped,
-            f'/{self.robot_name}/move_base_simple/goal',
-            1
-        )
-        self.sub_base_odom = self.core.create_subscription(
-            Odometry,
-            f'/{self.robot_name}/mobile_base/odom',
-            self.base_odom_cb
-        )
-        self.sub_wheel_states = self.core.create_subscription(
-            JointState,
-            f'/{self.robot_name}/{kobuki_joint_states}',
-            self.wheel_states_cb
-        )
+    def shutdown(self) -> None:
+        """Destroy the node and shut down all threads and processes."""
+        self.core.destroy_node()
+        rclpy.shutdown()
+        self._execution_thread.join()
         time.sleep(0.5)
-        print('Initialized InterbotixKobukiInterface!\n')
-
-    def move(
-        self,
-        x: float = 0,
-        yaw: float = 0,
-        duration: float = 1.0
-    ) -> None:
-        """
-        Move the base for a given amount of time.
-
-        :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward)
-        :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis
-        :param duration: (optional) desired time [sec] that the robot should follow the specified
-            speeds
-        """
-        time_start = self.core.get_clock().now()
-        r = self.core.create_rate(frequency=10)
-        while (self.core.get_clock().now() < (time_start + duration)):
-            self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
-            r.sleep()
-        self.pub_base_command.publish(Twist())
-
-    def move_to_pose(
-        self,
-        x: float,
-        y: float,
-        yaw: float,
-        wait: bool = False
-    ) -> bool:
-        """
-        Move the base to a given pose in a Map (Nav Stack must be enabled!).
-
-        :param x: desired 'x' position [m] w.r.t. the map frame that the robot should achieve
-        :param y: desired 'y' position [m] w.r.t. the map frame that the robot should achieve
-        :param yaw: desired yaw [rad] w.r.t. the map frame that the robot should achieve
-        :param wait: whether the function should wait until the base reaches its goal pose before
-            returning
-        :return:  whether the robot successfully reached its goal pose (only applies if 'wait' is
-             `True`)
-        :details - note that if 'wait' is `False`, the function will always return `True`.
-        """
-        target_pose = PoseStamped()
-        target_pose.header.frame_id = 'map'
-        target_pose.header.stamp = self.core.get_clock().now().to_msg()
-        target_pose.pose.position.x = x
-        target_pose.pose.position.y = y
-        quat = quaternion_from_euler(0, 0, yaw)
-        target_pose.pose.orientation = Quaternion(quat[0], quat[1], quat[2], quat[3])
-        if (wait and self.use_move_base_action):
-            goal = MoveBaseGoal(target_pose)
-            self.mb_client.send_goal(goal)
-            self.mb_client.wait_for_result()
-            if not (self.mb_client.succeed()):
-                self.core.get_logger().error('Did not successfully reach goal.')
-                return False
-        else:
-            self.pub_base_pose.publish(target_pose)
-        self.pub_base_sound.publish(Sound.CLEANINGEND)
-        return True
-
-    def command_velocity(self, x: float = 0, yaw: float = 0) -> None:
-        """
-        Command a twist (velocity) message to move the robot.
-
-        :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward)
-        :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis
-        """
-        self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
-
-    def base_odom_cb(self, msg: Odometry) -> None:
-        """
-        Update the odometry of the robot using a ROS callback function.
-
-        :param msg: ROS Odometry message from the Kobuki
-        """
-        self.odom = msg.pose.pose
-
-    def wheel_states_cb(self, msg: JointState):
-        """
-        Get the wheel joint states using a ROS callback function.
-
-        :param msg: ROS JointState message from Kobuki
-        """
-        self.wheel_states = msg
-
-    def auto_dock(self) -> bool:
-        """
-        Call action to automatically dock the base to charging station dock.
-
-        :return: `True` if docked successfully, `False` otherwise
-        :details: must be near enough to dock to see IR signals (~1 meter in front)
-        """
-        self.core.get_logger().info('Attempting to autonomously dock to charging station.')
-
-        # set docking action client
-        ad_client = ActionClient(
-            AutoDockingAction,
-            f'/{self.robot_name}/dock_drive_action',
-        )
-
-        # connect to Action Server
-        self.core.get_logger().info('Wating for auto_dock Action Server...')
-        while not ad_client.wait_for_server(timeout=Duration(seconds=5)):
-            if not rclpy.ok():
-                return False
-        self.core.get_logger().info('Found auto_dock Action Server')
-
-        # set docking goal
-        ad_goal = AutoDockingGoal()
-        ad_client.send_goal(ad_goal)
-        # rospy.on_shutdown(ad_client.cancel_goal)
-
-        self.core.get_logger().info('Attemping to dock...')
-        # run action and wait 120 seconds for result
-        ad_client.wait_for_result(Duration(seconds=120))
-
-        if ad_client.get_result():
-            self.core.get_logger().info('Docking Successful.')
-            return True
-        else:
-            self.core.get_logger().warning('Docking Unsuccessful.')
-            return False
-
-    def get_odom(self) -> List[float]:
-        """
-        Get the 2D pose of the robot w.r.t. the robot 'odom' frame.
-
-        :return: list containing the [x, y, yaw] of the robot w.r.t. the odom frame
-        """
-        euler = euler_from_quaternion(
-            (
-                self.odom.orientation.x,
-                self.odom.orientation.y,
-                self.odom.orientation.z,
-                self.odom.orientation.w
-            )
-        )
-        return [self.odom.position.x, self.odom.position.y, euler[2]]
-
-    def get_wheel_states(self) -> List[float]:
-        """
-        Get the current wheel positions.
-
-        :return: 2 element list containing the wheel positions [rad]
-        """
-        return list(self.wheel_states.position)
-
-    def reset_odom(self) -> None:
-        """Reset odometry to zero."""
-        self.pub_base_reset.publish(Empty())
-        self.pub_base_sound.publish(Sound(value=Sound.CLEANINGEND))
