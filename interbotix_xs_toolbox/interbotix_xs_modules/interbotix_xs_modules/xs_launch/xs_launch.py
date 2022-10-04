@@ -126,12 +126,12 @@ class DeclareInterbotixXSLoCoBotRobotDescriptionLaunchArgument(DeclareLaunchArgu
         )
 
 
-def construct_semantic_robot_description_command(
+def construct_interbotix_xsarm_semantic_robot_description_command(
     robot_model: str,
     config_path: Union[PathJoinSubstitution, str],
 ) -> Command:
     """
-    Construct the semantic robot description launch.substitutions.Command required by MoveIt.
+    Construct the Arm semantic robot description required by MoveIt.
 
     :param robot_model: The performed robot_model LaunchConfiguration
     :param config_path: The absolute path to the parent directory of the directory containing the
@@ -159,6 +159,35 @@ def construct_semantic_robot_description_command(
         'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
         'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
         'hardware_type:=', LaunchConfiguration('hardware_type'), ' ',
+    ])
+
+
+def construct_interbotix_xslocobot_semantic_robot_description_command(
+    robot_model: str,
+    config_path: Union[PathJoinSubstitution, str],
+) -> Command:
+    """
+    Construct the LoCoBot semantic robot description required by MoveIt.
+
+    :param robot_model: The performed robot_model LaunchConfiguration
+    :param config_path: The absolute path to the parent directory of the directory containing the
+        srdf
+    :return: A launch.substitutions.Command containing info to build the srdf
+
+    :details: The LaunchConfigurations used in this method must already have been declared. This
+        can be done by using the declare_interbotix_xsarm_robot_description_launch_arguments method
+        to declare the robot_description launch args.
+    """
+    return Command([
+        PathJoinSubstitution([
+            FindExecutable(name='xacro')
+        ]),
+        ' ',
+        config_path,
+        f'/srdf/{robot_model}.srdf.xacro', ' ',
+        'show_lidar:=', LaunchConfiguration('show_lidar'), ' ',
+        'base_type:=', LaunchConfiguration('base_type'), ' ',
+        'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
     ])
 
 
@@ -275,7 +304,7 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
 def declare_interbotix_xslocobot_robot_description_launch_arguments(
     *,
     use_gripper: Text = 'true',
-    show_ar_tag: Text = 'false',
+    show_ar_tag: Text = 'true',
     show_gripper_bar: Text = 'true',
     show_gripper_fingers: Text = 'true',
     show_lidar: Text = 'false',

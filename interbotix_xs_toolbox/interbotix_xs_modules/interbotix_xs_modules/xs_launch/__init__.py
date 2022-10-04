@@ -34,14 +34,16 @@ helper functions and classes.
 """
 
 from .xs_launch import (
-    construct_semantic_robot_description_command,
+    construct_interbotix_xsarm_semantic_robot_description_command,
+    construct_interbotix_xslocobot_semantic_robot_description_command,
     declare_interbotix_xsarm_robot_description_launch_arguments,
     declare_interbotix_xslocobot_robot_description_launch_arguments,
     determine_use_sim_time_param,
 )
 
 __all__ = [
-    'construct_semantic_robot_description_command',
+    'construct_interbotix_xsarm_semantic_robot_description_command',
+    'construct_interbotix_xslocobot_semantic_robot_description_command',
     'declare_interbotix_xsarm_robot_description_launch_arguments',
     'declare_interbotix_xslocobot_robot_description_launch_arguments',
     'determine_use_sim_time_param',
