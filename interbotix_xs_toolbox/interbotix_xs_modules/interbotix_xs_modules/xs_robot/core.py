@@ -28,6 +28,7 @@
 
 """Contains the `InterbotixRobotXSCore` class that interfaces with the interbotix_xs_sdk."""
 
+from asyncio import Future
 import copy
 import sys
 from threading import Lock
@@ -62,7 +63,7 @@ class InterbotixRobotXSCore(Node):
         self,
         robot_model: str,
         robot_name: str = None,
-        joint_state_topic: str = 'joint_states',
+        topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
         args=None
@@ -74,7 +75,8 @@ class InterbotixRobotXSCore(Node):
         :param robot_name: (optional) defaults to value given to 'robot_model'; this can be
             customized if controlling two of the same arms from one computer (like 'arm1/wx200' and
             'arm2/wx200')
-        :param joint_state_topic: (optional) the specifc JointState topic output by the xs_sdk node
+        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk
+            node
         :logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN, ERROR,
             or FATAL. defaults to INFO
         :node_name: (optional) name to give to the core started by this class, defaults to
@@ -86,6 +88,10 @@ class InterbotixRobotXSCore(Node):
 
         if self.robot_name is None:
             self.robot_name = robot_model
+        if self.robot_name == '':
+            self.ns = ''
+        else:
+            self.ns = f'/{self.robot_name}'
 
         rclpy.init(args=args)
         super().__init__(node_name=self.node_name, namespace=robot_name)
@@ -94,30 +100,30 @@ class InterbotixRobotXSCore(Node):
             f"Created node with name='{self.node_name}' in namespace='{robot_name}'"
         ))
 
-        self.joint_state_topic = joint_state_topic
+        self.topic_joint_states = topic_joint_states
         self.joint_states: JointState = None
         self.js_mutex = Lock()
 
         self.srv_set_op_modes = self.create_client(
-            OperatingModes, f'/{self.robot_name}/set_operating_modes'
+            OperatingModes, f'{self.ns}/set_operating_modes'
         )
         self.srv_set_pids = self.create_client(
-            MotorGains, f'/{self.robot_name}/set_motor_pid_gains'
+            MotorGains, f'{self.ns}/set_motor_pid_gains'
         )
         self.srv_set_reg = self.create_client(
-            RegisterValues, f'/{self.robot_name}/set_motor_registers'
+            RegisterValues, f'{self.ns}/set_motor_registers'
         )
         self.srv_get_reg = self.create_client(
-            RegisterValues, f'/{self.robot_name}/get_motor_registers'
+            RegisterValues, f'{self.ns}/get_motor_registers'
         )
         self.srv_get_info = self.create_client(
-            RobotInfo, f'/{self.robot_name}/get_robot_info'
+            RobotInfo, f'{self.ns}/get_robot_info'
         )
         self.srv_torque = self.create_client(
-            TorqueEnable, f'/{self.robot_name}/torque_enable'
+            TorqueEnable, f'{self.ns}/torque_enable'
         )
         self.srv_reboot = self.create_client(
-            Reboot, f'/{self.robot_name}/reboot_motors'
+            Reboot, f'{self.ns}/reboot_motors'
         )
 
         # Check for xs_sdk by looking for set_operating_modes
@@ -136,23 +142,23 @@ class InterbotixRobotXSCore(Node):
         self.srv_torque.wait_for_service()
         self.srv_reboot.wait_for_service()
         self.pub_group = self.create_publisher(
-            JointGroupCommand, f'/{self.robot_name}/commands/joint_group', 10
+            JointGroupCommand, f'{self.ns}/commands/joint_group', 10
         )
         self.pub_single = self.create_publisher(
-            JointSingleCommand, f'/{self.robot_name}/commands/joint_single', 10
+            JointSingleCommand, f'{self.ns}/commands/joint_single', 10
         )
         self.pub_traj = self.create_publisher(
-            JointTrajectoryCommand, f'/{self.robot_name}/commands/joint_trajectory', 10
+            JointTrajectoryCommand, f'{self.ns}/commands/joint_trajectory', 10
         )
         self.sub_joint_states = self.create_subscription(
             JointState,
-            f'/{self.robot_name}/{joint_state_topic}',
-            self.joint_state_cb,
+            f'{self.ns}/{topic_joint_states}',
+            self._joint_state_cb,
             10,
         )
         self.get_logger().debug((
                 'Trying to find joint states on topic '
-                f"'/{self.robot_name}/{self.joint_state_topic}'..."
+                f"'{self.ns}/{self.topic_joint_states}'..."
         ))
         while self.joint_states is None and rclpy.ok():
             rclpy.spin_once(self)
@@ -437,7 +443,7 @@ class InterbotixRobotXSCore(Node):
         joint_info['effort'] = joint_states.effort[joint_index]
         return joint_info
 
-    def joint_state_cb(self, msg: JointState):
+    def _joint_state_cb(self, msg: JointState):
         """
         Get the latest JointState message through a ROS Subscriber Callback.
 
@@ -445,3 +451,15 @@ class InterbotixRobotXSCore(Node):
         """
         with self.js_mutex:
             self.joint_states = msg
+
+    def robot_spin_once_until_future_complete(
+        self, future: Future,
+        timeout_sec: float = 0.1
+    ) -> None:
+        """
+        Spin the core's executor until the given future is complete within the timeout.
+
+        :param future: future to complete
+        :timeout_sec: seconds to wait. defaults to 0.1 seconds
+        """
+        self.executor.spin_once_until_future_complete(future=future, timeout_sec=timeout_sec)

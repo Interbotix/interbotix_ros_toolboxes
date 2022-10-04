@@ -32,6 +32,7 @@ Contains the `InterbotixGripperXS` and `InterbotixGripperXSInterface` classes.
 These two classes can be used to control an X-Series standalone gripper using Python.
 """
 
+import sys
 from threading import Thread
 import time
 
@@ -65,17 +66,17 @@ class InterbotixGripperXS:
         :param robot_model: Interbotix Arm model (ex. 'wx200' or 'vx300s')
         :param gripper_name: name of the gripper joint as defined in the 'motor_config' yaml file;
             typically, this is 'gripper'
-        :param robot_name: defaults to value given to 'robot_model'; this can be customized to best
-            suit the user's needs
-        :param gripper_pressure: fraction from 0 - 1 where '0' means the gripper operates at
-            'gripper_pressure_lower_limit' and '1' means the gripper operates at
+        :param robot_name: (optional) defaults to value given to 'robot_model'; this can be
+            customized to best suit the user's needs
+        :param gripper_pressure: (optional) fraction from 0 - 1 where '0' means the gripper
+            operates at 'gripper_pressure_lower_limit' and '1' means the gripper operates at
             'gripper_pressure_upper_limit'
-        :param gripper_pressure_lower_limit: lowest 'effort' that should be applied to the gripper
-            if gripper_pressure is set to 0; it should be high enough to open/close the gripper
-            (~150 PWM or ~400 mA current)
-        :param gripper_pressure_upper_limit: largest 'effort' that should be applied to the gripper
-            if gripper_pressure is set to 1; it should be low enough that the motor doesn't
-            'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
+        :param gripper_pressure_lower_limit: (optional) lowest 'effort' that should be applied to
+            the gripper if gripper_pressure is set to 0; it should be high enough to open/close the
+            gripper (~150 PWM or ~400 mA current)
+        :param gripper_pressure_upper_limit: (optional) largest 'effort' that should be applied to
+            the gripper if gripper_pressure is set to 1; it should be low enough that the motor
+            doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
         :param joint_state_topic: (optional) the specifc JointState topic output by the xs_sdk node
         :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
@@ -138,20 +139,19 @@ class InterbotixGripperXSInterface:
         """
         Construct the Interbotix Gripper Module.
 
-        :param core: reference to the InterbotixRobotXSCore class containing the
-            internal ROS plumbing that drives the Python API
-        :param gripper_name: name of the gripper joint as defined in the 'motor_config'
-            yaml file; typically, this is 'gripper'
-        :param gripper_pressure: fraction from 0 - 1 where '0' means the gripper
-            operates at 'gripper_pressure_lower_limit' and '1' means the gripper
-            operates at 'gripper_pressure_upper_limit'
-        :param gripper_pressure_lower_limit: lowest 'effort' that should be applied to
-            the gripper if gripper_pressure is set to 0; it should be high enough to
-            open/close the gripper (~150 PWM or ~400 mA current)
-        :param gripper_pressure_upper_limit: largest 'effort' that should be applied to
-            the gripper if gripper_pressure is set to 1; it should be low enough that
-            the motor doesn't 'overload' when gripping an object for a few seconds (~350
-            PWM or ~900 mA)
+        :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
+            plumbing that drives the Python API
+        :param gripper_name: name of the gripper joint as defined in the 'motor_config' yaml file;
+            typically, this is 'gripper'
+        :param gripper_pressure: (optional) fraction from 0 - 1 where '0' means the gripper
+            operates at 'gripper_pressure_lower_limit' and '1' means the gripper operates at
+            'gripper_pressure_upper_limit'
+        :param gripper_pressure_lower_limit: (optional) lowest 'effort' that should be applied to
+            the gripper if gripper_pressure is set to 0; it should be high enough to open/close the
+            gripper (~150 PWM or ~400 mA current)
+        :param gripper_pressure_upper_limit: (optional) largest 'effort' that should be applied to
+            the gripper if gripper_pressure is set to 1; it should be low enough that the motor
+            doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
         """
         self.core = core
         self.gripper_name = gripper_name
@@ -187,7 +187,7 @@ class InterbotixGripperXSInterface:
             self.core.get_logger().err(
                 "Please set the gripper's 'operating mode' to 'pwm' or 'current'."
             )
-            exit(1)
+            sys.exit(1)
 
         time.sleep(0.5)
         self.core.get_logger().info(
@@ -253,7 +253,7 @@ class InterbotixGripperXSInterface:
         """
         Open the gripper (when in 'pwm' control mode).
 
-        :param delay: number of seconds to delay before returning control to the user
+        :param delay: (optional) number of seconds to delay before returning control to the user
         """
         self.gripper_controller(self.gripper_value, delay)
 
@@ -261,6 +261,6 @@ class InterbotixGripperXSInterface:
         """
         Close the gripper (when in 'pwm' control mode).
 
-        :param delay: number of seconds to delay before returning control to the user
+        :param delay: (optional) number of seconds to delay before returning control to the user
         """
         self.gripper_controller(-self.gripper_value, delay)

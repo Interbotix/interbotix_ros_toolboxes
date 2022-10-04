@@ -26,30 +26,42 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""
+Contains the `InterbotixTurretXS` and `InterbotixTurretXSInterface` classes.
+
+These two classes can be used to control an X-Series standalone pan-and-tilt mechanism using
+Python.
+"""
+
+from threading import Thread
 import time
 from typing import List
 
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_msgs.msg import JointGroupCommand, JointSingleCommand
-from interbotix_xs_msgs.srv import RobotInfo
-
-raise NotImplementedError('The turret module is not yet compatible with ROS2')
+from interbotix_xs_msgs.srv import OperatingModes, RegisterValues, RobotInfo
+import rclpy
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.logging import LoggingSeverity
 
 
 class InterbotixTurretXS:
-    """Defines the standalone module to control an Interbotix Turret."""
+    """Standalone module to control an Interbotix Pan-and-Tilt Mechanism."""
 
     def __init__(
         self,
         robot_model: str,
         robot_name: str = None,
-        group_name: str = 'turret',
+        turret_name: str = 'turret',
         pan_profile_type: str = 'time',
         pan_profile_velocity: float = 2.0,
         pan_profile_acceleration: float = 0.3,
         tilt_profile_type: str = 'time',
         tilt_profile_velocity: float = 2.0,
         tilt_profile_acceleration: float = 0.3,
+        logging_level: LoggingSeverity = LoggingSeverity.INFO,
+        node_name: str = 'robot_manipulation',
+        start_on_init: bool = True,
     ) -> None:
         """
         Construct the Standalone InterbotixTurretXS object.
@@ -58,7 +70,7 @@ class InterbotixTurretXS:
         :param robot_name: defaults to value given to 'robot_model'; this can be customized if
             controlling two of the same turrets from one computer (like 'turret1/wxxmt' and
             'turret2/pxxls')
-        :param group_name: (optional) name of the desired Turret's pan-tilt joint group
+        :param turret_name: (optional) name of the desired Turret's pan-tilt joint group
         :param pan_profile_type: (optional) 'pan' joint settting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param pan_profile_velocity: (optional) 'pan' joint setting; refer to the OperatingModes
@@ -75,14 +87,24 @@ class InterbotixTurretXS:
         :param tilt_profile_acceleration: (optional) 'tilt' joint setting; refer to the
             OperatingModes Service file for an explanation - note that when 'profile_type' is
             'time', units are in seconds, not milliseconds
+        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+            ERROR, or FATAL. defaults to INFO
+        :param node_name: (optional) name to give to the core started by this class, defaults to
+            'robot_manipulation'
+        :param start_on_init: (optional) set to `True` to start running the spin thread after the
+            object is built; set to `False` if intending to sub-class this. If set to `False`,
+            either call the `start()` method later on, or add the core to an executor in another
+            thread.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
-            robot_name=robot_name
+            robot_name=robot_name,
+            logging_level=logging_level,
+            node_name=node_name,
         )
         self.turret = InterbotixTurretXSInterface(
             core=self.core,
-            group_name=group_name,
+            turret_name=turret_name,
             pan_profile_type=pan_profile_type,
             pan_profile_velocity=pan_profile_velocity,
             pan_profile_acceleration=pan_profile_acceleration,
@@ -91,14 +113,36 @@ class InterbotixTurretXS:
             tilt_profile_acceleration=tilt_profile_acceleration
         )
 
+        if start_on_init:
+            self.start()
+
+    def start(self) -> None:
+        """Start a background thread that builds and spins an executor."""
+        self._execution_thread = Thread(target=self.run)
+        self._execution_thread.start()
+
+    def run(self) -> None:
+        """Thread target."""
+        self.ex = MultiThreadedExecutor()
+        self.ex.add_node(self.core)
+        while rclpy.ok():
+            self.ex.spin()
+
+    def shutdown(self) -> None:
+        """Destroy the node and shut down all threads and processes."""
+        self.core.destroy_node()
+        rclpy.shutdown()
+        self._execution_thread.join()
+        time.sleep(0.5)
+
 
 class InterbotixTurretXSInterface:
-    """Definition of the Interbotix Turret Module."""
+    """Definition of the Interbotix Pan-and-Tilt Module."""
 
     def __init__(
         self,
         core: InterbotixRobotXSCore,
-        group_name: str = 'turret',
+        turret_name: str = 'turret',
         pan_profile_type: str = 'time',
         pan_profile_velocity: float = 2.0,
         pan_profile_acceleration: float = 0.3,
@@ -111,7 +155,7 @@ class InterbotixTurretXSInterface:
 
         :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
             plumbing that drives the Python API
-        :param group_name: (optional) name of the desired Turret's pan-tilt joint group
+        :param turret_name: (optional) name of the desired Turret's pan-tilt joint group
         :param pan_profile_type: (optional) 'pan' joint settting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param pan_profile_velocity: (optional) 'pan' joint setting; refer to the OperatingModes
@@ -130,8 +174,16 @@ class InterbotixTurretXSInterface:
             'time', units are in seconds, not milliseconds
         """
         self.core = core
-        group_info: RobotInfo.Response = self.core.srv_get_info('group', group_name)
-        self.group_name = group_name
+        self.turret_name = turret_name
+        self.future_group_info = self.core.srv_get_info.call_async(
+            RobotInfo.Request(cmd_type='group', name=turret_name)
+        )
+
+        while rclpy.ok() and not self.future_group_info.done():
+            rclpy.spin_until_future_complete(self.core, self.future_group_info)
+            rclpy.spin_once(self.core)
+
+        group_info: RobotInfo.Response = self.future_group_info.result()
         self.pan_name = group_info.joint_names[0]
         self.tilt_name = group_info.joint_names[1]
         pan_limits = [group_info.joint_lower_limits[0], group_info.joint_upper_limits[0]]
@@ -153,8 +205,9 @@ class InterbotixTurretXSInterface:
                 'profile_velocity': tilt_profile_velocity,
                 'profile_acceleration': tilt_profile_acceleration,
                 'lower_limit': tilt_limits[0],
-                'upper_limit': tilt_limits[1]}
+                'upper_limit': tilt_limits[1]
             }
+        }
         self.change_profile(
             self.pan_name,
             pan_profile_type,
@@ -167,8 +220,8 @@ class InterbotixTurretXSInterface:
             tilt_profile_velocity,
             tilt_profile_acceleration
         )
-        print((
-            f'Turret Group Name: {group_name}\n'
+        self.core.get_logger().info((
+            f'Turret Group Name: {turret_name}\n'
             f'Pan Name: {self.pan_name}, '
             f'Profile Type: {pan_profile_type}, '
             f'Profile Velocity: {pan_profile_velocity:.1f}, '
@@ -178,7 +231,7 @@ class InterbotixTurretXSInterface:
             f'Profile Velocity: {tilt_profile_velocity:.1f}, '
             f'Profile Acceleration: {tilt_profile_acceleration:.1f}'
         ))
-        print('Initialized InterbotixTurretXSInterface!\n')
+        self.core.get_logger().info('Initialized InterbotixTurretXSInterface!')
 
     def set_trajectory_profile(
         self,
@@ -204,18 +257,30 @@ class InterbotixTurretXSInterface:
             (profile_velocity != self.info[joint_name]['profile_velocity'])
         ):
             if (self.info[joint_name]['profile_type'] == 'velocity'):
-                self.core.srv_set_reg(
-                    cmd_type='single',
-                    name=joint_name,
-                    reg='Profile_Velocity',
-                    value=profile_velocity
+                future_profile_velocity = self.core.srv_set_reg.call_async(
+                    RegisterValues.Request(
+                        cmd_type='single',
+                        name=joint_name,
+                        reg='Profile_Velocity',
+                        value=profile_velocity
+                    )
+                )
+                self.core.robot_spin_once_until_future_complete(
+                    future=future_profile_velocity,
+                    timeout_sec=0.1
                 )
             else:
-                self.core.srv_set_reg(
-                    cmd_type='single',
-                    name=joint_name,
-                    reg='Profile_Velocity',
-                    value=int(profile_velocity * 1000)
+                future_profile_velocity = self.core.srv_set_reg.call_async(
+                    RegisterValues.Request(
+                        cmd_type='single',
+                        name=joint_name,
+                        reg='Profile_Velocity',
+                        value=int(profile_velocity * 1000)
+                    )
+                )
+                self.core.robot_spin_once_until_future_complete(
+                    future=future_profile_velocity,
+                    timeout_sec=0.1
                 )
             self.info[joint_name]['profile_velocity'] = profile_velocity
         if (
@@ -223,18 +288,30 @@ class InterbotixTurretXSInterface:
             (profile_acceleration != self.info[joint_name]['profile_acceleration'])
         ):
             if (self.info[joint_name]['profile_type'] == 'velocity'):
-                self.core.srv_set_reg(
-                    cmd_type='single',
-                    name=joint_name,
-                    reg='Profile_Acceleration',
-                    value=profile_acceleration
+                future_profile_acceleration = self.core.srv_set_reg.call_async(
+                    RegisterValues.Request(
+                        cmd_type='single',
+                        name=joint_name,
+                        reg='Profile_Acceleration',
+                        value=profile_acceleration
+                    )
+                )
+                self.core.robot_spin_once_until_future_complete(
+                    future=future_profile_acceleration,
+                    timeout_sec=0.1
                 )
             else:
-                self.core.srv_set_reg(
-                    cmd_type='single',
-                    name=joint_name,
-                    reg='Profile_Acceleration',
-                    value=int(profile_acceleration * 1000)
+                future_profile_acceleration = self.core.srv_set_reg.call_async(
+                    RegisterValues.Request(
+                        cmd_type='single',
+                        name=joint_name,
+                        reg='Profile_Acceleration',
+                        value=int(profile_acceleration * 1000)
+                    )
+                )
+                self.core.robot_spin_once_until_future_complete(
+                    future=future_profile_acceleration,
+                    timeout_sec=0.1
                 )
             self.info[joint_name]['profile_acceleration'] = profile_acceleration
 
@@ -258,7 +335,7 @@ class InterbotixTurretXSInterface:
         :param profile_acceleration: (optional) refer to the OperatingModes Service file for an
             explanation - note that when 'profile_type' is 'time', units are in seconds, not
             milliseconds
-        :param blocking: (optional) if 'profile_type' is 'time' and this is set to True, the
+        :param blocking: (optional) if 'profile_type' is 'time' and this is set to `True`, the
             function waits 'profile_velocity' seconds before returning control to the user;
             otherwise, the 'delay' parameter is used
         :param delay: (optional) number of seconds to wait after executing the position command
@@ -271,15 +348,15 @@ class InterbotixTurretXSInterface:
             (position <= self.info[joint_name]['upper_limit'])
         ):
             self.set_trajectory_profile(joint_name, profile_velocity, profile_acceleration)
-            self.core.pub_single.publish(JointSingleCommand(joint_name, position))
+            self.core.pub_single.publish(JointSingleCommand(name=joint_name, cmd=position))
             self.info[joint_name]['command'] = position
             if (self.info[joint_name]['profile_type'] == 'time' and blocking):
                 time.sleep(self.info[joint_name]['profile_velocity'])
             else:
                 time.sleep(delay)
         else:
-            self.core.get_logger().warning(
-                f"Goal position is outside the '{joint_name}' joint's limits."
+            self.core.get_logger().error(
+                f"Goal position is outside the '{joint_name}' joint's limits. Will not execute."
             )
 
     def pan(
@@ -294,15 +371,17 @@ class InterbotixTurretXSInterface:
         Command the Pan joint on the Turret.
 
         :param position: desired goal position [rad]
-        :param profile_velocity: refer to the OperatingModes Service file for an explanation - note
-            that when 'profile_type' is 'time', units are in seconds, not milliseconds
-        :param profile_acceleration: refer to the OperatingModes Service file for an explanation -
-            note that when 'profile_type' is 'time', units are in seconds, not milliseconds
-        :param blocking: if 'profile_type' is 'time' and this is set to True, the function waits
-            'profile_velocity' seconds before returning control to the user; otherwise, the 'delay'
-            parameter is used
-        :param delay: number of seconds to wait after executing the position command before
-            returning control to the user
+        :param profile_velocity: (optional) refer to the OperatingModes Service file for an
+            explanation - note that when 'profile_type' is 'time', units are in seconds, not
+            milliseconds
+        :param profile_acceleration: (optional) refer to the OperatingModes Service file for an
+            explanation - note that when 'profile_type' is 'time', units are in seconds, not
+            milliseconds
+        :param blocking: (optional) if 'profile_type' is 'time' and this is set to `True`, the
+            function waits 'profile_velocity' seconds before returning control to the user;
+            otherwise, the 'delay' parameter is used
+        :param delay: (optional) number of seconds to wait after executing the position command
+            before returning control to the user
         :details: note that if 'profile_velocity' and 'profile_acceleration' are not set, they
             retain the values they were set with previously
         """
@@ -333,7 +412,7 @@ class InterbotixTurretXSInterface:
         :param profile_acceleration: (optional) refer to the OperatingModes Service file for an
             explanation - note that when 'profile_type' is 'time', units are in seconds, not
             milliseconds
-        :param blocking: (optional) if 'profile_type' is 'time' and this is set to True, the
+        :param blocking: (optional) if 'profile_type' is 'time' and this is set to `True`, the
             function waits 'profile_velocity' seconds before returning control to the user;
             otherwise, the 'delay' parameter is used
         :param delay: (optional) number of seconds to wait after executing the position command
@@ -423,7 +502,7 @@ class InterbotixTurretXSInterface:
             OperatingModes Service file for an explanation - note that when 'profile_type' is
             'time', units are in seconds, not milliseconds
         :param blocking: (optional) if 'profile_type' for both joints is 'time' and this is set to
-            True, the function waits either 'pan_profile_velocity' or 'tilt_profile_velocity'
+            `True`, the function waits either 'pan_profile_velocity' or 'tilt_profile_velocity'
             seconds (whichever is greater) before returning control to the user; otherwise, the
             'delay' parameter is used
         :param delay: (optional) number of seconds to wait after executing the position command
@@ -448,7 +527,7 @@ class InterbotixTurretXSInterface:
                tilt_profile_acceleration
             )
             self.core.pub_group.publish(
-               JointGroupCommand(self.group_name, [pan_position, tilt_position]))
+               JointGroupCommand(name=self.turret_name, cmd=[pan_position, tilt_position]))
             self.info[self.pan_name]['command'] = pan_position
             self.info[self.tilt_name]['command'] = tilt_position
             if (
@@ -465,7 +544,9 @@ class InterbotixTurretXSInterface:
             else:
                 time.sleep(delay)
         else:
-            self.core.get_logger().warning('One or both goal positions are outside the limits!')
+            self.core.get_logger().error(
+                'One or both goal positions are outside the limits. Will not execute'
+            )
 
     def change_profile(
         self,
@@ -486,24 +567,36 @@ class InterbotixTurretXSInterface:
             note that when 'profile_type' is 'time', units are in seconds, not milliseconds
         """
         if (profile_type == 'velocity'):
-            self.core.srv_set_op_modes(
-                'single',
-                joint_name,
-                'position',
-                'velocity',
-                profile_velocity,
-                profile_acceleration
+            future_operating_modes = self.core.srv_set_op_modes.call_async(
+                OperatingModes.Request(
+                    cmd_type='single',
+                    name=joint_name,
+                    mode='position',
+                    profile_type='velocity',
+                    profile_velocity=profile_velocity,
+                    profile_acceleration=profile_acceleration
+                )
+            )
+            self.core.robot_spin_once_until_future_complete(
+                future=future_operating_modes,
+                timeout_sec=0.1
             )
             self.info[joint_name]['profile_velocity'] = profile_velocity
             self.info[joint_name]['profile_acceleration'] = profile_acceleration
         else:
-            self.core.srv_set_op_modes(
-                'single',
-                joint_name,
-                'position',
-                'time',
-                int(profile_velocity * 1000),
-                int(profile_acceleration * 1000)
+            future_operating_modes = self.core.srv_set_op_modes.call_async(
+                OperatingModes.Request(
+                    cmd_type='single',
+                    name=joint_name,
+                    mode='position',
+                    profile_type='time',
+                    profile_velocity=int(profile_velocity * 1000),
+                    profile_acceleration=int(profile_acceleration * 1000)
+                )
+            )
+            self.core.robot_spin_once_until_future_complete(
+                future=future_operating_modes,
+                timeout_sec=0.1
             )
             self.info[joint_name]['profile_velocity'] = profile_velocity
             self.info[joint_name]['profile_acceleration'] = profile_acceleration
