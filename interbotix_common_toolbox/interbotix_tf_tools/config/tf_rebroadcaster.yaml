@@ -1,0 +1,7 @@
+# The 'frames' node takes mappings between frames in a TF.
+# Each mapping represents a TF from the first frame to the second frame.
+# For example, a mapping of "odom: base_link" will re-broadcast the
+#   odom->base_link transformation to the new topic.
+frames:
+  odom: base_link
+  odom: base_footprint
