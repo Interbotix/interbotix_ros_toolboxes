@@ -1,6 +1,7 @@
 import sys
 import rospy
 import actionlib
+import numpy as np
 from std_msgs.msg import Empty
 
 # handles imports of different base message types
@@ -20,8 +21,9 @@ if not (kobuki_msgs_found or create_msgs_found):
     rospy.logerr("Could not find the messages required to operate the base. Quitting...")
     sys.exit(1)
 
+from rospy.numpy_msg import numpy_msg
 from geometry_msgs.msg import Twist, Vector3, PoseStamped, Quaternion
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Image
 from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
@@ -32,6 +34,125 @@ from interbotix_xs_modules.gripper import InterbotixGripperXSInterface
 from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 
+### @brief Standalone Module to control an Interbotix LoCoBot with a Create3 base
+### @param robot_model - Interbotix LoCoBot model (ex. 'locobot_px100' or 'locobot_base')
+### @param arm_model - Interbotix Manipulator model (ex. 'mobile_px100' or 'mobile_wx200'); if set
+#          to `None`, does not add an arm, gripper, or apriltag component to the robot
+### @param arm_group_name - joint group name that contains the 'arm' joints as defined in the
+###        'motor_config' yaml file
+### @param gripper_name - name of the gripper joint as defined in the 'motor_config' yaml file;
+###        typically, this is 'gripper'
+### @param turret_group_name - joint group name that contains the 'turret' joints as defined in the
+###        'motor_config' yaml file; typically, this is 'camera'
+### @param robot_name - defaults to the value given to 'robot_model' if unspecified; this can be
+###        customized if controlling two or more locobots from one computer (like 'locobot1' and
+###        'locobot2')
+### @param init_node - set to `True` if the InterbotixRobotXSCore class should initialize the ROS
+###        node - this is the most Pythonic approach; to incorporate a robot into an existing ROS
+###        node though, set to `False`
+### @param dxl_joint_states - name of the joint states topic that contains just the states of the
+###        dynamixel servos
+class InterbotixLocobotCreate3XS(object):
+    def __init__(
+        self,
+        robot_model,
+        arm_model=None,
+        arm_group_name="arm",
+        gripper_name="gripper",
+        turret_group_name="camera",
+        robot_name="locobot",
+        init_node=True,
+        dxl_joint_states="dynamixel/joint_states",
+    ):
+
+        self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
+        self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
+        if rospy.has_param("/" + robot_name + "/use_base") and rospy.get_param("/" + robot_name + "/use_base") == True:
+            self.base = InterbotixCreate3Interface(robot_name)
+        if rospy.has_param("/" + robot_name + "/use_perception") and rospy.get_param("/" + robot_name + "/use_perception") == True:
+            self.pcl = InterbotixPointCloudInterface(robot_name + "/pc_filter", False)
+        if arm_model is not None:
+            self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
+            self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
+            if rospy.has_param("/" + robot_name + "/use_armtag") and rospy.get_param("/" + robot_name + "/use_armtag") == True:
+                self.armtag = InterbotixArmTagInterface(robot_name + "/armtag", robot_name + "/apriltag", False)
+
+
+### @brief Definition of the Interbotix Create3 Module
+### @param robot_name - namespace of the Create3 (a.k.a the name of the Interbotix LoCoBot)
+class InterbotixCreate3Interface(object):
+    def __init__(self, robot_name):
+        self.robot_name = robot_name
+        self.odom = None
+        self.wheel_status = None
+        self.color_img = None
+        # ROS Publisher to command twists to the base
+        self.pub_base_command = rospy.Publisher("/" + self.robot_name + "/cmd_vel", Twist, queue_size=1)
+        # ROS Publisher to command audios to the base
+        self.pub_base_sound = rospy.Publisher("/" + self.robot_name + "/cmd_audio", AudioNoteVector, queue_size=1)
+        # ROS Subscriber to process odometry of the base
+        self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/odom", Odometry, self.base_odom_cb)
+        # ROS Subscriber to process images
+        self.color_img = rospy.Subscriber("/" + self.robot_name + "/camera/color/image_raw", numpy_msg(Image), self.color_img_cb, queue_size=10)
+        rospy.sleep(0.5)
+        print("Initialized InterbotixCreate3Interface!\n")
+
+    ### @brief Move the base for a given amount of time
+    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
+    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
+    ### @param duration - desired time [sec] that the robot should follow the specified speeds
+    def move(self, x=0, yaw=0, duration=1.0):
+        time_start = rospy.get_time()
+        r = rospy.Rate(10)
+        # Publish Twist at 10 Hz for duration
+        while (rospy.get_time() < (time_start + duration)):
+            #Full name: geometry_msgs.msg._Twist.Twist geometry_msgs.msg._Twist.Twist(linear=Vector3(x=x), angular=Vector3(z=yaw))
+            # rostopic pub /pub_base_command geometry_msgs.msg._Twist.Twist geometry_msgs.msg._Twist.Twist()
+            self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
+            r.sleep()
+        # After the duration has passed, publish a zero Twist
+        self.pub_base_command.publish(Twist())
+
+    ### @brief Commands a Twist message to the base
+    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
+    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
+    ### @details - This method can be called repeatedly to move the robot if using a controller
+    def command_velocity(self, x=0, yaw=0):
+        self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
+
+    ### @brief Command the Create3 base to play a frequency for a given duration
+    ### @param frequency - frequency of the note in Hz
+    ### @param duration - duration the note should be played for in seconds
+    def command_audio(self, frequency, duration):
+        self.pub_base_sound.publish(AudioNote(frequency=frequency, max_runtime=duration))
+
+    ### @brief Command the Create3 base to play the given AudioNoteVector
+    ### @param audio_vector - AudioNoteVector to be commanded
+    def command_audio_vector(self, audio_vector):
+        self.pub_base_sound.publish(audio_vector)
+#debugging: disabling the callback sort of
+    def color_img_cb(self, data):
+        img = np.frombuffer(data.data, dtype=np.uint8).reshape(data.height, data.width, -1)
+        self.color_img = img
+
+    def get_img(self):
+        return self.color_img
+
+    ### @brief ROS Callback function to update the odometry of the robot
+    ### @param msg - ROS Odometry message from the base
+    def base_odom_cb(self, msg):
+        self.odom = msg.pose.pose
+
+    ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
+    ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
+    def get_odom(self):
+        quat = (
+            self.odom.orientation.x,
+            self.odom.orientation.y,
+            self.odom.orientation.z,
+            self.odom.orientation.w
+        )
+        return [self.odom.position.x, self.odom.position.y, euler_from_quaternion(quat)[2]]
 
 ### @brief Standalone Module to control an Interbotix LoCoBot with a Kobuki base
 ### @param robot_model - Interbotix LoCoBot model (ex. 'locobot_px100' or 'locobot_base')
@@ -293,112 +414,6 @@ class InterbotixKobukiInterface(object):
         self.pub_base_sound.publish(Sound(value=Sound.CLEANINGEND))
 
 
-### @brief Standalone Module to control an Interbotix LoCoBot with a Create3 base
-### @param robot_model - Interbotix LoCoBot model (ex. 'locobot_px100' or 'locobot_base')
-### @param arm_model - Interbotix Manipulator model (ex. 'mobile_px100' or 'mobile_wx200'); if set
-#          to `None`, does not add an arm, gripper, or apriltag component to the robot
-### @param arm_group_name - joint group name that contains the 'arm' joints as defined in the
-###        'motor_config' yaml file
-### @param gripper_name - name of the gripper joint as defined in the 'motor_config' yaml file;
-###        typically, this is 'gripper'
-### @param turret_group_name - joint group name that contains the 'turret' joints as defined in the
-###        'motor_config' yaml file; typically, this is 'camera'
-### @param robot_name - defaults to the value given to 'robot_model' if unspecified; this can be
-###        customized if controlling two or more locobots from one computer (like 'locobot1' and
-###        'locobot2')
-### @param init_node - set to `True` if the InterbotixRobotXSCore class should initialize the ROS
-###        node - this is the most Pythonic approach; to incorporate a robot into an existing ROS
-###        node though, set to `False`
-### @param dxl_joint_states - name of the joint states topic that contains just the states of the
-###        dynamixel servos
-class InterbotixLocobotCreate3XS(object):
-    def __init__(
-        self,
-        robot_model,
-        arm_model=None,
-        arm_group_name="arm",
-        gripper_name="gripper",
-        turret_group_name="camera",
-        robot_name="locobot",
-        init_node=True,
-        dxl_joint_states="dynamixel/joint_states",
-    ):
-        self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
-        self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
-        if rospy.has_param("/" + robot_name + "/use_base") and rospy.get_param("/" + robot_name + "/use_base") == True:
-            self.base = InterbotixCreate3Interface(robot_name)
-        if rospy.has_param("/" + robot_name + "/use_perception") and rospy.get_param("/" + robot_name + "/use_perception") == True:
-            self.pcl = InterbotixPointCloudInterface(robot_name + "/pc_filter", False)
-        if arm_model is not None:
-            self.arm = InterbotixArmXSInterface(self.dxl, arm_model, arm_group_name)
-            self.gripper = InterbotixGripperXSInterface(self.dxl, gripper_name)
-            if rospy.has_param("/" + robot_name + "/use_armtag") and rospy.get_param("/" + robot_name + "/use_armtag") == True:
-                self.armtag = InterbotixArmTagInterface(robot_name + "/armtag", robot_name + "/apriltag", False)
-
-
-### @brief Definition of the Interbotix Create3 Module
-### @param robot_name - namespace of the Create3 (a.k.a the name of the Interbotix LoCoBot)
-class InterbotixCreate3Interface(object):
-    def __init__(self, robot_name):
-        self.robot_name = robot_name
-        self.odom = None
-        self.wheel_status = None
-        # ROS Publisher to command twists to the base
-        self.pub_base_command = rospy.Publisher("/" + self.robot_name + "/cmd_vel", Twist, queue_size=1)
-        # ROS Publisher to command audios to the base
-        self.pub_base_sound = rospy.Publisher("/" + self.robot_name + "/cmd_audio", AudioNoteVector, queue_size=1)
-        # ROS Subscriber to process odometry of the base
-        self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/odom", Odometry, self.base_odom_cb)
-        rospy.sleep(0.5)
-        print("Initialized InterbotixCreate3Interface!\n")
-
-    ### @brief Move the base for a given amount of time
-    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
-    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
-    ### @param duration - desired time [sec] that the robot should follow the specified speeds
-    def move(self, x=0, yaw=0, duration=1.0):
-        time_start = rospy.get_time()
-        r = rospy.Rate(10)
-        # Publish Twist at 10 Hz for duration
-        while (rospy.get_time() < (time_start + duration)):
-            self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
-            r.sleep()
-        # After the duration has passed, publish a zero Twist
-        self.pub_base_command.publish(Twist())
-
-    ### @brief Commands a Twist message to the base
-    ### @param x - desired speed [m/s] in the 'x' direction (forward/backward)
-    ### @param yaw - desired angular speed [rad/s] around the 'z' axis
-    ### @details - This method can be called repeatedly to move the robot if using a controller
-    def command_velocity(self, x=0, yaw=0):
-        self.pub_base_command.publish(Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)))
-
-    ### @brief Command the Create3 base to play a frequency for a given duration
-    ### @param frequency - frequency of the note in Hz
-    ### @param duration - duration the note should be played for in seconds
-    def command_audio(self, frequency, duration):
-        self.pub_base_sound.publish(AudioNote(frequency=frequency, max_runtime=duration))
-
-    ### @brief Command the Create3 base to play the given AudioNoteVector
-    ### @param audio_vector - AudioNoteVector to be commanded
-    def command_audio_vector(self, audio_vector):
-        self.pub_base_sound.publish(audio_vector)
-
-    ### @brief ROS Callback function to update the odometry of the robot
-    ### @param msg - ROS Odometry message from the base
-    def base_odom_cb(self, msg):
-        self.odom = msg.pose.pose
-
-    ### Get the 2D pose of the robot w.r.t. the robot 'odom' frame
-    ### @return pose - list containing the [x, y, yaw] of the robot w.r.t. the odom frame
-    def get_odom(self):
-        quat = (
-            self.odom.orientation.x,
-            self.odom.orientation.y,
-            self.odom.orientation.z,
-            self.odom.orientation.w
-        )
-        return [self.odom.position.x, self.odom.position.y, euler_from_quaternion(quat)[2]]
 
 
 # Alias Kobuki LoCoBot as 'default' LoCoBot
