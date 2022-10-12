@@ -90,11 +90,13 @@ class InterbotixMobileBaseInterface(ABC):
             msg_type=JointState,
             topic=topic_base_joint_states,
             callback=self._base_states_cb,
+            qos_profile=1,
         )
         self.sub_base_odom = self.core.create_subscription(
             msg_type=Odometry,
             topic='odom',
             callback=self._base_odom_cb,
+            qos_profile=1,
         )
         self.client_base_nav_to_pose = ActionClient(
             node=self.core,
@@ -109,7 +111,6 @@ class InterbotixMobileBaseInterface(ABC):
         self,
         x: float = 0,
         yaw: float = 0,
-        timeout_sec: float = 1.0
     ) -> None:
         """
         Command a twist (velocity) message to move the robot.
@@ -119,22 +120,35 @@ class InterbotixMobileBaseInterface(ABC):
         :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis. defaults to 0
         """
         self.command_velocity(
-            twist=Twist(linear=Vector3(x=x), angular=Vector3(z=yaw)),
-            timeout_sec=timeout_sec,
+            twist=Twist(
+                linear=Vector3(x=x),
+                angular=Vector3(z=yaw)
+            ),
         )
 
-    def command_velocity(self, twist: Twist = Twist(), timeout_sec: float = 1.0) -> None:
+    def command_velocity_for_duration(self, twist: Twist = Twist(), duration: float = 1.0) -> None:
         """
         Command a twist (velocity) message to move the robot.
 
-        :param twist: desired twist. defaults to empty Twist message (all zeros)
+        :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
+        :param duration: (optional) length of time in seconds to publish velocity for. defaults to
+            1.0
+        :details: at the end of the duration, publishes an empty Twist message to halt movement
         """
-        time_start = self.core.get_clock().now()
-        r = self.core.create_rate(frequency=10)
-        while (self.core.get_clock().now() < (time_start + timeout_sec)):
+        time_start = self.core.get_clock().now().nanoseconds / 1e9
+        r = self.core.create_rate(frequency=10.0)
+        while (self.core.get_clock().now().nanoseconds / 1e9 < (time_start + duration)):
             self.pub_base_twist.publish(twist)
             r.sleep()
-        self.pub_base_twist.publish(Twist())
+        self.stop()
+
+    def command_velocity(self, twist: Twist = Twist()) -> None:
+        """
+        Command a twist (velocity) message to move the robot.
+
+        :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
+        """
+        self.pub_base_twist.publish(twist)
 
     def command_pose(
         self,
@@ -143,6 +157,18 @@ class InterbotixMobileBaseInterface(ABC):
         blocking=False,
         frame_id: str = 'map',
     ) -> bool:
+        """
+        Move the base to a given pose in a map (Nav Stack must be enabled!).
+        :param goal_pose: desired Pose w.r.t. the map frame that the robot should achieve
+        :param behavior_tree: string containing the behavior tree that the NavigateToPose goal
+            should specify. defaults to an empty string `''`
+        :param blocking: whether the function should wait until the base reaches its goal pose
+            before returning control to the user
+        :param frame_id: frame name as a string to navigate relative to. defaults to `'map'`
+        :return: `True` if the robot successfully reached its goal pose; `False` otherwise. (only
+            applies if 'blocking' is `True`)
+        :details: note that if 'blocking' is `False`, the function will always return `True`
+        """
         if not self.use_nav:
             self.core.get_logger().error('`use_nav` set to `False`. Will not execute navigation.')
             return False
@@ -189,6 +215,20 @@ class InterbotixMobileBaseInterface(ABC):
         blocking=False,
         frame_id='map',
     ) -> bool:
+        """
+        Move the base to a given pose in a map (Nav Stack must be enabled!).
+        :param x: desired x [m] w.r.t. the map frame that the robot should achieve
+        :param y: desired y [y] w.r.t. the map frame that the robot should achieve
+        :param yaw: desired yaw [rad] w.r.t. the map frame that the robot should achieve
+        :param behavior_tree: string containing the behavior tree that the NavigateToPose goal
+            should specify. defaults to an empty string `''`
+        :param blocking: whether the function should wait until the base reaches its goal pose
+            before returning control to the user
+        :param frame_id: frame name as a string to navigate relative to. defaults to `'map'`
+        :return: `True` if the robot successfully reached its goal pose; `False` otherwise. (only
+            applies if 'blocking' is `True`)
+        :details: note that if 'blocking' is `False`, the function will always return `True`
+        """
         q = quaternion_from_euler(0, 0, yaw)
         return self.command_pose(
             goal_pose=Pose(
@@ -199,22 +239,24 @@ class InterbotixMobileBaseInterface(ABC):
             frame_id=frame_id,
         )
 
-    def _stamp_pose(self, pose: Pose, frame_id: str = 'map') -> PoseStamped:
-        return PoseStamped(
-            pose=pose,
-            header=Header(
-                frame_id=frame_id,
-                stamp=self.core.get_clock().now().to_msg(),
-            )
-        )
-
-    def _nav_to_pose_feedback_cb(self, msg: NavigateToPose.Feedback) -> None:
-        self.nav_to_pose_feedback = msg
+    def stop(self):
+        """Publish an empty Twist message that will stop the base's movement."""
+        self.pub_base_twist.publish(Twist())
 
     def get_nav_to_pose_feedback(self) -> NavigateToPose.Feedback:
+        """
+        Get the most recently recieved nav to pose feedback message.
+
+        :return: The most recently recieved NavigateToPose.Feedback message.
+        """
         return self.nav_to_pose_feedback
 
     def is_nav_complete(self):
+        """
+        Check if the navigate is running.
+
+        :return: `True` if the navigation is running; `False` otherwise
+        """
         if not self.future_nav:
             return True
         self.core.robot_spin_once_until_future_complete(future=self.future_nav, timeout_sec=0.1)
@@ -227,23 +269,12 @@ class InterbotixMobileBaseInterface(ABC):
             return False
 
     def get_base_states(self) -> JointState:
+        """
+        Get the most recently recieved base JointState message.
+
+        :return: the most recently recieved base JointState message
+        """
         return self.base_states
-
-    def _base_states_cb(self, msg: JointState) -> None:
-        """
-        Update the base joint states.
-
-        :param msg: ROS JointState message
-        """
-        self.base_states = msg
-
-    def _base_odom_cb(self, msg: Odometry) -> None:
-        """
-        Update the odometry of the robot.
-
-        :param msg: ROS Odometry message
-        """
-        self.odom = msg
 
     def get_odom_xytheta(self) -> List[float]:
         """
@@ -261,6 +292,45 @@ class InterbotixMobileBaseInterface(ABC):
                 self.odom.pose.pose.orientation.w
             ))[2]
         ]
+
+    def _base_states_cb(self, msg: JointState) -> None:
+        """
+        Update the base joint states.
+
+        :param msg: ROS JointState message
+        """
+        self.base_states = msg
+
+    def _base_odom_cb(self, msg: Odometry) -> None:
+        """
+        Update the odometry of the robot.
+
+        :param msg: ROS Odometry message
+        """
+        self.odom = msg
+
+    def _nav_to_pose_feedback_cb(self, msg: NavigateToPose.Feedback) -> None:
+        """
+        Update the nav to pose action feedback.
+
+        :param msg: NavigateToPose.Feedback action feedback
+        """
+        self.nav_to_pose_feedback = msg
+
+    def _stamp_pose(self, pose: Pose, frame_id: str = 'map') -> PoseStamped:
+        """
+        Stamp a pose message with the frame_id and the current time.
+
+        :param pose: the Pose message to stamp.
+        :param frame_id: (optional) the frame to stamp the Pose message with. defaults to `'map'`
+        """
+        return PoseStamped(
+            pose=pose,
+            header=Header(
+                frame_id=frame_id,
+                stamp=self.core.get_clock().now().to_msg(),
+            )
+        )
 
     @abstractmethod
     def reset_odom(self, *args, **kwargs) -> None:

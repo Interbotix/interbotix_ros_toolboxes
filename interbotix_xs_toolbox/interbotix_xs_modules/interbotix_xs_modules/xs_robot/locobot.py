@@ -71,7 +71,7 @@ class InterbotixLocobotXS:
         gripper_name: str = 'gripper',
         turret_group_name: str = 'camera',
         robot_name: str = '',
-        dxl_joint_states: str = 'dynamixel/joint_states',
+        topic_dxl_joint_states: str = 'dynamixel/joint_states',
         topic_base_joint_states: str = 'mobile_base/joint_states',
         topic_cmd_vel: str = 'cmd_vel',
         use_nav: bool = False,
@@ -101,7 +101,7 @@ class InterbotixLocobotXS:
         :param robot_name: (optional) defaults to the value given to 'robot_model' if unspecified;
             this can be customized if controlling two or more locobots from one computer (like
             'locobot1' and 'locobot2')
-        :param dxl_joint_states: (optional) name of the joint states topic that contains just the
+        :param topic_dxl_joint_states: (optional) name of the joint states topic that contains just the
             states of the dynamixel servos
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the base. defaults to `'mobile_base/joint_states'`
@@ -121,7 +121,7 @@ class InterbotixLocobotXS:
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
             robot_name=robot_name,
-            topic_joint_states=dxl_joint_states,
+            topic_joint_states=topic_dxl_joint_states,
             logging_level=logging_level,
             node_name=node_name,
             args=args
@@ -148,14 +148,19 @@ class InterbotixLocobotXS:
                     use_nav=use_nav,
                 )
         if use_perception:
-            self.pcl = InterbotixPointCloudInterface(filter_ns=f'{robot_name}/pc_filter')
+            self.pcl = InterbotixPointCloudInterface(
+                filter_ns=f'{robot_name}/pc_filter'
+            )
         if arm_model is not None:
             self.arm = InterbotixArmXSInterface(
                 core=self.core,
                 robot_model=arm_model,
                 group_name=arm_group_name
             )
-            self.gripper = InterbotixGripperXSInterface(core=self.core, gripper_name=gripper_name)
+            self.gripper = InterbotixGripperXSInterface(
+                core=self.core,
+                gripper_name=gripper_name
+            )
             if use_armtag:
                 self.armtag = InterbotixArmTagInterface(
                     armtag_ns=f'{robot_name}/armtag',
@@ -175,8 +180,7 @@ class InterbotixLocobotXS:
         """Thread target."""
         self.ex = MultiThreadedExecutor()
         self.ex.add_node(self.core)
-        while rclpy.ok():
-            self.ex.spin()
+        self.ex.spin()
 
     def shutdown(self) -> None:
         """Destroy the node and shut down all threads and processes."""

@@ -75,7 +75,7 @@ class InterbotixManipulatorXS:
         gripper_pressure: float = 0.5,
         gripper_pressure_lower_limit: int = 150,
         gripper_pressure_upper_limit: int = 350,
-        joint_state_topic: str = 'joint_states',
+        topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
         start_on_init: bool = True,
@@ -107,7 +107,8 @@ class InterbotixManipulatorXS:
         :param gripper_pressure_upper_limit: (optional) largest 'effort' that should be applied to
             the gripper if `gripper_pressure` is set to 1; it should be low enough that the motor
             doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
-        :param joint_state_topic: (optional) the specifc JointState topic output by the xs_sdk node
+        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk
+            node
         :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
@@ -120,7 +121,7 @@ class InterbotixManipulatorXS:
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
             robot_name=robot_name,
-            joint_state_topic=joint_state_topic,
+            topic_joint_states=topic_joint_states,
             logging_level=logging_level,
             node_name=node_name,
             args=args
@@ -153,8 +154,7 @@ class InterbotixManipulatorXS:
         """Thread target."""
         self.ex = MultiThreadedExecutor()
         self.ex.add_node(self.core)
-        while rclpy.ok():
-            self.ex.spin()
+        self.ex.spin()
 
     def shutdown(self) -> None:
         """Destroy the node and shut down all threads and processes."""

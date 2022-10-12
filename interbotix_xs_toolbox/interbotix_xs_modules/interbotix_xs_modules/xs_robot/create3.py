@@ -105,4 +105,9 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
         )
 
     def play_sound(self, sound: AudioNoteVector) -> None:
+        """
+        Publish a sound or sounds using the base.
+
+        :param sound: AudioNoteVector message to play
+        """
         self.pub_base_sound.publish(sound)
