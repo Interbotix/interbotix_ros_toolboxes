@@ -40,9 +40,7 @@ from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 from interbotix_xs_modules.xs_robot.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
-from interbotix_xs_modules.xs_robot.create3 import InterbotixCreate3Interface
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
-from interbotix_xs_modules.xs_robot.kobuki import InterbotixKobukiInterface
 from interbotix_xs_modules.xs_robot.turret import InterbotixTurretXSInterface
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
@@ -132,6 +130,7 @@ class InterbotixLocobotXS:
         )
         if use_base:
             if base_type == BaseType.KOBUKI:
+                from interbotix_xs_modules.xs_robot.kobuki import InterbotixKobukiInterface
                 self.base = InterbotixKobukiInterface(
                     core=self.core,
                     robot_name=robot_name,
@@ -140,6 +139,7 @@ class InterbotixLocobotXS:
                     use_nav=use_nav,
                 )
             elif base_type == BaseType.CREATE3:
+                from interbotix_xs_modules.xs_robot.create3 import InterbotixCreate3Interface
                 self.base = InterbotixCreate3Interface(
                     core=self.core,
                     robot_name=robot_name,
