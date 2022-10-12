@@ -96,4 +96,9 @@ class InterbotixKobukiInterface(InterbotixMobileBaseInterface):
         self.play_sound(Sound(value=Sound.CLEANINGEND))
 
     def play_sound(self, sound: Sound) -> None:
+        """
+        Publish a sound or sounds using the base.
+
+        :param sound: Sound message to play
+        """
         self.pub_base_sound.publish(sound)
