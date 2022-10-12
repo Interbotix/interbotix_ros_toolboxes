@@ -29,8 +29,8 @@
 import time
 from typing import List, Sequence, Tuple, Union
 
-from apriltag_msgs.msg import AprilTagDetection, AprilTagDetectionArray
-from apriltag_msgs.srv import AnalyzeSingleImage
+from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
+from apriltag_ros.srv import AnalyzeSingleImage
 from geometry_msgs.msg import Pose, TransformStamped
 from interbotix_perception_msgs.srv import SnapPicture
 import rclpy
