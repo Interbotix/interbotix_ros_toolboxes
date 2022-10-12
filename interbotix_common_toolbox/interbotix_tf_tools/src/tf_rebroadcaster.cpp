@@ -76,15 +76,25 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
   {
     // Get all parent and child frames, insert into map
     std::string frame_parent = frame_itr->first.as<std::string>();
-    std::string frame_child = frame_itr->second.as<std::string>();
-    frame_map.insert({frame_parent, frame_child});
+    std::string frame_child = frame_itr->second["child_frame_id"].as<std::string>();
+    std::string prefix = frame_itr->second["prefix"].as<std::string>();
+    frames_.push_back(Frame{frame_parent, frame_child, prefix});
 
-    // Print out which frames will be rebroadcasted
-    RCLCPP_INFO(
-      this->get_logger(),
-      "Will broadcast TF from frame '%s' to frame '%s'.",
-      frame_parent.c_str(),
-      frame_child.c_str());
+    if (prefix == "") {
+      RCLCPP_INFO(
+        this->get_logger(),
+        "Will broadcast TF from frame '%s' to frame '%s'.",
+        frame_child.c_str(),
+        prefix.c_str());
+    } else {
+      // Print out which frames will be rebroadcasted
+      RCLCPP_INFO(
+        this->get_logger(),
+        "Will broadcast TF from frame '%s' to frame '%s', prepending prefix '%s'.",
+        frame_parent.c_str(),
+        frame_child.c_str(),
+        prefix.c_str());
+    }
   }
 
   // Create pubs and subs
@@ -98,15 +108,24 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
 
 void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
 {
+  // TODO(lsinterbotix): optimize
   // Loop over each parent/child frame
-  for (const auto & [parent_frame, child_frame] : frame_map) {
+  for (const auto & frame : frames_) {
     // Loop over every transform in message
-    for (const auto & tf : msg.transforms) {
+    for (auto & tf : msg.transforms) {
       // Check if parent and child match
-      if (parent_frame == tf.header.frame_id && child_frame == tf.child_frame_id) {
-        // If they do match, rebroadcast to new topic
+      if (
+        frame.parent_frame_id == tf.header.frame_id &&
+        frame.child_frame_id == tf.child_frame_id)
+      {
+        // If they do match, rebroadcast to new topic, prepending the prefix if necessary
+        auto tf_ = tf;
         tf2_msgs::msg::TFMessage rebroadcast_tf;
-        rebroadcast_tf.transforms.push_back(tf);
+        if (frame.prefix != "") {
+          tf_.child_frame_id = frame.prefix + tf.child_frame_id;
+          tf_.header.frame_id = frame.prefix + tf.header.frame_id;
+        }
+        rebroadcast_tf.transforms.push_back(tf_);
         pub_tf_->publish(rebroadcast_tf);
       }
     }

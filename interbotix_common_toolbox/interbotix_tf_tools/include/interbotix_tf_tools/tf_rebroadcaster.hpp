@@ -48,6 +48,13 @@
 namespace interbotix_tf_tools
 {
 
+struct Frame
+{
+  std::string parent_frame_id;
+  std::string child_frame_id;
+  std::string prefix;
+};
+
 class TFRebroadcaster : public rclcpp::Node
 {
 public:
@@ -75,8 +82,8 @@ private:
   // YAML node containing configuration info
   YAML::Node config_;
 
-  // Mappings between the parent frames and child frames
-  std::unordered_map<std::string, std::string> frame_map;
+  // Vector containing all frames to be re-broadcasted from the configuraiton
+  std::vector<Frame> frames_;
 };
 
 }  // namespace interbotix_tf_tools
