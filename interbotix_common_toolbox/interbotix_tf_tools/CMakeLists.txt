@@ -23,7 +23,11 @@ find_package(yaml-cpp REQUIRED)
 
 include_directories(include)
 
-add_library(tf_rebroadcaster src/tf_rebroadcaster.cpp)
+add_library(tf_rebroadcaster SHARED
+  src/tf_rebroadcaster.cpp
+)
+target_compile_definitions(tf_rebroadcaster
+  PRIVATE "COMPOSITION_BUILDING_DLL")
 ament_target_dependencies(
   tf_rebroadcaster
   geometry_msgs
@@ -33,12 +37,14 @@ ament_target_dependencies(
   tf2_ros
 )
 target_link_libraries(tf_rebroadcaster yaml-cpp)
+rclcpp_components_register_nodes(tf_rebroadcaster "interbotix_tf_tools::TFRebroadcaster")
 
 install(
   TARGETS
     tf_rebroadcaster
-  DESTINATION
-    lib/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(

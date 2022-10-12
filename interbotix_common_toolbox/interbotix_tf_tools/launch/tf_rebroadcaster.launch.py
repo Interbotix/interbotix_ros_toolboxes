@@ -35,7 +35,8 @@ from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
 )
-from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -44,20 +45,29 @@ def launch_setup(context):
     topic_from_launch_arg = LaunchConfiguration('topic_from')
     topic_to_launch_arg = LaunchConfiguration('topic_to')
 
-    tf_rebroadcaster_node = Node(
-        package='interbotix_tf_tree',
-        executable='tf_rebroadcaster',
-        name='tf_rebroadcaster',
-        parameters=[
-            {
-                'filepath_config': config_launch_arg,
-                'topic_from': topic_from_launch_arg,
-                'topic_to': topic_to_launch_arg,
-            }
-        ],
+    tf_rebroadcaster_container = ComposableNodeContainer(
+        name='tf_rebroadcaster_container',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='interbotix_tf_tools',
+                plugin='interbotix_tf_tools::TFRebroadcaster',
+                name='tf_rebroadcaster',
+                parameters=[
+                    {
+                        'filepath_config': config_launch_arg,
+                        'topic_from': topic_from_launch_arg,
+                        'topic_to': topic_to_launch_arg,
+                    },
+                ],
+            )
+        ]
     )
+
     return [
-        tf_rebroadcaster_node,
+        tf_rebroadcaster_container,
     ]
 
 
