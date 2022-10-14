@@ -84,8 +84,8 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
       RCLCPP_INFO(
         this->get_logger(),
         "Will broadcast TF from frame '%s' to frame '%s'.",
-        frame_child.c_str(),
-        prefix.c_str());
+        frame_parent.c_str(),
+        frame_child.c_str());
     } else {
       // Print out which frames will be rebroadcasted
       RCLCPP_INFO(

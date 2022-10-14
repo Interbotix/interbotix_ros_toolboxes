@@ -16,9 +16,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(tf2_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 include_directories(include)
@@ -30,11 +29,10 @@ target_compile_definitions(tf_rebroadcaster
   PRIVATE "COMPOSITION_BUILDING_DLL")
 ament_target_dependencies(
   tf_rebroadcaster
-  geometry_msgs
-  rclcpp
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
+    geometry_msgs
+    rclcpp
+    tf2_msgs
+    rclcpp_components
 )
 target_link_libraries(tf_rebroadcaster yaml-cpp)
 rclcpp_components_register_nodes(tf_rebroadcaster "interbotix_tf_tools::TFRebroadcaster")
