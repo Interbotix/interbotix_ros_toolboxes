@@ -99,8 +99,8 @@ class InterbotixLocobotXS:
         :param robot_name: (optional) defaults to the value given to 'robot_model' if unspecified;
             this can be customized if controlling two or more locobots from one computer (like
             'locobot1' and 'locobot2')
-        :param topic_dxl_joint_states: (optional) name of the joint states topic that contains just the
-            states of the dynamixel servos
+        :param topic_dxl_joint_states: (optional) name of the joint states topic that contains just
+            the states of the dynamixel servos
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the base. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should
