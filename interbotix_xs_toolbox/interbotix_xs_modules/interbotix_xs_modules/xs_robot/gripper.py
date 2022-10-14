@@ -77,7 +77,8 @@ class InterbotixGripperXS:
         :param gripper_pressure_upper_limit: (optional) largest 'effort' that should be applied to
             the gripper if gripper_pressure is set to 1; it should be low enough that the motor
             doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
-        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk node
+        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk
+            node
         :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to

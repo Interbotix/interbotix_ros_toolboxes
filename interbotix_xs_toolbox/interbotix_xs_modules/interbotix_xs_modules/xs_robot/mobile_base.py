@@ -159,6 +159,7 @@ class InterbotixMobileBaseInterface(ABC):
     ) -> bool:
         """
         Move the base to a given pose in a map (Nav Stack must be enabled!).
+
         :param goal_pose: desired Pose w.r.t. the map frame that the robot should achieve
         :param behavior_tree: string containing the behavior tree that the NavigateToPose goal
             should specify. defaults to an empty string `''`
@@ -217,6 +218,7 @@ class InterbotixMobileBaseInterface(ABC):
     ) -> bool:
         """
         Move the base to a given pose in a map (Nav Stack must be enabled!).
+
         :param x: desired x [m] w.r.t. the map frame that the robot should achieve
         :param y: desired y [y] w.r.t. the map frame that the robot should achieve
         :param yaw: desired yaw [rad] w.r.t. the map frame that the robot should achieve
