@@ -187,7 +187,7 @@ def construct_interbotix_xslocobot_semantic_robot_description_command(
         config_path,
         f'/srdf/{robot_model}.srdf.xacro', ' ',
         'robot_name:=', LaunchConfiguration('robot_name'), ' ',
-        'use_lidar:=', LaunchConfiguration('use_lidar'), ' ',
+        'show_lidar:=', LaunchConfiguration('show_lidar'), ' ',
         'base_type:=', LaunchConfiguration('base_type'), ' ',
         'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
     ])
