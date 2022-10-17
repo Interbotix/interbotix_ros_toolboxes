@@ -97,6 +97,7 @@ class DeclareInterbotixXSLoCoBotRobotDescriptionLaunchArgument(DeclareLaunchArgu
                 'locobot.urdf.xacro'
             ]), ' ',
             'arm_model:=', LaunchConfiguration('arm_model'), ' ',
+            'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'base_model:=', LaunchConfiguration('base_type'), ' ',
             'robot_model:=', LaunchConfiguration('robot_model'), ' ',
             'robot_name:=', LaunchConfiguration('robot_name'), ' ',
@@ -176,8 +177,8 @@ def construct_interbotix_xslocobot_semantic_robot_description_command(
     :return: A launch.substitutions.Command containing info to build the srdf
 
     :details: The LaunchConfigurations used in this method must already have been declared. This
-        can be done by using the declare_interbotix_xsarm_robot_description_launch_arguments method
-        to declare the robot_description launch args.
+        can be done by using the declare_interbotix_xslocobot_robot_description_launch_arguments
+        method to declare the robot_description launch args.
     """
     return Command([
         PathJoinSubstitution([
@@ -186,6 +187,7 @@ def construct_interbotix_xslocobot_semantic_robot_description_command(
         ' ',
         config_path,
         f'/srdf/{robot_model}.srdf.xacro', ' ',
+        'robot_name:=', LaunchConfiguration('robot_name'), ' ',
         'show_lidar:=', LaunchConfiguration('show_lidar'), ' ',
         'base_type:=', LaunchConfiguration('base_type'), ' ',
         'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
