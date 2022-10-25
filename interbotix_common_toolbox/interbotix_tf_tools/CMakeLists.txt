@@ -46,6 +46,13 @@ install(
 )
 
 install(
+  PROGRAMS
+    scripts/static_trans_pub.py
+  DESTINATION
+    lib/${PROJECT_NAME}
+)
+
+install(
   DIRECTORY
     config
     launch

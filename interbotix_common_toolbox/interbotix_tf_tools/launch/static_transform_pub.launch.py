@@ -67,7 +67,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'transform_filepath',
             default_value=PathJoinSubstitution([
-                FindPackageShare('interbotix_perception_modules'),
+                FindPackageShare('interbotix_tf_tools'),
                 'config',
                 LaunchConfiguration('transform_filename')
             ]),
@@ -77,8 +77,8 @@ def generate_launch_description():
 
     static_trans_pub_node = Node(
         name='static_trans_pub',
-        package='interbotix_perception_modules',
-        executable='static_trans_pub',
+        package='interbotix_tf_tools',
+        executable='static_trans_pub.py',
         parameters=[{
             'load_transforms': LaunchConfiguration('load_transforms'),
             'save_transforms': LaunchConfiguration('save_transforms'),
