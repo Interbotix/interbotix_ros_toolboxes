@@ -13,9 +13,10 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>interbotix_common_modules</depend>
+  <depend>interbotix_perception_modules</depend>
+  <exec_depend>realsense2_camera</exec_depend>
 
   <test_depend>rosunit</test_depend>
-  <test_depend>interbotix_perception_modules</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
 
