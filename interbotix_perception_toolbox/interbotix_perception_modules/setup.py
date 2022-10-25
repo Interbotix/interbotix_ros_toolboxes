@@ -36,7 +36,6 @@ setup(
             'armtag_tuner_gui = interbotix_perception_modules.armtag_tuner_gui:main',
             'picture_snapper = interbotix_perception_modules.picture_snapper:main',
             'pointcloud_tuner_gui = interbotix_perception_modules.pointcloud_tuner_gui:main',
-            'static_trans_pub = interbotix_perception_modules.static_trans_pub:main',
         ],
     },
 )

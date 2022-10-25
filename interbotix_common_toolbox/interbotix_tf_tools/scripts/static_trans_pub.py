@@ -64,7 +64,7 @@ class StaticTransformManager(Node):
         self.declare_parameter(
             'transform_filepath',
             os.path.join(
-                get_package_share_directory('interbotix_perception_modules'),
+                get_package_share_directory('interbotix_tf_tree'),
                 'config',
                 'static_transforms.yaml'))
 
@@ -87,7 +87,7 @@ class StaticTransformManager(Node):
                     self.get_logger().info(f"Creating directory: '{filedir}'.")
             except (OSError, EnvironmentError) as e:  # if we fail (permissions, etc.)
                 self.get_logger().warning(
-                    f'Failed to create directory. Transform file will not be saved: {e}.'
+                    f"Failed to create directory. Transform file will not be saved: '{e}'."
                 )
 
             # load if we need to
@@ -100,7 +100,7 @@ class StaticTransformManager(Node):
 
         self.create_subscription(TransformStamped, 'static_transforms', self.transform_cb, 10)
 
-        print('Initialized Static Transform Publisher!')
+        self.get_logger().info('Initialized Static Transform Publisher!')
 
     def transform_cb(self, msg: TransformStamped):
         """
@@ -125,30 +125,35 @@ class StaticTransformManager(Node):
 
     def load_transforms(self):
         """Load and publish the transforms from config file."""
-        try:
-            with open(self.filepath, 'r') as yamlfile:
-                trans_list = yaml.safe_load(yamlfile)
-            self.get_logger().info('Loaded static transforms.')
+        if os.path.isfile(self.filepath):
+            try:
+                with open(self.filepath, 'r') as yamlfile:
+                    trans_list = yaml.safe_load(yamlfile)
+                self.get_logger().info('Loaded static transforms.')
 
-            self.transform_list = []
-            for trans_dict in trans_list:
-                trans = TransformStamped()
-                trans.header.frame_id = trans_dict['frame_id']
-                trans.child_frame_id = trans_dict['child_frame_id']
-                trans.transform.translation.x = trans_dict['x']
-                trans.transform.translation.y = trans_dict['y']
-                trans.transform.translation.z = trans_dict['z']
-                trans.transform.rotation.x = trans_dict['qx']
-                trans.transform.rotation.y = trans_dict['qy']
-                trans.transform.rotation.z = trans_dict['qz']
-                trans.transform.rotation.w = trans_dict['qw']
-                trans.header.stamp = self.get_clock().now().to_msg()
-                self.transform_list.append(trans)
-            self.br.sendTransform(self.transform_list)
+                self.transform_list = []
+                for trans_dict in trans_list:
+                    trans = TransformStamped()
+                    trans.header.frame_id = trans_dict['frame_id']
+                    trans.child_frame_id = trans_dict['child_frame_id']
+                    trans.transform.translation.x = trans_dict['x']
+                    trans.transform.translation.y = trans_dict['y']
+                    trans.transform.translation.z = trans_dict['z']
+                    trans.transform.rotation.x = trans_dict['qx']
+                    trans.transform.rotation.y = trans_dict['qy']
+                    trans.transform.rotation.z = trans_dict['qz']
+                    trans.transform.rotation.w = trans_dict['qw']
+                    trans.header.stamp = self.get_clock().now().to_msg()
+                    self.transform_list.append(trans)
+                self.br.sendTransform(self.transform_list)
 
-        except IOError:
-            self.get_logger().warning(
-                f"File at '{self.filepath}' does not exist yet. No static transforms loaded."
+            except (IOError, OSError):
+                self.get_logger().warn(
+                    f"Error when opening file '{self.filepath}'. No static transforms loaded."
+                )
+        else:
+            self.get_logger().info(
+                'Static transforms file does not exist. No static transforms loaded.'
             )
 
     def save_transforms(self):
@@ -204,6 +209,8 @@ def main(args=None):
         static_transform_manager = StaticTransformManager()
         rclpy.spin(static_transform_manager)
     except KeyboardInterrupt:
+        if static_transform_manager.save_transforms_param:
+            static_transform_manager.save_transforms()
         rclpy.shutdown()
 
 

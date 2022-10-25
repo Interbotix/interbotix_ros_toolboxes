@@ -10,10 +10,15 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>ament_index_python</depend>
   <depend>rclcpp_components</depend>
   <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  <depend>std_srvs</depend>
   <depend>tf2_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>python3-yaml</depend>
   <depend>yaml-cpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
