@@ -64,7 +64,7 @@ class StaticTransformManager(Node):
         self.declare_parameter(
             'transform_filepath',
             os.path.join(
-                get_package_share_directory('interbotix_tf_tree'),
+                get_package_share_directory('interbotix_tf_tools'),
                 'config',
                 'static_transforms.yaml'))
 
