@@ -27,8 +27,6 @@ Below is a list and short description of each helper node. Over time, this list 
 
 - **picture_snapper** - small node that presents a 'snap_picture' ROS Server; it saves the latest picture obtained from a camera to the specified file location; it's important for this node to run on the same computer that the **apriltag_ros_single_image_server_node** node is running on since the latter node needs to be able to access the image file.
 
-- **static_trans_pub** - this is a small custom node that manages static transforms; any module that would like to publish a static transform publishes it to this node; it then appends it to a list if its a new transform or modifies a current transform and sends it out to ROS; it also loads/saves the transforms to a YAML file at node startup/shutdown
-
 - **pointcloud_tuner_gui** - presents a PyQt GUI to the user with display boxes and slider bars to allow a user to tune filter parameters used in the perception pipeline; it also loads/saves these settings to a YAML file
 
 - **perception_pipeline** - implements the Perception Pipeline using the [PointCloud Library](http://wiki.ros.org/perception_pcl)
@@ -45,7 +43,7 @@ There are two GUIs in this package. The first GUI - the *Armtag Tuner GUI* can b
 </p>
 
 - **Num Samples** - this adjusts from a value of 1 to 10 in integer increments; it tells the backend how many samples it should take of the AprilTag before averaging them together to get a more accurate pose
-- **Snap Pose** - by pressing this button, the AprilTag algorithm is run **Num Samples** times; the description below the button tells you what the transform represents; the resulting average of these transform is then sent over to the **static_trans_pub** node to be eventually included in the `/tf_static` tree
+- **Snap Pose** - by pressing this button, the AprilTag algorithm is run **Num Samples** times; the description below the button tells you what the transform represents; the resulting average of these transform is then sent over to the **static_trans_pub** node from the interbotix_tf_tools package to be eventually included in the `/tf_static` tree
 - **Displays** - the six non-editable fields below the transform description let the user know what the actual transform is
 
 The next GUI shows the filters implemented in the Perception Pipeline in the order that they are used. The main objective of the pipeline is to input a raw pointcloud and output a processed pointcloud which only shows the points that represent objects (i.e. clusters).
@@ -105,12 +103,6 @@ Besides for the arguments listed below, the arguments above are in this launch f
 | use_pointcloud_tuner_gui | whether to show a GUI that a user can use to tune filter parameters | false |
 | enable_pipeline | whether to enable the perception pipeline filters to run continuously; to save computer processing power, this should be set to False unless you are actively trying to tune the filter parameters; if False, the pipeline will only run if the `get_cluster_positions` ROS service is called | $(arg use_pointcloud_tuner_gui) |
 | cloud_topic | the absolute ROS topic name to subscribe to raw pointcloud data | /camera/depth/color/points |
-
-#### static_transform_pub.launch
-| Argument | Description | Default Value |
-| -------- | ----------- | :-----------: |
-| load_transforms | whether or not the **static_trans_pub** node should publish any poses stored in the static_transforms.yaml file at startup; this should only be set to false if a tf chain already exists connecting the camera and arm base_link frame (usually defined in a URDF), and you'd rather use that tf chain as opposed to the one specified in the static_transforms.yaml file | true |
-| transform_filepath | filepath to the static_transforms.yaml file used by the **static_trans_pub** node; if the file does not exist yet, this is where you'd like the file to be generated | "" |
 
 ## Troubleshooting
 
