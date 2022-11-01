@@ -44,7 +44,7 @@ from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 ### @param turret_group_name - joint group name that contains the 'turret' joints as defined in the
 ###        'motor_config' yaml file; typically, this is 'camera'
 ### @param robot_name - defaults to the value given to 'robot_model' if unspecified; this can be
-###        customized if controlling two or more locobots from one computer (like 'locobot1' and
+###        customized if controlling two or more LoCoBots from one computer (like 'locobot1' and
 ###        'locobot2')
 ### @param init_node - set to `True` if the InterbotixRobotXSCore class should initialize the ROS
 ###        node - this is the most Pythonic approach; to incorporate a robot into an existing ROS
@@ -241,7 +241,7 @@ class InterbotixKobukiInterface(object):
             )
 
             # connect to Action Server
-            rospy.loginfo("Wating for auto_dock Action Server...")
+            rospy.loginfo("Waiting for auto_dock Action Server...")
             while not ad_client.wait_for_server(timeout=rospy.Duration(secs=5)):
                 if rospy.is_shutdown(): return False
             rospy.loginfo("Found auto_dock Action Server")
@@ -251,7 +251,7 @@ class InterbotixKobukiInterface(object):
             ad_client.send_goal(ad_goal)
             rospy.on_shutdown(ad_client.cancel_goal)
 
-            rospy.loginfo("Attemping to dock...")
+            rospy.loginfo("Attempting to dock...")
             # run action and wait 120 seconds for result
             ad_client.wait_for_result(rospy.Duration(secs=120))
             if ad_client.get_result():
@@ -304,7 +304,7 @@ class InterbotixKobukiInterface(object):
 ### @param turret_group_name - joint group name that contains the 'turret' joints as defined in the
 ###        'motor_config' yaml file; typically, this is 'camera'
 ### @param robot_name - defaults to the value given to 'robot_model' if unspecified; this can be
-###        customized if controlling two or more locobots from one computer (like 'locobot1' and
+###        customized if controlling two or more LoCoBots from one computer (like 'locobot1' and
 ###        'locobot2')
 ### @param init_node - set to `True` if the InterbotixRobotXSCore class should initialize the ROS
 ###        node - this is the most Pythonic approach; to incorporate a robot into an existing ROS
@@ -320,13 +320,14 @@ class InterbotixLocobotCreate3XS(object):
         gripper_name="gripper",
         turret_group_name="camera",
         robot_name="locobot",
+        create3_name="mobile_base",
         init_node=True,
         dxl_joint_states="dynamixel/joint_states",
     ):
         self.dxl = InterbotixRobotXSCore(robot_model, robot_name, init_node, dxl_joint_states)
         self.camera = InterbotixTurretXSInterface(self.dxl, turret_group_name)
         if rospy.has_param("/" + robot_name + "/use_base") and rospy.get_param("/" + robot_name + "/use_base") == True:
-            self.base = InterbotixCreate3Interface(robot_name)
+            self.base = InterbotixCreate3Interface(create3_name)
         if rospy.has_param("/" + robot_name + "/use_perception") and rospy.get_param("/" + robot_name + "/use_perception") == True:
             self.pcl = InterbotixPointCloudInterface(robot_name + "/pc_filter", False)
         if arm_model is not None:
@@ -336,19 +337,19 @@ class InterbotixLocobotCreate3XS(object):
                 self.armtag = InterbotixArmTagInterface(robot_name + "/armtag", robot_name + "/apriltag", False)
 
 
-### @brief Definition of the Interbotix Create3 Module
-### @param robot_name - namespace of the Create3 (a.k.a the name of the Interbotix LoCoBot)
+### @brief Definition of the Interbotix Create 3 Module
+### @param create3_name - namespace of the Create 3
 class InterbotixCreate3Interface(object):
-    def __init__(self, robot_name):
-        self.robot_name = robot_name
+    def __init__(self, create3_name):
+        self.create3_name = create3_name
         self.odom = None
         self.wheel_status = None
         # ROS Publisher to command twists to the base
-        self.pub_base_command = rospy.Publisher("/" + self.robot_name + "/cmd_vel", Twist, queue_size=1)
+        self.pub_base_command = rospy.Publisher("/" + self.create3_name + "/cmd_vel", Twist, queue_size=1)
         # ROS Publisher to command audios to the base
-        self.pub_base_sound = rospy.Publisher("/" + self.robot_name + "/cmd_audio", AudioNoteVector, queue_size=1)
+        self.pub_base_sound = rospy.Publisher("/" + self.create3_name + "/cmd_audio", AudioNoteVector, queue_size=1)
         # ROS Subscriber to process odometry of the base
-        self.sub_base_odom = rospy.Subscriber("/" + self.robot_name + "/odom", Odometry, self.base_odom_cb)
+        self.sub_base_odom = rospy.Subscriber("/" + self.create3_name + "/odom", Odometry, self.base_odom_cb)
         rospy.sleep(0.5)
         print("Initialized InterbotixCreate3Interface!\n")
 
