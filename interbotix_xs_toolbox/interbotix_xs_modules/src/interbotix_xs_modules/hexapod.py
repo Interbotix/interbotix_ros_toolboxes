@@ -96,7 +96,7 @@ class InterbotixHexapodXSInterface(object):
         tmr_transforms = rospy.Timer(rospy.Duration(0.04), self.publish_states)                             # ROS Timer to publish transforms to the /tf and /odom topics at a fixed rate
         print("Initialized InterbotixHexapodXSInterface!\n")
 
-    ### @brief Parses the URDF and populates the appropiate variables with link information
+    ### @brief Parses the URDF and populates the appropriate variables with link information
     def get_urdf_info(self):
         full_rd_name = '/' + self.core.robot_name + '/robot_description'
         while rospy.has_param(full_rd_name) != True: pass
@@ -128,7 +128,7 @@ class InterbotixHexapodXSInterface(object):
         self.bottom_height = abs(bottom_joint.origin.xyz[2])
         self.home_height = self.bottom_height + 0.05
 
-    ### @brief Intializes the static components of the ROS transforms
+    ### @brief Initializes the static components of the ROS transforms
     def initialize_transforms(self):
         self.pose.header.frame_id = self.core.robot_name + "/odom"
         self.pose.pose.orientation.w = 1.0
@@ -273,7 +273,7 @@ class InterbotixHexapodXSInterface(object):
         self.hexapod_command.cmd[self.info_index_map[leg + "_tibia"]] = theta[2]
         return True
 
-    ### @brief ROS Timer callback function that continously publishes transforms
+    ### @brief ROS Timer callback function that continuously publishes transforms
     ### @param event - unused ROS Timer event message
     ### @details - if a transform is not being updated, then wait until the time stamp is no longer in the future
     ###            before publishing it with the current ROS time (prevents jumps back in time)
@@ -641,7 +641,7 @@ class InterbotixHexapodXSInterface(object):
         return foot_points
 
     ### @brief Set one or all initial hexapod foot points (foot/feet location before beginning a gait cycle)
-    ### @param leg - one of the legs defined in 'self.leg_list' or 'all' if passing in a dictionary containg all desired foot points
+    ### @param leg - one of the legs defined in 'self.leg_list' or 'all' if passing in a dictionary containing all desired foot points
     ### @param foot_points - a list containing the [x, y, z] location of the 'foot_link' frame for the given leg relative to the 'base_footprint' frame OR
     ###                      a dictionary containing each leg's location of the 'foot_link' frame relative to the 'base_footprint' frame (keys are the leg names defined in 'self.leg_list')
     def set_foot_points(self, leg, foot_points):
@@ -651,7 +651,7 @@ class InterbotixHexapodXSInterface(object):
             self.foot_points[leg] = copy.deepcopy(foot_points)
 
     ### @brief Set one or all initial hexapod home foot points (foot/feet location before beginning a gait cycle)
-    ### @param leg - one of the legs defined in 'self.leg_list' or 'all' if passing in a dictionary containg all desired foot points
+    ### @param leg - one of the legs defined in 'self.leg_list' or 'all' if passing in a dictionary containing all desired foot points
     ### @param foot_points - a list containing the [x, y, z] location of the 'foot_link' frame for the given leg relative to the 'base_footprint' frame OR
     ###                      a dictionary containing each leg's location of the 'foot_link' frame relative to the 'base_footprint' frame (keys are the leg names defined in 'self.leg_list')
     def set_home_foot_points(self, leg, foot_points):

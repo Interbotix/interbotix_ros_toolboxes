@@ -40,7 +40,7 @@ class InterbotixRobotXSCore(object):
                 "The robot '%s' is not discoverable. "
                 "Did you enter the correct robot_name parameter? "
                 "Quitting..." % robot_model))
-            exit()
+            sys.exit(1)
 
         self.srv_set_op_modes = rospy.ServiceProxy("/" + self.robot_name + "/set_operating_modes", OperatingModes)
         self.srv_set_pids = rospy.ServiceProxy("/" + self.robot_name + "/set_motor_pid_gains", MotorGains)
@@ -62,7 +62,7 @@ class InterbotixRobotXSCore(object):
     ### @brief Set the operating mode for either a single motor or a group of motors
     ### @param cmd_type - can be "group" for a group of motors or "single" for a single motor
     ### @param name - group name if cmd_type is 'group' or the motor name if cmd_type is 'single'
-    ### @param mode - desired operatinge mode like "position" or "velocity". See the OperatingModes Service description for all choices
+    ### @param mode - desired operating mode like "position" or "velocity". See the OperatingModes Service description for all choices
     ### @param profile_type - can be "time" or "velocity". See the OperatingModes Service description for details
     ### @param profile_velocity - passthrough to the Profile_Velocity register. See the OperatingModes Service description for details
     ### @param profile_acceleration - passthrough to the Profile_Acceleration register. See the OperatingModes Service description for details
@@ -145,7 +145,7 @@ class InterbotixRobotXSCore(object):
     ###               trajectory is a list of velocities [rad/s]
     ### @param raw_traj - list of dictionaries where each dictionary is made up of a float / list of float pairs.
     ###                   the 'key' is the desired time [sec] from start that the 'value' (list of floats) should be executed.
-    ### @details - an example input trajectory for a pan/tilt mechansim could look like...
+    ### @details - an example input trajectory for a pan/tilt mechanism could look like...
     ###            [{0, [1,1]},
     ###             {1.5, [-1,0.75]},
     ###             {2.3, [0,0]}]
@@ -164,7 +164,7 @@ class InterbotixRobotXSCore(object):
         self.pub_traj.publish(msg)
 
     ### @brief Get the current joint states (position, velocity, effort) of all Dynamixel motors
-    ### @return joint_states - JointState ROS message. Refer to online documenation to see its structure
+    ### @return joint_states - JointState ROS message. Refer to online documentation to see its structure
     def robot_get_joint_states(self):
         joint_states = None
         with self.js_mutex:

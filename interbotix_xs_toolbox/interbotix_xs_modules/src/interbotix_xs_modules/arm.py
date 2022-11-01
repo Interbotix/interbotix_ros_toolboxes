@@ -79,10 +79,10 @@ class InterbotixArmXSInterface(object):
     ### @param moving_time - duration in seconds that the robot should move
     ### @param accel_time - duration in seconds that that robot should spend accelerating/decelerating (must be less than or equal to half the moving_time)
     def set_trajectory_time(self, moving_time=None, accel_time=None):
-        if (moving_time != None and moving_time != self.moving_time):
+        if (moving_time is not None and moving_time != self.moving_time):
             self.moving_time = moving_time
             self.core.srv_set_reg(cmd_type="group", name=self.group_name, reg="Profile_Velocity", value=int(moving_time * 1000))
-        if (accel_time != None and accel_time != self.accel_time):
+        if (accel_time is not None and accel_time != self.accel_time):
             self.accel_time = accel_time
             self.core.srv_set_reg(cmd_type="group", name=self.group_name, reg="Profile_Acceleration", value=int(accel_time * 1000))
 
@@ -96,20 +96,20 @@ class InterbotixArmXSInterface(object):
         for x in range(self.group_info.num_joints):
             if not (self.group_info.joint_lower_limits[x] <= theta_list[x] <= self.group_info.joint_upper_limits[x]):
                 rospy.logwarn(
-                    "[xs_modules] Would exceed position limits on joint %s." % x
+                    "Would exceed position limits on joint %s." % x
                 )
                 rospy.logwarn(
-                    "[xs_modules] Limits are [%f, %f], value was %f." % 
-                    (self.group_info.joint_lower_limits[x], 
+                    "Limits are [%f, %f], value was %f." %
+                    (self.group_info.joint_lower_limits[x],
                     self.group_info.joint_upper_limits[x], theta_list[x])
                 )
                 return False
             if (speed_list[x] > self.group_info.joint_velocity_limits[x]):
                 rospy.logwarn(
-                    "[xs_modules] Would exceed velocity limits on joint %s." % x
+                    "Would exceed velocity limits on joint %s." % x
                 )
                 rospy.logwarn(
-                    "[xs_modules] Limit is %f, value was %f." % 
+                    "Limit is %f, value was %f." %
                     (self.group_info.joint_velocity_limits[x], theta_list[x])
                 )
                 return False
@@ -255,7 +255,7 @@ class InterbotixArmXSInterface(object):
     ### @param wp_moving_time - duration in seconds that each waypoint in the trajectory should move
     ### @param wp_accel_time - duration in seconds that each waypoint in the trajectory should be accelerating/decelerating (must be equal to or less than half of wp_moving_time)
     ### @param wp_period - duration in seconds between each waypoint
-    ### @return <bool> - True if a trajectory was succesfully planned and executed; otherwise False
+    ### @return <bool> - True if a trajectory was successfully planned and executed; otherwise False
     ### @details - T_sy is a 4x4 transformation matrix representing the pose of a virtual frame w.r.t. /<robot_name>/base_link.
     ###            This virtual frame has the exact same x, y, z, roll, and pitch of /<robot_name>/base_link but contains the yaw
     ###            of the end-effector frame (/<robot_name>/ee_gripper_link).
@@ -312,6 +312,30 @@ class InterbotixArmXSInterface(object):
             self.set_trajectory_time(moving_time, accel_time)
 
         return success
+
+    ### @brief Command displacements to the end effector's position w.r.t. the Space frame
+    ### @param dx - linear displacement along the X-axis of the Space frame [m]
+    ### @param dy - linear displacement along the Y-axis of the Space frame [m]
+    ### @param dz - linear displacement along the Z-axis of the Space frame [m]
+    ### @param custom_guess - list of joint positions with which to seed the IK solver
+    ### @param execute - if True, this moves the physical robot after planning; otherwise, only planning is done
+    ### @param moving_time - duration in seconds that the robot should move
+    ### @param accel_time - duration in seconds that that robot should spend accelerating/decelerating (must be less than or equal to half the moving_time)
+    ### @param blocking - whether the function should wait to return control to the user until the robot finishes moving
+    ### @return theta_list - joint values needed to get the end-effector to the desired pose
+    ### @return <bool> - True if a valid solution was found; False otherwise
+    ### @details - Do not set 'yaw' if using an arm with fewer than 6dof
+    def set_relative_ee_position_wrt_to_base_frame(self, *, dx=0, dy=0, dz=0, custom_guess=None, execute=True, moving_time=None, accel_time=None, blocking=True):
+        return self.set_ee_pose_components(
+            x=self.T_sb[0, 3] + dx,
+            y=self.T_sb[1, 3] + dy,
+            z=self.T_sb[2, 3] + dz,
+            custom_guess=custom_guess,
+            execute=execute,
+            moving_time=moving_time,
+            accel_time=accel_time,
+            blocking=blocking,
+        )
 
     ### @brief Get the latest commanded joint positions
     ### @return - list of latest commanded joint positions [rad]

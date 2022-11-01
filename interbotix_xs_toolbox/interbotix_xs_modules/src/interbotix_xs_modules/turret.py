@@ -6,10 +6,10 @@ from interbotix_xs_modules.core import InterbotixRobotXSCore
 ### @param robot_model - Interbotix turret model (ex. 'wxxmt' or 'pxxls')
 ### @param robot_name - defaults to value given to 'robot_model'; this can be customized if controlling two of the same turrets from one computer (like 'turret1/wxxmt' and 'turret2/pxxls')
 ### @param group_name - name of the desired Turret's pan-tilt joint group
-### @param pan_profile_type - 'pan' joint settting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
+### @param pan_profile_type - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
 ### @param pan_profile_velocity - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 ### @param pan_profile_acceleration - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
-### @param tilt_profile_type - 'tilt' joint settting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
+### @param tilt_profile_type - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
 ### @param tilt_profile_velocity - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 ### @param tilt_profile_acceleration - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 ### @param init_node - set to True if the InterbotixRobotXSCore class should initialize the ROS node - this is the most Pythonic approach; to incorporate a robot into an existing ROS node though, set to False
@@ -21,10 +21,10 @@ class InterbotixTurretXS(object):
 ### @brief Definition of the Interbotix Turret Module
 ### @param core - reference to the InterbotixRobotXSCore class containing the internal ROS plumbing that drives the Python API
 ### @param group_name - name of the desired Turret's pan-tilt joint group
-### @param pan_profile_type - 'pan' joint settting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
+### @param pan_profile_type - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
 ### @param pan_profile_velocity - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 ### @param pan_profile_acceleration - 'pan' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
-### @param tilt_profile_type - 'tilt' joint settting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
+### @param tilt_profile_type - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - can be either 'time' or 'velocity'
 ### @param tilt_profile_velocity - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 ### @param tilt_profile_acceleration - 'tilt' joint setting; refer to the OperatingModes Service file for an explanation - note that when 'profile_type' is 'time', units are in seconds, not milliseconds
 class InterbotixTurretXSInterface(object):
