@@ -12,9 +12,7 @@ Links to other repositories that use this repo include:
 
 ### CI Status
 
-#### X-Series Core CI
-
-| ROS Distro | X-Series ROS Core Build |
+| ROS Distro | X-Series ROS Toolboxes Build |
 | :------- | :------- |
 | ROS 1 Melodic | [![build-xs-melodic](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-melodic.yaml/badge.svg)](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-melodic.yaml) |
 | ROS 1 Noetic | [![build-xs-noetic](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-noetic.yaml/badge.svg)](https://github.com/Interbotix/interbotix_ros_toolboxes/actions/workflows/xs-noetic.yaml) |
