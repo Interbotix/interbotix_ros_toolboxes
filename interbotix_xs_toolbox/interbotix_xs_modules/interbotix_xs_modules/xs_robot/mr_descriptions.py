@@ -49,7 +49,7 @@ class ModernRoboticsDescription(ABC):
     """
     Abstract base class for other MR Description classes.
 
-    Derived classes should overrite the Slist and M member variables.
+    Derived classes should override the Slist and M member variables.
     """
 
     Slist: np.ndarray = None

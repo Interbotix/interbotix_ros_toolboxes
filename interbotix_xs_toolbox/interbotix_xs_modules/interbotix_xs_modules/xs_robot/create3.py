@@ -61,7 +61,7 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
 
         :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
             plumbing that drives the Python API
-        :param robot_name: namespace of the Create3 node (a.k.a the name of the Interbotix LoCoBot)
+        :param robot_name: namespace of the Create 3 nodes
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the Create 3's two wheels. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should

@@ -71,7 +71,7 @@ class InterbotixTurretXS:
             controlling two of the same turrets from one computer (like 'turret1/wxxmt' and
             'turret2/pxxls')
         :param turret_name: (optional) name of the desired Turret's pan-tilt joint group
-        :param pan_profile_type: (optional) 'pan' joint settting; refer to the OperatingModes
+        :param pan_profile_type: (optional) 'pan' joint setting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param pan_profile_velocity: (optional) 'pan' joint setting; refer to the OperatingModes
             Service file for an explanation - note that when 'profile_type' is 'time', units are in
@@ -79,7 +79,7 @@ class InterbotixTurretXS:
         :param pan_profile_acceleration: (optional) 'pan' joint setting; refer to the
             OperatingModes Service file for an explanation - note that when 'profile_type' is
             'time', units are in seconds, not milliseconds
-        :param tilt_profile_type: (optional) 'tilt' joint settting; refer to the OperatingModes
+        :param tilt_profile_type: (optional) 'tilt' joint setting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param tilt_profile_velocity: (optional) 'tilt' joint setting; refer to the OperatingModes
             Service file for an explanation - note that when 'profile_type' is 'time', units are in
@@ -87,7 +87,7 @@ class InterbotixTurretXS:
         :param tilt_profile_acceleration: (optional) 'tilt' joint setting; refer to the
             OperatingModes Service file for an explanation - note that when 'profile_type' is
             'time', units are in seconds, not milliseconds
-        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
@@ -156,7 +156,7 @@ class InterbotixTurretXSInterface:
         :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
             plumbing that drives the Python API
         :param turret_name: (optional) name of the desired Turret's pan-tilt joint group
-        :param pan_profile_type: (optional) 'pan' joint settting; refer to the OperatingModes
+        :param pan_profile_type: (optional) 'pan' joint setting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param pan_profile_velocity: (optional) 'pan' joint setting; refer to the OperatingModes
             Service file for an explanation - note that when 'profile_type' is 'time', units are in
@@ -164,7 +164,7 @@ class InterbotixTurretXSInterface:
         :param pan_profile_acceleration: (optional) 'pan' joint setting; refer to the
             OperatingModes Service file for an explanation - note that when 'profile_type' is
             'time', units are in seconds, not milliseconds
-        :param tilt_profile_type: (optional) 'tilt' joint settting; refer to the OperatingModes
+        :param tilt_profile_type: (optional) 'tilt' joint setting; refer to the OperatingModes
             Service file for an explanation - can be either 'time' or 'velocity'
         :param tilt_profile_velocity: (optional) 'tilt' joint setting; refer to the OperatingModes
             Service file for an explanation - note that when 'profile_type' is 'time', units are in

@@ -107,9 +107,9 @@ class InterbotixManipulatorXS:
         :param gripper_pressure_upper_limit: (optional) largest 'effort' that should be applied to
             the gripper if `gripper_pressure` is set to 1; it should be low enough that the motor
             doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
-        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk
+        :param topic_joint_states: (optional) the specific JointState topic output by the xs_sdk
             node
-        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
@@ -621,7 +621,7 @@ class InterbotixArmXSInterface:
             should be accelerating/decelerating (must be equal to or less than half of
             `wp_moving_time`)
         :param wp_period: (optional) duration in seconds between each waypoint
-        :return: `True` if a trajectory was succesfully planned and executed; otherwise `False`
+        :return: `True` if a trajectory was successfully planned and executed; otherwise `False`
         :details: `T_sy` is a 4x4 transformation matrix representing the pose of a virtual frame
             w.r.t. /<robot_name>/base_link. This virtual frame has the exact same `x`, `y`, `z`,
             `roll`, and `pitch` of /<robot_name>/base_link but contains the `yaw` of the end
@@ -711,21 +711,6 @@ class InterbotixArmXSInterface:
 
         return success
 
-    def _wrap_theta_list(self, theta_list: List[np.ndarray]) -> List[np.ndarray]:
-        """
-        Wrap an array of joint commands to [-pi, pi) and between the joint limits.
-
-        :param theta_list: array of floats to wrap
-        :return: array of floats wrapped between [-pi, pi)
-        """
-        theta_list = (theta_list + np.pi) % REV - np.pi
-        for x in range(len(theta_list)):
-            if round(theta_list[x], 3) < round(self.group_info.joint_lower_limits[x], 3):
-                theta_list[x] += REV
-            elif round(theta_list[x], 3) > round(self.group_info.joint_upper_limits[x], 3):
-                theta_list[x] -= REV
-        return theta_list
-
     def get_joint_commands(self) -> List[float]:
         """
         Get the latest commanded joint positions.
@@ -765,8 +750,7 @@ class InterbotixArmXSInterface:
             self.core.joint_states.position[self.core.js_index_map[name]]
             for name in self.group_info.joint_names
         ]
-        T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, joint_states)
-        return T_sb
+        return mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, joint_states)
 
     def capture_joint_positions(self) -> None:
         """
@@ -789,3 +773,18 @@ class InterbotixArmXSInterface:
         self.T_sb = mr.FKinSpace(
             self.robot_des.M, self.robot_des.Slist, self.joint_commands
         )
+
+    def _wrap_theta_list(self, theta_list: List[np.ndarray]) -> List[np.ndarray]:
+        """
+        Wrap an array of joint commands to [-pi, pi) and between the joint limits.
+
+        :param theta_list: array of floats to wrap
+        :return: array of floats wrapped between [-pi, pi)
+        """
+        theta_list = (theta_list + np.pi) % REV - np.pi
+        for x in range(len(theta_list)):
+            if round(theta_list[x], 3) < round(self.group_info.joint_lower_limits[x], 3):
+                theta_list[x] += REV
+            elif round(theta_list[x], 3) > round(self.group_info.joint_upper_limits[x], 3):
+                theta_list[x] -= REV
+        return theta_list

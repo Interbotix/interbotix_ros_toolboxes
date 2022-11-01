@@ -32,7 +32,7 @@ from asyncio import Future
 import copy
 import sys
 from threading import Lock
-from typing import List
+from typing import Dict, List
 
 from interbotix_xs_msgs.msg import (
     JointGroupCommand,
@@ -75,9 +75,9 @@ class InterbotixRobotXSCore(Node):
         :param robot_name: (optional) defaults to value given to 'robot_model'; this can be
             customized if controlling two of the same arms from one computer (like 'arm1/wx200' and
             'arm2/wx200')
-        :param topic_joint_states: (optional) the specifc JointState topic output by the xs_sdk
+        :param topic_joint_states: (optional) the specific JointState topic output by the xs_sdk
             node
-        :logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN, ERROR,
+        :logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN, ERROR,
             or FATAL. defaults to INFO
         :node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
@@ -191,7 +191,7 @@ class InterbotixRobotXSCore(Node):
         :param cmd_type: can be "group" for a group of motors or "single" for a single motor
         :param name: group name if `cmd_type` is 'group' or the motor name if `cmd_type` is
             'single'
-        :param mode: desired operatinge mode like "position" or "velocity".
+        :param mode: desired operating mode like "position" or "velocity".
         :param profile_type: (optional) can be "time" or "velocity".
         :param profile_velocity: (optional) passthrough to the Profile_Velocity register.
         :param profile_acceleration: (optional) passthrough to the Profile_Acceleration register.
@@ -382,7 +382,7 @@ class InterbotixRobotXSCore(Node):
         cmd_type: str,
         name: str,
         traj_type: str,
-        raw_traj: dict
+        raw_traj: List[Dict[float, List[float]]]
     ) -> None:
         """
         Command a trajectory (position or velocity) to a single motor or a group of motors.
@@ -395,10 +395,10 @@ class InterbotixRobotXSCore(Node):
         :param raw_traj: list of dictionaries where each dictionary is made up of a float / list of
             float pairs. the 'key' is the desired time [sec] from start that the 'value' (list of
             floats) should be executed.
-        :details - an example input trajectory for a pan/tilt mechansim could look like:
-            [{0.0, [1,  1]   },
-             {1.5, [-1, 0.75]},
-             {2.3, [0,  0]   }]
+        :details: an example input trajectory for a pan/tilt mechanism could look like:
+            [{0.0, [1.0,  1.0]   },
+             {1.5, [-1.0, 0.75]  },
+             {2.3, [0.0,  0.0]   }]
         :details: refer to the JointTrajectoryCommand Message description for more info
         """
         traj = JointTrajectory()
@@ -409,16 +409,15 @@ class InterbotixRobotXSCore(Node):
                     traj_point.positions = value
                 elif traj_type == 'velocity':
                     traj_point.velocities = value
-                traj_point.time_from_start = Duration(seconds=key)
+                traj_point.time_from_start = Duration(seconds=key).to_msg()
                 traj.points.append(traj_point)
-        msg = JointTrajectoryCommand(cmd_type, name, traj)
-        self.pub_traj.publish(msg)
+        self.pub_traj.publish(JointTrajectoryCommand(cmd_type=cmd_type, name=name, traj=traj))
 
     def robot_get_joint_states(self) -> JointState:
         """
         Get the current joint states (position, velocity, effort) of all DYNAMIXEL motors.
 
-        :return: JointState ROS message. Refer to online documenation to see its structure
+        :return: JointState ROS message. Refer to online documentation to see its structure
         """
         joint_states = None
         with self.js_mutex:
