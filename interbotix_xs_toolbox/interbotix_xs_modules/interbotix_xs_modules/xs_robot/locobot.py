@@ -97,7 +97,7 @@ class InterbotixLocobotXS:
         :param turret_group_name: (optional) joint group name that contains the 'turret' joints as
             defined in the 'motor_config' yaml file; typically, this is 'camera'
         :param robot_name: (optional) defaults to the value given to 'robot_model' if unspecified;
-            this can be customized if controlling two or more locobots from one computer (like
+            this can be customized if controlling two or more LoCoBots from one computer (like
             'locobot1' and 'locobot2')
         :param topic_dxl_joint_states: (optional) name of the joint states topic that contains just
             the states of the dynamixel servos
@@ -107,7 +107,7 @@ class InterbotixLocobotXS:
             be published. defaults to `'cmd_vel'`
         :param use_nav: (optional) whether or not to enable navigation features. requires that nav2
             be launched. defaults to `False`
-        :param logging_level: (optional) rclpy logging severtity level. Can be DEBUG, INFO, WARN,
+        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'

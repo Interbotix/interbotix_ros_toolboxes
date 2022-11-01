@@ -247,9 +247,9 @@ class InterbotixMobileBaseInterface(ABC):
 
     def get_nav_to_pose_feedback(self) -> NavigateToPose.Feedback:
         """
-        Get the most recently recieved nav to pose feedback message.
+        Get the most recently received nav to pose feedback message.
 
-        :return: The most recently recieved NavigateToPose.Feedback message.
+        :return: The most recently received NavigateToPose.Feedback message.
         """
         return self.nav_to_pose_feedback
 
@@ -272,9 +272,9 @@ class InterbotixMobileBaseInterface(ABC):
 
     def get_base_states(self) -> JointState:
         """
-        Get the most recently recieved base JointState message.
+        Get the most recently received base JointState message.
 
-        :return: the most recently recieved base JointState message
+        :return: the most recently received base JointState message
         """
         return self.base_states
 

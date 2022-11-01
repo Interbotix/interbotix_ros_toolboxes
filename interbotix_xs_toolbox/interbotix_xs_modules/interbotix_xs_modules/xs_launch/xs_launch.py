@@ -205,7 +205,7 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
     hardware_type: Text = 'actual',
 ) -> List[DeclareLaunchArgument]:
     """
-    Return the `robot_description` DeclareLaunchArgument and its requried children.
+    Return the `robot_description` DeclareLaunchArgument and its required children.
 
     DeclareLaunchArgument objects:
         - `base_link_frame`
@@ -314,7 +314,7 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
     hardware_type: Text = 'actual',
 ) -> List[DeclareLaunchArgument]:
     """
-    Return the `robot_description` DeclareLaunchArgument and its requried children.
+    Return the `robot_description` DeclareLaunchArgument and its required children.
 
     DeclareLaunchArgument objects:
         - `base_type`
