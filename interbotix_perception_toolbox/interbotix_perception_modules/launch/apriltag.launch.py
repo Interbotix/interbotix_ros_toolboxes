@@ -54,11 +54,6 @@ def launch_setup(context):
         namespace=apriltag_ns_launch_arg.perform(context),
         parameters=[
             tags_config_launch_arg.perform(context),
-            {
-                'camera_color_topic': camera_color_topic_launch_arg,
-                'camera_info_topic': camera_info_topic_launch_arg,
-                'camera_frame': camera_frame_launch_arg,
-            }
         ],
         arguments=[
             apriltag_ns_launch_arg.perform(context)
@@ -71,6 +66,11 @@ def launch_setup(context):
         name='picture_snapper',
         namespace=apriltag_ns_launch_arg.perform(context),
         parameters=[
+            {
+                'camera_color_topic': camera_color_topic_launch_arg,
+                'camera_info_topic': camera_info_topic_launch_arg,
+                'camera_frame': camera_frame_launch_arg,
+            }
         ],
         arguments=[
             apriltag_ns_launch_arg.perform(context)
