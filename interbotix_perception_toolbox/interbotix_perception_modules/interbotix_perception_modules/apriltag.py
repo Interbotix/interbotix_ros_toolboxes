@@ -86,8 +86,16 @@ class InterbotixAprilTagInterface(Node):
             AnalyzeSingleImage,
             f'/{apriltag_ns}/single_image_tag_detection'
         )
-        self.srv_snap_picture.wait_for_service()
-        self.srv_analyze_image.wait_for_service()
+        while (not self.srv_snap_picture.wait_for_service(timeout_sec=1) and rclpy.ok()):
+            self.node_inf.get_logger().warn(
+                f"Service '/{apriltag_ns}/snap_picture' not yet ready.",
+                throttle_duration_sec=5,
+            )
+        while (not self.srv_analyze_image.wait_for_service(timeout_sec=1) and rclpy.ok()):
+            self.node_inf.get_logger().warn(
+                f"Service '/{apriltag_ns}/single_image_tag_detection' not yet ready.",
+                throttle_duration_sec=5,
+            )
         self.sub_camera_info = self.node_inf.create_subscription(
             CameraInfo,
             f'/{camera_info_topic}',
@@ -107,7 +115,14 @@ class InterbotixAprilTagInterface(Node):
 
         # wait to receive camera info (means that we are properly subbed)
         while (self.request.camera_info == CameraInfo() and rclpy.ok()):
-            rclpy.spin_once(self.node_inf)
+            self.get_logger().warn(
+                (
+                    f"No CameraInfo messages received yet on topic '{camera_info_topic}' or "
+                    'CameraInfo message is empty.'
+                ),
+                throttle_duration_sec=5,
+            )
+            rclpy.spin_once(self.node_inf, timeout_sec=1)
         self.node_inf.destroy_subscription(self.sub_camera_info)
 
         self.node_inf.get_logger().info('Initialized InterbotixAprilTagInterface!')
@@ -135,11 +150,11 @@ class InterbotixAprilTagInterface(Node):
         :return: Pose message of the proposed AR tag w.r.t. the camera color image frame
 
         :details: tf is published to the StaticTransformManager node (in this package) as a static
-            transform if no tags are detected, a genertic invalid pose is returned
+            transform if no tags are detected, a generic invalid pose is returned
         """
         detections: Sequence[AprilTagDetection] = self._snap().detections
 
-        # check if tags were detected, return genertic pose if not
+        # check if tags were detected, return generic pose if not
         if len(detections) == 0:
             pose = Pose()
             if self.v:
@@ -174,6 +189,8 @@ class InterbotixAprilTagInterface(Node):
             SnapPicture.Request(filename=self.request.full_path_where_to_get_image)
         )
         rclpy.spin_until_future_complete(self.node_inf, future=future_snap)
+        if not future_snap.result().success:
+            return AprilTagDetectionArray()
         future_analyze = self.srv_analyze_image.call_async(self.request)
         rclpy.spin_until_future_complete(self.node_inf, future=future_analyze)
         return future_analyze.result().tag_detections
@@ -183,7 +200,6 @@ class InterbotixAprilTagInterface(Node):
         Set list of valid tags.
 
         :param ids: list of valid ids
-        :type ids: list of ints
         """
         if ids is not None:
             self.valid_tags = set(ids)
@@ -193,7 +209,6 @@ class InterbotixAprilTagInterface(Node):
         Find the pose of valid tags that can be seen by the camera.
 
         :return: poses of the tags relative to camera, corresponding ids
-        :rtype: list of Poses, list of ints
         """
         if self.valid_tags is None:
             self.node_inf.get_logger().warning(

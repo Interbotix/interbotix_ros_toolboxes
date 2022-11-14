@@ -29,10 +29,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import sys
 import threading
 
 import cv2
-from cv_bridge import CvBridge
+from cv_bridge import CvBridge, CvBridgeError
 from interbotix_perception_msgs.srv import SnapPicture
 import rclpy
 from rclpy.node import Node
@@ -46,7 +47,7 @@ To start this application, open a terminal on the robot and type:
 
 To save a picture, open a new terminal in this directory and type:
 
-    ros2 service call /apriltag/snap_picture "filename: '[filename].jpg'"
+    ros2 service call /<apriltag_ns>/snap_picture "filename: '[filename].jpg'"
 """
 
 
@@ -99,15 +100,20 @@ class PictureSnapper(Node):
         try:  # check if directory exists, if not make one
             if not os.path.exists(self.image_save_dir):
                 os.makedirs(self.image_save_dir)
-            self.get_logger().info(f"Saving images to: '{self.full_image_save_dir}'")
+            self.get_logger().info(f"Saving images to '{self.full_image_save_dir}'.")
         except OSError as e:  # if we fail (permissions, etc.)
-            self.get_logger().error(f'Failed to create directory: {e}')
-            exit(1)
+            self.get_logger().error(f'Failed to create directory: {e}.')
+            sys.exit(1)
 
-        self.get_logger().info(f"Ready to save image from topic: '{self.camera_color_topic}'")
-        self.create_service(SnapPicture, 'snap_picture', self.snap_picture)
         while (self.image is None and rclpy.ok()):
-            rclpy.spin_once(self)
+            self.get_logger().warn(
+                f"No Image messages received yet on topic '{self.camera_color_topic}'.",
+                throttle_duration_sec=5,
+            )
+            rclpy.spin_once(self, timeout_sec=1)
+        self.create_service(SnapPicture, 'snap_picture', self.snap_picture)
+        self.get_logger().info(f"Ready to save images from topic '{self.camera_color_topic}'.")
+        self.get_logger().info('Picture Snapper is up!')
 
     def camera_color_cb(self, msg: Image):
         """
@@ -125,11 +131,13 @@ class PictureSnapper(Node):
         :param req: ROS 'SnapPicture' Service message request
         :param res: ROS 'SnapPicture' Service message response
         """
-        # res = SnapPicture.Response()
         res.success = False
         res.filepath = 'NULL'
         bridge = CvBridge()
         with self.img_mutex:
+            if self.image is None:
+                self.get_logger().error(f"Got no image from topic '{self.camera_color_topic}'.")
+                return res
             try:
                 cv_image = bridge.imgmsg_to_cv2(self.image, 'bgr8')
                 cv2.imwrite(os.path.join(self.image_save_dir, req.filename), cv_image)
@@ -138,7 +146,9 @@ class PictureSnapper(Node):
                 res.success = True
                 res.filepath = filepath
             except OSError as e:
-                self.get_logger().error(f'Failed to save image. {e}')
+                self.get_logger().error(f'Failed to save image: {e}')
+            except CvBridgeError as e:
+                self.get_logger().error(f'CV Bridge failed to process image: {e}')
         return res
 
 
