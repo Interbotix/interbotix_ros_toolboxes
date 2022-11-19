@@ -105,6 +105,8 @@ class PictureSnapper(Node):
             self.get_logger().error(f'Failed to create directory: {e}.')
             sys.exit(1)
 
+        # wait to receive images (means that we are properly subscribed to the topic)
+        rclpy.spin_once(self, timeout_sec=3)  # spin once to process any callbacks
         while (self.image is None and rclpy.ok()):
             self.get_logger().warn(
                 f"No Image messages received yet on topic '{self.camera_color_topic}'.",
