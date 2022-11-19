@@ -112,7 +112,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.5,
             display=self.doublespinbox_cropbox_xmin,
             slider=self.hslider_cropbox_xmin,
-            precision=2)
+            precision=2,
+        )
         self.create_sub_component(
             name='X max [m]',
             set_func=self.pc_inf.set_x_filter_max,
@@ -121,7 +122,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.5,
             display=self.doublespinbox_cropbox_xmax,
             slider=self.hslider_cropbox_xmax,
-            precision=2)
+            precision=2,
+        )
         self.create_sub_component(
             name='Y min [m]',
             set_func=self.pc_inf.set_y_filter_min,
@@ -130,7 +132,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.5,
             display=self.doublespinbox_cropbox_ymin,
             slider=self.hslider_cropbox_ymin,
-            precision=2)
+            precision=2,
+        )
         self.create_sub_component(
             name='Y max [m]',
             set_func=self.pc_inf.set_y_filter_max,
@@ -139,7 +142,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.5,
             display=self.doublespinbox_cropbox_ymax,
             slider=self.hslider_cropbox_ymax,
-            precision=2)
+            precision=2,
+        )
         self.create_sub_component(
             name='Z min [m]',
             set_func=self.pc_inf.set_z_filter_min,
@@ -148,7 +152,8 @@ class PointCloudTunerGui(QWidget):
             max_val=1.5,
             display=self.doublespinbox_cropbox_zmin,
             slider=self.hslider_cropbox_zmin,
-            precision=2)
+            precision=2,
+        )
         self.create_sub_component(
             name='Z max [m]',
             set_func=self.pc_inf.set_z_filter_max,
@@ -157,7 +162,8 @@ class PointCloudTunerGui(QWidget):
             max_val=1.5,
             display=self.doublespinbox_cropbox_zmax,
             slider=self.hslider_cropbox_zmax,
-            precision=2)
+            precision=2,
+        )
 
     def create_voxel_grid_block(self):
         """Create the Voxel Filter Block."""
@@ -169,7 +175,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.01,
             display=self.doublespinbox_voxelgrid_leafsize,
             slider=self.hslider_voxelgrid_leafsize,
-            precision=3)
+            precision=3,
+        )
 
     def create_seg_block(self):
         """Create the Plane Segmentation Block."""
@@ -181,7 +188,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.05,
             display=self.doublespinbox_seg_thresh,
             slider=self.hslider_seg_thresh,
-            precision=3)
+            precision=3,
+        )
         self.create_sub_component(
             name='Max Iterations',
             set_func=self.pc_inf.set_plane_max_iter,
@@ -190,7 +198,8 @@ class PointCloudTunerGui(QWidget):
             max_val=1000,
             display=self.spinbox_seg_iter,
             slider=self.hslider_seg_iter,
-            precision=0)
+            precision=0,
+        )
 
     def create_ror_block(self):
         """Create the Radius Outlier Removal Block."""
@@ -202,7 +211,8 @@ class PointCloudTunerGui(QWidget):
             max_val=20,
             display=self.spinbox_outlier_minneighbors,
             slider=self.hslider_outlier_minneighbors,
-            precision=0)
+            precision=0,
+        )
         self.create_sub_component(
             name='Radius Search [m]',
             set_func=self.pc_inf.set_ror_radius_search,
@@ -211,7 +221,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.05,
             display=self.doublespinbox_outlier_radius,
             slider=self.hslider_outlier_radius,
-            precision=3)
+            precision=3,
+        )
 
     def create_cluster_block(self):
         """Create the Cluster Filter Block."""
@@ -223,7 +234,8 @@ class PointCloudTunerGui(QWidget):
             max_val=1000,
             display=self.spinbox_cluster_size_min,
             slider=self.hslider_cluster_size_min,
-            precision=0)
+            precision=0,
+        )
         self.create_sub_component(
             name='Max Size',
             set_func=self.pc_inf.set_cluster_max_size,
@@ -232,7 +244,8 @@ class PointCloudTunerGui(QWidget):
             max_val=1000,
             display=self.spinbox_cluster_size_max,
             slider=self.hslider_cluster_size_max,
-            precision=0)
+            precision=0,
+        )
         self.create_sub_component(
             name='Tolerance [m]',
             set_func=self.pc_inf.set_cluster_tol,
@@ -241,7 +254,8 @@ class PointCloudTunerGui(QWidget):
             max_val=0.1,
             display=self.doublespinbox_cluster_tol,
             slider=self.hslider_cluster_tol,
-            precision=3)
+            precision=3,
+        )
 
     def create_button_block(self):
         """Create GUI subsection for Load, Save, and Reset Configs buttons."""
@@ -265,7 +279,7 @@ class PointCloudTunerGui(QWidget):
 
         :param name: name of the Block
         :param set_func: function to set the value of a specific param
-        :param get_func: function to get the value of a specfic param
+        :param get_func: function to get the value of a specifc param
         :param min_val: minimum value that the param can have
         :param max_val: maximum value that the param can have
         :param display: Ref to SpinBox or SpinBoxDouble Widget for this param

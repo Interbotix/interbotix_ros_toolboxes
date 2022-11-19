@@ -54,7 +54,7 @@ class InterbotixPointCloudInterface(Node):
         Construct pointcloud filter parameter tuner.
 
         :param filter_ns: namespace where the ROS parameters needed by the module are located
-        :param node_inf: reference to the rclcpy.node.Node on which to build this interface. Leave
+        :param node_inf: reference to the rclpy.node.Node on which to build this interface. Leave
             as `None` to let this interface serve as its own Node
         :details: Note that the default reference frame for the pointcloud is used (usually
             something like 'camera_depth_optical_frame')
@@ -118,19 +118,6 @@ class InterbotixPointCloudInterface(Node):
 
         self.node_inf.get_logger().info('Initialized InterbotixPointCloudInterface.')
 
-    # def run(self) -> None:
-    #     self.ex = MultiThreadedExecutor()
-    #     self.ex.add_node(self)
-    #     self.execution_thread = Thread(target=self.ex.spin)
-    #     self.execution_thread.start()
-
-    # def shutdown(self) -> None:
-    #     rclpy.shutdown()
-    #     self.ex.shutdown()
-    #     self.execution_thread.join(timeout=5.0)
-    #     if self.execution_thread.is_alive():
-    #         print('Taking a long time to join thread. Press Ctrl+C twice to exit.')
-
     def get_params(self) -> dict:
         """
         Convert from a FilterParams Service type to a Python Dictionary.
@@ -138,20 +125,20 @@ class InterbotixPointCloudInterface(Node):
         :return: python dictionary containing the data from the FilterParams service message
         """
         param_dict = {}
-        param_dict['x_filter_min'] = self.filter_params.x_filter_min
-        param_dict['x_filter_max'] = self.filter_params.x_filter_max
-        param_dict['y_filter_min'] = self.filter_params.y_filter_min
-        param_dict['y_filter_max'] = self.filter_params.y_filter_max
-        param_dict['z_filter_min'] = self.filter_params.z_filter_min
-        param_dict['z_filter_max'] = self.filter_params.z_filter_max
-        param_dict['voxel_leaf_size'] = self.filter_params.voxel_leaf_size
-        param_dict['plane_max_iter'] = self.filter_params.plane_max_iter
-        param_dict['plane_dist_thresh'] = self.filter_params.plane_dist_thresh
-        param_dict['ror_radius_search'] = self.filter_params.ror_radius_search
-        param_dict['ror_min_neighbors'] = self.filter_params.ror_min_neighbors
-        param_dict['cluster_tol'] = self.filter_params.cluster_tol
-        param_dict['cluster_min_size'] = self.filter_params.cluster_min_size
-        param_dict['cluster_max_size'] = self.filter_params.cluster_max_size
+        param_dict['x_filter_min'] = float(self.filter_params.x_filter_min)
+        param_dict['x_filter_max'] = float(self.filter_params.x_filter_max)
+        param_dict['y_filter_min'] = float(self.filter_params.y_filter_min)
+        param_dict['y_filter_max'] = float(self.filter_params.y_filter_max)
+        param_dict['z_filter_min'] = float(self.filter_params.z_filter_min)
+        param_dict['z_filter_max'] = float(self.filter_params.z_filter_max)
+        param_dict['voxel_leaf_size'] = float(self.filter_params.voxel_leaf_size)
+        param_dict['plane_max_iter'] = int(self.filter_params.plane_max_iter)
+        param_dict['plane_dist_thresh'] = float(self.filter_params.plane_dist_thresh)
+        param_dict['ror_radius_search'] = float(self.filter_params.ror_radius_search)
+        param_dict['ror_min_neighbors'] = int(self.filter_params.ror_min_neighbors)
+        param_dict['cluster_tol'] = float(self.filter_params.cluster_tol)
+        param_dict['cluster_min_size'] = int(self.filter_params.cluster_min_size)
+        param_dict['cluster_max_size'] = int(self.filter_params.cluster_max_size)
         return param_dict
 
     def set_params(self, param_dict: dict) -> None:
@@ -160,18 +147,18 @@ class InterbotixPointCloudInterface(Node):
 
         :param param_dict: Python Dictionary to convert to a FilterParams message
         """
-        self.filter_params.x_filter_min = param_dict['x_filter_min']
-        self.filter_params.x_filter_max = param_dict['x_filter_max']
-        self.filter_params.y_filter_min = param_dict['y_filter_min']
-        self.filter_params.y_filter_max = param_dict['y_filter_max']
-        self.filter_params.z_filter_min = param_dict['z_filter_min']
-        self.filter_params.z_filter_max = param_dict['z_filter_max']
-        self.filter_params.voxel_leaf_size = param_dict['voxel_leaf_size']
+        self.filter_params.x_filter_min = float(param_dict['x_filter_min'])
+        self.filter_params.x_filter_max = float(param_dict['x_filter_max'])
+        self.filter_params.y_filter_min = float(param_dict['y_filter_min'])
+        self.filter_params.y_filter_max = float(param_dict['y_filter_max'])
+        self.filter_params.z_filter_min = float(param_dict['z_filter_min'])
+        self.filter_params.z_filter_max = float(param_dict['z_filter_max'])
+        self.filter_params.voxel_leaf_size = float(param_dict['voxel_leaf_size'])
         self.filter_params.plane_max_iter = int(param_dict['plane_max_iter'])
-        self.filter_params.plane_dist_thresh = param_dict['plane_dist_thresh']
-        self.filter_params.ror_radius_search = param_dict['ror_radius_search']
+        self.filter_params.plane_dist_thresh = float(param_dict['plane_dist_thresh'])
+        self.filter_params.ror_radius_search = float(param_dict['ror_radius_search'])
         self.filter_params.ror_min_neighbors = int(param_dict['ror_min_neighbors'])
-        self.filter_params.cluster_tol = param_dict['cluster_tol']
+        self.filter_params.cluster_tol = float(param_dict['cluster_tol'])
         self.filter_params.cluster_min_size = int(param_dict['cluster_min_size'])
         self.filter_params.cluster_max_size = int(param_dict['cluster_max_size'])
 

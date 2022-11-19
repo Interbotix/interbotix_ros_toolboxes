@@ -113,7 +113,8 @@ class InterbotixAprilTagInterface(Node):
 
         time.sleep(0.5)
 
-        # wait to receive camera info (means that we are properly subbed)
+        # wait to receive camera info (means that we are properly subscribed to the topic)
+        rclpy.spin_once(self.node_inf, timeout_sec=3)  # spin once to process any callbacks
         while (self.request.camera_info == CameraInfo() and rclpy.ok()):
             self.get_logger().warn(
                 (
@@ -184,15 +185,19 @@ class InterbotixAprilTagInterface(Node):
 
         :return: list of tag detections
         """
-        # TODO(LSinterbotix): clean this up
+        # Call the SnapPicture service
         future_snap = self.srv_snap_picture.call_async(
             SnapPicture.Request(filename=self.request.full_path_where_to_get_image)
         )
         rclpy.spin_until_future_complete(self.node_inf, future=future_snap)
+        # Check if the SnapPicture result was successful
         if not future_snap.result().success:
+            # If it was not, return an empty detection array
             return AprilTagDetectionArray()
+        # Call the AnalyzeSingleImage service on the snapped image
         future_analyze = self.srv_analyze_image.call_async(self.request)
         rclpy.spin_until_future_complete(self.node_inf, future=future_analyze)
+        # Return the results of the analysis - the detected tags
         return future_analyze.result().tag_detections
 
     def set_valid_tags(self, ids: Union[List[int], None]):
