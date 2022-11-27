@@ -27,6 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from interbotix_common_modules.launch import AndCondition, OrCondition
+from launch.conditions import IfCondition
 from launch.substitutions import TextSubstitution
 
 import pytest
@@ -54,15 +55,14 @@ def test_and_condition():
         (['false', 'true'], False),
         (['true', 'false'], False),
         (['true', '0'], False),
+        (['true', IfCondition('true')], True),
     ]
 
     for conditions, expected in test_cases:
-        assert AndCondition(
-            conditions=[TextSubstitution(text=condition) for condition in conditions]
-        ).evaluate(lc) is expected
+        assert AndCondition(conditions).evaluate(lc) is expected
 
     with pytest.raises(TypeError):
-        AndCondition(conditions=TextSubstitution(text='true')).evaluate(lc)
+        AndCondition('true').evaluate(lc)
 
 
 def test_or_condition():
@@ -73,12 +73,11 @@ def test_or_condition():
         (('true', 'True', 'TRUE'), True),
         (['false', 'False', 'FALSE'], False),
         (['true', 'false'], True),
+        (['true', IfCondition('false')], True),
     ]
 
     for conditions, expected in test_cases:
-        assert OrCondition(
-            conditions=[TextSubstitution(text=condition) for condition in conditions]
-        ).evaluate(lc) is expected
+        assert OrCondition(conditions).evaluate(lc) is expected
 
     with pytest.raises(TypeError):
-        OrCondition(conditions=TextSubstitution(text='true')).evaluate(lc)
+        OrCondition(TextSubstitution(text='true')).evaluate(lc)
