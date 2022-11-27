@@ -26,7 +26,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List, Text
+from typing import List, Text, Union
 
 from launch.condition import Condition
 from launch.conditions import evaluate_condition_expression
@@ -45,21 +45,34 @@ class OrCondition(Condition):
     This condition will raise a TypeError if a list or tuple is not provided.
     """
 
-    def __init__(self, conditions: List[SomeSubstitutionsType]) -> None:
-        if isinstance(conditions, str):
+    def __init__(
+        self,
+        predicate_expressions: List[Union[SomeSubstitutionsType, Condition]]
+    ) -> None:
+        if isinstance(predicate_expressions, str):
             raise TypeError(
-                'interbotix_common_modules.launch.OrCondition given a single condition. Two or '
-                'more conditions are expected.'
+                'interbotix_common_modules.launch.OrCondition given a single expression. Two or '
+                'more expressions are expected.'
             )
-        self.__conditions = [
-            normalize_to_list_of_substitutions(condition) for condition in conditions
+        self.__conditions = []
+        self.__substitutions = []
+        to_be_normalized = []
+        # Separate out conditions to be evaluated on their own
+        for pe in predicate_expressions:
+            if isinstance(pe, Condition):
+                self.__conditions.append(pe)
+            else:
+                to_be_normalized.append(pe)
+        self.__substitutions = [
+            normalize_to_list_of_substitutions(condition) for condition in to_be_normalized
         ]
         super().__init__(predicate=self._predicate_func)
 
     def _predicate_func(self, context: LaunchContext) -> bool:
         return any(
-            [evaluate_condition_expression(context, condition) for condition in self.__conditions]
-        )
+            [evaluate_condition_expression(context, sub) for sub in self.__substitutions]
+        ) or any([condition.evaluate(context) for condition in self.__conditions])
+
 
     def describe(self) -> Text:
         return self.__repr__()
