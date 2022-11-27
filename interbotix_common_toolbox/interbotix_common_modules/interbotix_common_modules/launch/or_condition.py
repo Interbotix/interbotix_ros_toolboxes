@@ -73,6 +73,5 @@ class OrCondition(Condition):
             [evaluate_condition_expression(context, sub) for sub in self.__substitutions]
         ) or any([condition.evaluate(context) for condition in self.__conditions])
 
-
     def describe(self) -> Text:
         return self.__repr__()
