@@ -104,7 +104,7 @@ class DeclareInterbotixXSLoCoBotRobotDescriptionLaunchArgument(DeclareLaunchArgu
             'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
             'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
             'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
-            'show_lidar:=', LaunchConfiguration('show_lidar'), ' ',
+            'use_lidar:=', LaunchConfiguration('use_lidar'), ' ',
             'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
             'hardware_type:=', LaunchConfiguration('hardware_type'), ' ',
         ]),
@@ -187,7 +187,7 @@ def construct_interbotix_xslocobot_semantic_robot_description_command(
         config_path,
         f'/srdf/{robot_model}.srdf.xacro', ' ',
         'robot_name:=', LaunchConfiguration('robot_name'), ' ',
-        'show_lidar:=', LaunchConfiguration('show_lidar'), ' ',
+        'use_lidar:=', LaunchConfiguration('use_lidar'), ' ',
         'base_type:=', LaunchConfiguration('base_type'), ' ',
         'external_srdf_loc:=', LaunchConfiguration('external_srdf_loc'), ' ',
     ])
@@ -309,7 +309,6 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
     show_ar_tag: Text = 'true',
     show_gripper_bar: Text = 'true',
     show_gripper_fingers: Text = 'true',
-    show_lidar: Text = 'false',
     external_urdf_loc: Text = '',
     hardware_type: Text = 'actual',
 ) -> List[DeclareLaunchArgument]:
@@ -322,7 +321,6 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
         - `show_ar_tag`
         - `show_gripper_bar`
         - `show_gripper_fingers`
-        - `show_lidar`
         - `external_urdf_loc`
         - `hardware_type`
 
@@ -372,15 +370,6 @@ def declare_interbotix_xslocobot_robot_description_launch_arguments(
                 'if `true`, the gripper fingers are included in the `robot_description`; '
                 'if `false`, the gripper finger links are not loaded. Set to `false` if you have '
                 'custom gripper fingers.'
-            ),
-        ),
-        DeclareLaunchArgument(
-            'show_lidar',
-            default_value=show_lidar,
-            choices=('true', 'false'),
-            description=(
-                'if `true`, the lidar is included in the `robot_description`; only set to `true`'
-                'if you purchased a lidar with your locobot.'
             ),
         ),
         DeclareLaunchArgument(
