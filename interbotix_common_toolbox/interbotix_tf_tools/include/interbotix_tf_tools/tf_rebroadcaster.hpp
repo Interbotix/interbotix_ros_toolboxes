@@ -37,6 +37,7 @@
 #include "interbotix_tf_tools/visibility_control.h"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 #include "rclcpp/rclcpp.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -62,8 +63,8 @@ private:
   // Subscription to the topic to get TFs from
   rclcpp::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr sub_tf_;
 
-  // Publisher to the new topic
-  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr pub_tf_;
+  // Transform broadcaster to the output topic
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   // Absolute filepath to the configuration file
   std::string filepath_config_;
@@ -71,13 +72,10 @@ private:
   // String containing the topic that the rebroadcaster should listen to TFs from
   std::string topic_from_;
 
-  // String containing the topic that the rebroadcaster should publish to
-  std::string topic_to_;
-
   // YAML node containing configuration info
   YAML::Node config_;
 
-  // Vector containing all frames to be re-broadcasted from the configuraiton
+  // Vector containing all frames to be re-broadcasted from the configuration
   std::vector<Frame> frames_;
 };
 

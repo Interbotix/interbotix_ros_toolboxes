@@ -28,6 +28,7 @@
 
 #include "interbotix_tf_tools/tf_rebroadcaster.hpp"
 
+#include <memory>
 #include <string>
 
 using namespace std::chrono_literals;
@@ -40,10 +41,8 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
 {
   // Declare and get parameters
   this->declare_parameter<std::string>("filepath_config");
-  this->declare_parameter<std::string>("topic_to");
   this->declare_parameter<std::string>("topic_from");
   this->get_parameter("filepath_config", filepath_config_);
-  this->get_parameter("topic_to", topic_to_);
   this->get_parameter("topic_from", topic_from_);
 
   // Load configuration file
@@ -65,7 +64,7 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
     this->get_logger(),
     "Will broadcast TFs from topic '%s' to topic '%s'.",
     topic_from_.c_str(),
-    topic_to_.c_str());
+    this->get_namespace());
 
   // Get frames config
   YAML::Node all_frames = config_["frames"];
@@ -97,13 +96,12 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
     }
   }
 
-  // Create pubs and subs
-  using namespace std::placeholders;
+  // Create subscription and tf broadcaster
   sub_tf_ = this->create_subscription<tf2_msgs::msg::TFMessage>(
     topic_from_,
-    10,
-    std::bind(&TFRebroadcaster::tf_cb, this, _1));
-  pub_tf_ = this->create_publisher<tf2_msgs::msg::TFMessage>(topic_to_, 10);
+    rclcpp::SensorDataQoS().reliable(),
+    [this](tf2_msgs::msg::TFMessage msg) {tf_cb(msg);});
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 }
 
 void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
@@ -112,21 +110,30 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
   // Loop over each parent/child frame
   for (const auto & frame : frames_) {
     // Loop over every transform in message
-    for (auto & tf : msg.transforms) {
+    for (auto & tf_in : msg.transforms) {
       // Check if parent and child match
       if (
-        frame.parent_frame_id == tf.header.frame_id &&
-        frame.child_frame_id == tf.child_frame_id)
+        frame.parent_frame_id == tf_in.header.frame_id &&
+        frame.child_frame_id == tf_in.child_frame_id)
       {
         // If they do match, rebroadcast to new topic, prepending the prefix if necessary
-        auto tf_ = tf;
-        tf2_msgs::msg::TFMessage rebroadcast_tf;
+        geometry_msgs::msg::TransformStamped tf_out;
+        tf_out.header.stamp = tf_in.header.stamp;
+        tf_out.transform.translation.x = tf_in.transform.translation.x;
+        tf_out.transform.translation.y = tf_in.transform.translation.y;
+        tf_out.transform.translation.z = tf_in.transform.translation.z;
+        tf_out.transform.rotation.x = tf_in.transform.rotation.x;
+        tf_out.transform.rotation.y = tf_in.transform.rotation.y;
+        tf_out.transform.rotation.z = tf_in.transform.rotation.z;
+        tf_out.transform.rotation.w = tf_in.transform.rotation.w;
         if (frame.prefix != "") {
-          tf_.child_frame_id = frame.prefix + tf.child_frame_id;
-          tf_.header.frame_id = frame.prefix + tf.header.frame_id;
+          tf_out.child_frame_id = frame.prefix + tf_in.child_frame_id;
+          tf_out.header.frame_id = frame.prefix + tf_in.header.frame_id;
+        } else {
+          tf_out.child_frame_id = tf_in.child_frame_id;
+          tf_out.header.frame_id = tf_in.header.frame_id;
         }
-        rebroadcast_tf.transforms.push_back(tf_);
-        pub_tf_->publish(rebroadcast_tf);
+        tf_broadcaster_->sendTransform(tf_out);
       }
     }
   }

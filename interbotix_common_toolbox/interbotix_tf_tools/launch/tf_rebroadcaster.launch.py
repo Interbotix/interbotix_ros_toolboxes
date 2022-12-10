@@ -34,6 +34,7 @@ from launch.actions import (
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
+    TextSubstitution,
 )
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
@@ -41,10 +42,6 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def launch_setup(context):
-    config_launch_arg = LaunchConfiguration('tf_rebroadcaster_config')
-    topic_from_launch_arg = LaunchConfiguration('topic_from')
-    topic_to_launch_arg = LaunchConfiguration('topic_to')
-
     tf_rebroadcaster_container = ComposableNodeContainer(
         name='tf_rebroadcaster_container',
         namespace='',
@@ -57,11 +54,11 @@ def launch_setup(context):
                 name='tf_rebroadcaster',
                 parameters=[
                     {
-                        'filepath_config': config_launch_arg,
-                        'topic_from': topic_from_launch_arg,
-                        'topic_to': topic_to_launch_arg,
+                        'filepath_config': LaunchConfiguration('tf_rebroadcaster_config'),
+                        'topic_from': LaunchConfiguration('topic_from'),
                     },
                 ],
+                remappings=[('/tf', LaunchConfiguration('topic_to'))],
             )
         ]
     )
@@ -88,6 +85,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'topic_to',
+            default_value=TextSubstitution(text='/tf'),
             description='topic to which the TF messages will be re-broadcasted.',
         ),
     ]

@@ -18,6 +18,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 include_directories(include)
@@ -26,13 +27,15 @@ add_library(tf_rebroadcaster SHARED
   src/tf_rebroadcaster.cpp
 )
 target_compile_definitions(tf_rebroadcaster
-  PRIVATE "COMPOSITION_BUILDING_DLL")
+  PRIVATE "COMPOSITION_BUILDING_DLL"
+)
 ament_target_dependencies(
   tf_rebroadcaster
     geometry_msgs
     rclcpp
-    tf2_msgs
     rclcpp_components
+    tf2_msgs
+    tf2_ros
 )
 target_link_libraries(tf_rebroadcaster yaml-cpp)
 rclcpp_components_register_nodes(tf_rebroadcaster "interbotix_tf_tools::TFRebroadcaster")
