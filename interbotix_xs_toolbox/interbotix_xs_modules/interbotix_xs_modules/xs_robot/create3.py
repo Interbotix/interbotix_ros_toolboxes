@@ -52,7 +52,7 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
         core: InterbotixRobotXSCore,
         robot_name: str,
         topic_base_joint_states: str = 'mobile_base/joint_states',
-        topic_cmd_vel: str = 'cmd_vel',
+        topic_cmd_vel: str = 'mobile_base/cmd_vel',
         nav_timeout_sec: float = 300.0,
         use_nav: bool = False,
     ):
@@ -65,7 +65,7 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the Create 3's two wheels. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should
-            be published. defaults to `'cmd_vel'`
+            be published. defaults to `'mobile_base/cmd_vel'`
         :param nav_timeout_sec: (optional) length of time in seconds after which to cancel a
             navigation goal. defaults to `300` (five minutes)
         :param use_nav: (optional) whether or not to enable navigation features. requires that nav2
@@ -81,12 +81,12 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
         )
         self.pub_base_sound = self.core.create_publisher(
             msg_type=AudioNoteVector,
-            topic='cmd_audio',
+            topic='mobile_base/cmd_audio',
             qos_profile=1
         )
         self.client_reset_pose = self.core.create_client(
             srv_type=ResetPose,
-            srv_name='reset_pose',
+            srv_name='mobile_base/reset_pose',
         )
 
         time.sleep(0.5)
@@ -98,7 +98,10 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
         self.core.robot_spin_once_until_future_complete(future_reset_odom)
         self.play_sound(
             sound=AudioNoteVector(
-                header=Header(frame_id='base_link', stamp=self.core.get_clock().now().to_msg()),
+                header=Header(
+                    frame_id=f'{self.robot_name}/base_link',
+                    stamp=self.core.get_clock().now().to_msg()
+                ),
                 notes=[AudioNote(frequency=6000, max_runtime=Duration(seconds=1.0))],
                 append=False,
             )

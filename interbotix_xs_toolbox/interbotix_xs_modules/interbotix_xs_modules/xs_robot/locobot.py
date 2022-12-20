@@ -71,7 +71,6 @@ class InterbotixLocobotXS:
         robot_name: str = '',
         topic_dxl_joint_states: str = 'dynamixel/joint_states',
         topic_base_joint_states: str = 'mobile_base/joint_states',
-        topic_cmd_vel: str = 'cmd_vel',
         use_nav: bool = False,
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
@@ -103,8 +102,6 @@ class InterbotixLocobotXS:
             the states of the dynamixel servos
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the base. defaults to `'mobile_base/joint_states'`
-        :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should
-            be published. defaults to `'cmd_vel'`
         :param use_nav: (optional) whether or not to enable navigation features. requires that nav2
             be launched. defaults to `False`
         :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
@@ -135,7 +132,6 @@ class InterbotixLocobotXS:
                     core=self.core,
                     robot_name=robot_name,
                     topic_base_joint_states=topic_base_joint_states,
-                    topic_cmd_vel=topic_cmd_vel,
                     use_nav=use_nav,
                 )
             elif base_type == BaseType.CREATE3:
@@ -144,7 +140,6 @@ class InterbotixLocobotXS:
                     core=self.core,
                     robot_name=robot_name,
                     topic_base_joint_states=topic_base_joint_states,
-                    topic_cmd_vel=topic_cmd_vel,
                     use_nav=use_nav,
                 )
         if use_perception:
