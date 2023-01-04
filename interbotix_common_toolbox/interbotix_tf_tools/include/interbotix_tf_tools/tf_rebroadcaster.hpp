@@ -49,6 +49,7 @@ struct Frame
   std::string parent_frame_id;
   std::string child_frame_id;
   std::string prefix;
+  bool logged = false;
 };
 
 class TFRebroadcaster : public rclcpp::Node

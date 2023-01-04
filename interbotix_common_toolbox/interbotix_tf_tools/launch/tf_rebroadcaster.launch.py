@@ -44,7 +44,7 @@ from launch_ros.substitutions import FindPackageShare
 def launch_setup(context):
     tf_rebroadcaster_container = ComposableNodeContainer(
         name='tf_rebroadcaster_container',
-        namespace='',
+        namespace=LaunchConfiguration('namespace_to'),
         package='rclcpp_components',
         executable='component_container',
         composable_node_descriptions=[
@@ -52,13 +52,14 @@ def launch_setup(context):
                 package='interbotix_tf_tools',
                 plugin='interbotix_tf_tools::TFRebroadcaster',
                 name='tf_rebroadcaster',
+                namespace=LaunchConfiguration('namespace_to'),
                 parameters=[
                     {
                         'filepath_config': LaunchConfiguration('tf_rebroadcaster_config'),
                         'topic_from': LaunchConfiguration('topic_from'),
                     },
                 ],
-                remappings=[('/tf', LaunchConfiguration('topic_to'))],
+                remappings=[('/tf', [LaunchConfiguration('namespace_to'), '/tf'])],
             )
         ]
     )
@@ -84,9 +85,9 @@ def generate_launch_description():
             description='topic from which the TFs will be retrieved.',
         ),
         DeclareLaunchArgument(
-            'topic_to',
-            default_value=TextSubstitution(text='/tf'),
-            description='topic to which the TF messages will be re-broadcasted.',
+            'namespace_to',
+            default_value=TextSubstitution(text=''),
+            description='namespace under which the TF messages will be re-broadcasted.',
         ),
     ]
 
