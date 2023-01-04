@@ -59,13 +59,6 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
     return;
   }
 
-  // Print out configuration info
-  RCLCPP_INFO(
-    this->get_logger(),
-    "Will broadcast TFs from topic '%s' to topic '%s'.",
-    topic_from_.c_str(),
-    this->get_namespace());
-
   // Get frames config
   YAML::Node all_frames = config_["frames"];
   for (
@@ -79,6 +72,7 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
     std::string prefix = frame_itr->second["prefix"].as<std::string>();
     frames_.push_back(Frame{frame_parent, frame_child, prefix});
 
+    // Print out which frames will be rebroadcasted
     if (prefix == "") {
       RCLCPP_INFO(
         this->get_logger(),
@@ -86,7 +80,6 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
         frame_parent.c_str(),
         frame_child.c_str());
     } else {
-      // Print out which frames will be rebroadcasted
       RCLCPP_INFO(
         this->get_logger(),
         "Will broadcast TF from frame '%s' to frame '%s', prepending prefix '%s'.",
@@ -102,15 +95,22 @@ TFRebroadcaster::TFRebroadcaster(const rclcpp::NodeOptions & options)
     rclcpp::SensorDataQoS().reliable(),
     [this](tf2_msgs::msg::TFMessage msg) {tf_cb(msg);});
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+  // Print out topic info
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Will broadcast TFs from topic '%s' to the 'tf' topic under namespace '%s'.",
+    sub_tf_->get_topic_name(),
+    this->get_namespace());
 }
 
 void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
 {
   // TODO(lsinterbotix): optimize
   // Loop over each parent/child frame
-  for (const auto & frame : frames_) {
+  for (auto & frame : frames_) {
     // Loop over every transform in message
-    for (auto & tf_in : msg.transforms) {
+    for (const auto & tf_in : msg.transforms) {
       // Check if parent and child match
       if (
         frame.parent_frame_id == tf_in.header.frame_id &&
@@ -134,6 +134,14 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
           tf_out.header.frame_id = tf_in.header.frame_id;
         }
         tf_broadcaster_->sendTransform(tf_out);
+        if(!frame.logged) {
+          RCLCPP_INFO(
+            this->get_logger(),
+            "Broadcasted TF from frame '%s' to frame '%s'. This will only log once.",
+            tf_out.child_frame_id.c_str(),
+            tf_out.header.frame_id.c_str());
+          frame.logged = true;
+        }
       }
     }
   }
