@@ -325,7 +325,7 @@ class InterbotixArmXSInterface(object):
     ### @return theta_list - joint values needed to get the end-effector to the desired pose
     ### @return <bool> - True if a valid solution was found; False otherwise
     ### @details - Do not set 'yaw' if using an arm with fewer than 6dof
-    def set_relative_ee_position_wrt_to_base_frame(self, *, dx=0, dy=0, dz=0, custom_guess=None, execute=True, moving_time=None, accel_time=None, blocking=True):
+    def set_relative_ee_position_wrt_to_base_frame(self, dx=0, dy=0, dz=0, custom_guess=None, execute=True, moving_time=None, accel_time=None, blocking=True):
         return self.set_ee_pose_components(
             x=self.T_sb[0, 3] + dx,
             y=self.T_sb[1, 3] + dy,
