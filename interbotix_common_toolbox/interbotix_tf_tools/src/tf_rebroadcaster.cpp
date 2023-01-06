@@ -134,7 +134,7 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::msg::TFMessage & msg)
           tf_out.header.frame_id = tf_in.header.frame_id;
         }
         tf_broadcaster_->sendTransform(tf_out);
-        if(!frame.logged) {
+        if (!frame.logged) {
           RCLCPP_INFO(
             this->get_logger(),
             "Broadcasted TF from frame '%s' to frame '%s'. This will only log once.",
