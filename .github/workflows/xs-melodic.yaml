@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout ROS Toolboxes
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare Workspace
         run: |
           git clone https://github.com/Interbotix/interbotix_ros_core
