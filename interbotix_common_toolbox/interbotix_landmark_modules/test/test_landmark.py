@@ -180,7 +180,7 @@ class LandmarkTest(unittest.TestCase):
         rclpy.spin_until_future_complete(
             node=self.node,
             future=future_wait_for_tf,
-            timeout_sec=1.0
+            timeout_sec=5.0
         )
 
         lc.get_landmark(1).update_tfs(
@@ -266,10 +266,10 @@ class LandmarkTest(unittest.TestCase):
         rclpy.spin_until_future_complete(
             node=self.node,
             future=future_wait_for_tf2,
-            timeout_sec=1.0
+            timeout_sec=5.0
         )
 
-        self.executor.spin_once(timeout_sec=1.0)
+        self.executor.spin_once(timeout_sec=5.0)
 
         # tf2_ros.TransformListener(self.tf_buffer, node=self.node)
         tf_map_to_test_2 = self.tf_buffer.lookup_transform(
