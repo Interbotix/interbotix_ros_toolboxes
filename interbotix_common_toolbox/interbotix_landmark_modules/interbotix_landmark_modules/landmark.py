@@ -27,7 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import time
-from typing import Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 from geometry_msgs.msg import Pose, PoseStamped, Transform, TransformStamped
 from rclpy.node import Node
@@ -55,6 +55,7 @@ class Landmark:
         node_inf: Node = None,
         tf_buffer: tf2_ros.Buffer = None,
         tf_listener: tf2_ros.TransformListener = None,
+        callback: Callable = None,
         landmark_ns: str = 'landmarks',
     ):
         """
@@ -76,6 +77,7 @@ class Landmark:
 
         self.label_ = label
         self.id_ = id_num
+        self.callback = callback
         self.landmark_ns = landmark_ns
 
         # transforms
@@ -701,6 +703,7 @@ class LandmarkCollection:
                 if lm.tf_set_:
                     self.static_tf_pub.publish(
                         lm.get_tf_wrt_map())
+        self.node_inf.executor.spin_once(timeout_sec=1.0)
 
     def update_markers(self) -> None:
         """Update markers."""
