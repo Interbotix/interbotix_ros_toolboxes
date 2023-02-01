@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Trossen Robotics
+# Copyright 2023 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -40,15 +40,15 @@ class PublishMapToLandmarkStaticTF(Node):
         super().__init__('tf_map_to_landmark')
         # publisher to static_transforms
         pub = self.create_publisher(
-            'static_transforms',
             TransformStamped,
+            'static_transforms',
             qos_profile=1
         )
 
         original_frame = self.get_parameter_or('~original_frame', 'map')
         fixed_frame = self.get_parameter_or('~fixed_frame', 'landmarks')
 
-        # build identity TF betweeen /orig and /fixed
+        # build identity TF between /orig and /fixed
         tf = TransformStamped()
         tf.header.frame_id = original_frame
         tf.header.stamp = self.get_clock().now().to_msg()
@@ -69,8 +69,8 @@ class PublishMapToLandmarkStaticTF(Node):
         self.get_logger().info('Shutting down...')
 
 
-def main(args=None):
-    rclpy.init(args)
+def main():
+    rclpy.init()
     PublishMapToLandmarkStaticTF()
 
 
