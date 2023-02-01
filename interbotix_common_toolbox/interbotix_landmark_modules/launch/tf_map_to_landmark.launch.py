@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2023 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -65,7 +65,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'fixed_frame',
             default_value='landmarks',
-            description='fixed frame that all landmarks should be a chlid of in their transforms.',
+            description='fixed frame that all landmarks should be a child of in their transforms.',
         ),
         DeclareLaunchArgument(
             'original_frame',
