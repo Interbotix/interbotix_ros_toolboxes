@@ -40,6 +40,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_testing.actions import ReadyToTest
+import launch_testing.markers
 import pytest
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
@@ -48,7 +49,8 @@ from tf2_geometry_msgs import TransformStamped # noqa
 import tf2_ros
 
 
-@pytest.mark.rostest
+@pytest.mark.launch_test
+@launch_testing.markers.keep_alive
 def generate_test_description():
     static_transform_pub_launch_include = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
