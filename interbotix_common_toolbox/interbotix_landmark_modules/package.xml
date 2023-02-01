@@ -15,8 +15,13 @@
   <depend>visualization_msgs</depend>
   <depend>interbotix_common_modules</depend>
   <depend>interbotix_perception_modules</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>tf_transformations</depend>
+  <exec_depend>python3-transforms3d</exec_depend>
   <exec_depend>realsense2_camera</exec_depend>
 
+  <test_depend>launch_testing</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
 
