@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2023 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -53,6 +53,8 @@ class Landmark:
         label: str,
         id_num: int,
         node_inf: Node = None,
+        tf_buffer: tf2_ros.Buffer = None,
+        tf_listener: tf2_ros.TransformListener = None,
         landmark_ns: str = 'landmarks',
     ):
         """
@@ -67,8 +69,10 @@ class Landmark:
         self.node_inf = node_inf
 
         # tf buffer and listener
-        self.tf_buffer = tf2_ros.Buffer(node=node_inf)
-        self.listener = tf2_ros.TransformListener(buffer=self.tf_buffer, node=self.node_inf)
+        self.tf_buffer = tf_buffer if tf_buffer is not None else tf2_ros.Buffer(node=node_inf)
+        self.listener = tf_listener if tf_listener is not None else tf2_ros.TransformListener(
+            buffer=self.tf_buffer, node=self.node_inf
+        )
 
         self.label_ = label
         self.id_ = id_num
@@ -129,7 +133,6 @@ class Landmark:
             )
             # set/update tf with respect to map
             return tf_new
-            # self.set_tf_wrt_map(tf_new) # TODO
         except TransformException as e:
             self.node_inf.get_logger().error(
                 f"Could not transform between frames '{parent_new}' and '{parent_old}': {e}",
@@ -141,7 +144,6 @@ class Landmark:
         Get label.
 
         :return: label
-        "rtype: string
         """
         return self.label_
 
@@ -433,6 +435,8 @@ class LandmarkCollection:
         observation_frame: str = None,
         fixed_frame: str = None,
         ros_on: bool = False,
+        tf_buffer: tf2_ros.Buffer = None,
+        tf_listener: tf2_ros.TransformListener = None,
     ):
         """
         Construct LandmarkCollection object.
@@ -449,6 +453,12 @@ class LandmarkCollection:
         self.node_inf = node_inf
         self.data = landmarks
 
+        # tf buffer and listener
+        self.tf_buffer = tf_buffer if tf_buffer is not None else tf2_ros.Buffer(node=self.node_inf)
+        self.listener = tf_listener if tf_listener is not None else tf2_ros.TransformListener(
+            buffer=self.tf_buffer, node=self.node_inf
+        )
+
         # if we will use ROS, get params and set up pubs/subs
         if ros_on:
             self.ROS = True
@@ -462,14 +472,14 @@ class LandmarkCollection:
                 fixed_frame)
 
             self.static_tf_pub = self.node_inf.create_publisher(
-                'static_transforms',
                 TransformStamped,
+                'static_transforms',
                 qos_profile=10,
             )
 
             self.marker_pub = self.node_inf.create_publisher(
-                'landmark_markers',
                 MarkerArray,
+                'landmark_markers',
                 qos_profile=10,)
 
         else:
@@ -512,6 +522,8 @@ class LandmarkCollection:
                 label=label,
                 id_num=id_num,
                 node_inf=self.node_inf,
+                tf_listener=self.listener,
+                tf_buffer=self.tf_buffer,
             )
         })
 
@@ -527,7 +539,7 @@ class LandmarkCollection:
         """
         Return the ids of the tags of any landmark in the Collection.
 
-        :return: list of ids corresponsing to landmarks in the Collection
+        :return: list of ids corresponding to landmarks in the Collection
         :details: updates the list of valid tags before returning
         """
         self.update_valid_tags()
@@ -667,7 +679,7 @@ class LandmarkCollection:
         """
         return self.data == {}
 
-    def pub_tfs(self, tag_ids: Union[List[int], None] = None):
+    def pub_tfs(self, tag_ids: Union[List[int], None] = None) -> None:
         """
         Publish TFs to static transforms.
 
@@ -690,7 +702,7 @@ class LandmarkCollection:
                     self.static_tf_pub.publish(
                         lm.get_tf_wrt_map())
 
-    def update_markers(self):
+    def update_markers(self) -> None:
         """Update markers."""
         for lm in self.get_set_landmarks():  # only publish seen tags
             g = lm.get_nav_goal()
@@ -712,7 +724,7 @@ class LandmarkCollection:
             lm.marker_text.pose.orientation.w = 1.0
             lm.marker_text.header.stamp = Time()
 
-    def pub_markers(self, tag_ids: Union[List[int], int, None] = None):
+    def pub_markers(self, tag_ids: Union[List[int], int, None] = None) -> None:
         """
         Publish specified markers.
 
