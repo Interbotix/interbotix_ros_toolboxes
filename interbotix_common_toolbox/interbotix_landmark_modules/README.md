@@ -24,23 +24,15 @@ Below if a list and short description of each helper node. Over time, this list 
   <img width="410" height="auto" src="images/landmark_manager.png">
 </p>
 
-- **landmark_finder** - Node that uses the AprilTag **single_image_server_node** to periodicaly take snapshots from a camera. If a landmark is detected by this node, a transform to its pose is published to the static TF tree.
+- **landmark_finder** - Node that uses the AprilTag **single_image_server_node** to periodically take snapshots from a camera. If a landmark is detected by this node, a transform to its pose is published to the static TF tree.
 
 - **tf_map_to_landmark** - Small node that publishes a transform between a fixed frame and the origin frame (usually map) to separate the landmarks from other frames on the TF tree.
 
 ## Usage
 To use any module, simply include the appropriate launch file in the [launch](launch/) directory in you master launch file. Then make sure to include the appropriate import statement in your Python script as described above.
 
-### Launch File Arguements
-Short descriptions for each launch file's arguements are below...
-
-#### landmark.launch
-| Argument | Description | Default Value |
-| -------- | ----------- | :-----------: |
-| apriltag_ns | name-space where the AprilTag related nodes and parameters are located | apriltag |
-| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_raw |
-| camera_info_topic | the absolute ROS topic name to subscribe to the camera color info | camera/color/camera_info |
-| use_cam | whether or not to launch the realsense2_camera package | true |
+### Launch File Arguments
+Short descriptions for each launch file's arguments are below...
 
 #### landmark_manager.launch
 | Argument | Description | Default Value |
@@ -62,4 +54,4 @@ Tried to publish a visual representation of the goto markers, but the landmark h
 
 ## Future Work
 - Add special landmark labels that, when navigated to, trigger some function.
-    - For example, navigating to a landmark labeled `kobuki_dock` triggers the auto_dock sequence.
+    - For example, navigating to a landmark labeled `dock` triggers an automated docking sequence.

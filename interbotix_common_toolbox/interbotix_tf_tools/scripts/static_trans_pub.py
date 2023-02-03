@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Trossen Robotics
+# Copyright 2023 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -110,16 +110,16 @@ class StaticTransformManager(Node):
         :details: any new static transform is appended to the self.transform_list variable; if the
             transform already exists, the old one is replaced with the new one
         """
-        self.get_logger().info((
-            'Static Transform Publisher received TF from '
-            f"'{msg.header.frame_id}' to '{msg.child_frame_id}'"
-        ))
         for indx in range(len(self.transform_list)):
             if msg.child_frame_id == self.transform_list[indx].child_frame_id:
                 self.transform_list.pop(indx)
                 break
         self.transform_list.append(msg)
         self.br.sendTransform(self.transform_list)
+        self.get_logger().info((
+            'Static Transform Publisher broadcasted TF from '
+            f"'{msg.header.frame_id}' to '{msg.child_frame_id}'."
+        ))
         if self.save_transforms_param:
             self.save_transforms()
 
