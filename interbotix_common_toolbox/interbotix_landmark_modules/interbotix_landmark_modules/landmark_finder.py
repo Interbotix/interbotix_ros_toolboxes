@@ -49,25 +49,28 @@ class LandmarkFinder:
         :param node_inf: reference to the rclpy.node.Node on which to build this interface
         """
         super().__init__('landmark_finder')
-        self.node_inf = node_inf
-        apriltag_ns = self.node_inf.get_parameter_or('~apriltag_ns', 'apriltag')
+        self._node_inf = node_inf
+        apriltag_ns = self._node_inf.get_parameter_or('~apriltag_ns', 'apriltag')
 
         pkg_path = get_package_share_directory('interbotix_landmark_modules')
 
         # get parameters
-        self.lm_config_filepath = self.node_inf.get_parameter_or(
+        self.lm_config_filepath = self._node_inf.get_parameter_or(
             '~landmark_config',
-            f'{pkg_path}/landmarks/landmarks.yaml')
-        self.obs_frame = self.node_inf.get_parameter_or(
+            f'{pkg_path}/landmarks/landmarks.yaml'
+        )
+        self.obs_frame = self._node_inf.get_parameter_or(
             '~obs_frame',
-            'camera_color_optical_frame')
-        self.fixed_frame = self.node_inf.get_parameter_or(
+            'camera_color_optical_frame'
+        )
+        self.fixed_frame = self._node_inf.get_parameter_or(
             '~fixed_frame',
-            'landmarks')
+            'landmarks'
+        )
 
         self.valid_tags = None
         self.landmarks = LandmarkCollection(
-            node_inf=self.node_inf,
+            node_inf=self._node_inf,
             landmarks={},
             obs_frame=self.obs_frame,
             fixed_frame=self.fixed_frame,
@@ -76,17 +79,18 @@ class LandmarkFinder:
         self._load_landmarks()
         self.apriltag = AprilTag(
             apriltag_ns=apriltag_ns,
-            node_inf=self.node_inf)
+            node_inf=self._node_inf
+        )
         self.apriltag.set_valid_tags(self.valid_tags)
 
         # wait a bit for other nodes to launch
         time.sleep(5.0)
 
-        self.timer = self.node_inf.create_timer(
+        self.timer = self._node_inf.create_timer(
             timer_period_sec=2.0,
             callback=self.timer_callback
         )
-        self.node_inf.get_logger().info('Initialized LandmarkFinder!')
+        self._node_inf.get_logger().info('Initialized LandmarkFinder!')
 
         # self.node_inf.on_shutdown(self._save_landmarks)  # TODO(lsinterbotix)
 
@@ -95,8 +99,8 @@ class LandmarkFinder:
         # load landmarks from filepath
         if self.landmarks.load(self.lm_config_filepath):
             # set tags seen in landmark file
-            self.valid_tags = [lm.id_ for lm in self.landmarks.get_landmarks()]
-            self.node_inf.get_logger().info(f'Loaded landmarks from {self.lm_config_filepath}.')
+            self.valid_tags = self.landmarks.get_valid_tags()
+            self._node_inf.get_logger().info(f'Loaded landmarks from {self.lm_config_filepath}.')
 
     def _save_landmarks(self, tags: Union[List[int], None] = None) -> None:
         """
@@ -117,8 +121,8 @@ class LandmarkFinder:
                 # if we get a valid pose (if given quaternion is valid)...
                 if quaternion_is_valid(poses_wrt_cam[i].orientation):
                     # transform the pose to the new frame
-                    self.landmarks.get_landmark(tag_ids[i]).set_tf_wrt_cam(poses_wrt_cam[i])
-                    self.landmarks.get_landmark(tag_ids[i]).update_tfs(
+                    self.landmarks.get_landmark(tag_ids[i]).tf_wrt_cam = poses_wrt_cam[i]
+                    self.landmarks.get_landmark(tag_ids[i]).update_tf(
                         parent_old=self.obs_frame,
                         parent_new=self.fixed_frame
                     )
