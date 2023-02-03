@@ -35,16 +35,16 @@ jobs:
           ref: galactic
           submodules: recursive
           path: src/interbotix_ros_core
-      - name: Checkout Apriltag ROS package
-        uses: actions/checkout@v3
-        with:
-          repository: interbotix/apriltag_ros
-          ref: ros2-port
-          path: src/apriltag_ros
-      - name: Remove IGNORE files
-        run: |
-          rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_landmark_modules/COLCON_IGNORE
-          rm src/interbotix_ros_toolboxes/interbotix_perception_toolbox/COLCON_IGNORE
+      # - name: Checkout Apriltag ROS package
+      #   uses: actions/checkout@v3
+      #   with:
+      #     repository: interbotix/apriltag_ros
+      #     ref: ros2-port
+      #     path: src/apriltag_ros
+      # - name: Remove IGNORE files
+      #   run: |
+      #     rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_landmark_modules/COLCON_IGNORE
+      #     rm src/interbotix_ros_toolboxes/interbotix_perception_toolbox/COLCON_IGNORE
       - name: Get cache
         uses: actions/cache@v2
         with:
