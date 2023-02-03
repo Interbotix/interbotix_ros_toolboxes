@@ -26,10 +26,12 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import time
+from __future__ import annotations
+
 from typing import Callable, Dict, List, Union
 
 from geometry_msgs.msg import Pose, PoseStamped, Transform, TransformStamped
+import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.time import Time
@@ -51,18 +53,18 @@ class Landmark:
     def __init__(
         self,
         label: str,
-        id_num: int,
-        node_inf: Node = None,
+        tag_id: int,
+        node_inf: Node,
         tf_buffer: tf2_ros.Buffer = None,
         tf_listener: tf2_ros.TransformListener = None,
         callback: Callable = None,
         landmark_ns: str = 'landmarks',
-    ):
+    ) -> None:
         """
         Construct a Landmark object.
 
-        :param label: name of this tracked landmark
-        :param id_num: ID of this tracked landmark
+        :param label: name of this tracked Landmark
+        :param tag_id: tag_id of this tracked Landmark
         :param node_inf: reference to the rclpy.node.Node on which to build this interface
         :param landmark_ns: (optional) namespace where the ROS parameters needed by the module are
             located. Defaults to "landmarks".
@@ -75,39 +77,32 @@ class Landmark:
             buffer=self.tf_buffer, node=self.node_inf
         )
 
-        self.label_ = label
-        self.id_ = id_num
-        self.callback = callback
-        self.landmark_ns = landmark_ns
+        self._label = label
+        self._tag_id = tag_id
+        self._callback = callback
+        self._landmark_ns = landmark_ns
 
         # transforms
-        self.tf_wrt_cam = TransformStamped()
-        self.tf_wrt_cam.child_frame_id = self.label_
-        self.tf_wrt_map = TransformStamped()
-        self.tf_wrt_map.child_frame_id = self.label_
-        self.mounted_offset = 0.0
+        self._tf_wrt_cam = TransformStamped()
+        self._tf_wrt_cam.child_frame_id = self._label
+        self._tf_wrt_map = TransformStamped()
+        self._tf_wrt_map.child_frame_id = self._label
+        self._mounted_offset = 0.0
 
         # flags
-        self.tf_set_ = False
-        self.mounted_ = False
+        self._tf_set = False
+        self._mounted = False
 
         self._init_markers()
 
-    def get_id(self) -> int:
+    @property
+    def tag_id(self) -> int:
         """
-        Get id.
+        Get tag id.
 
-        :return: id
+        :return: this Landmark's tag_id
         """
-        return self.id_
-
-    def set_id(self, id_num: int):
-        """
-        Set id.
-
-        :param id_num: new id number for this landmark
-        """
-        self.id_ = id_num
+        return self._tag_id
 
     def transform_to_new_frame(self, parent_old: str, parent_new: str) -> PoseStamped:
         """
@@ -118,13 +113,13 @@ class Landmark:
         :return: pose in new fixed frame
         """
         tf_old = PoseStamped()
-        tf_old.pose.position.x = self.tf_wrt_cam.transform.translation.x
-        tf_old.pose.position.y = self.tf_wrt_cam.transform.translation.y
-        tf_old.pose.position.z = self.tf_wrt_cam.transform.translation.z
-        tf_old.pose.orientation.x = self.tf_wrt_cam.transform.rotation.x
-        tf_old.pose.orientation.y = self.tf_wrt_cam.transform.rotation.y
-        tf_old.pose.orientation.z = self.tf_wrt_cam.transform.rotation.z
-        tf_old.pose.orientation.w = self.tf_wrt_cam.transform.rotation.w
+        tf_old.pose.position.x = self._tf_wrt_cam.transform.translation.x
+        tf_old.pose.position.y = self._tf_wrt_cam.transform.translation.y
+        tf_old.pose.position.z = self._tf_wrt_cam.transform.translation.z
+        tf_old.pose.orientation.x = self._tf_wrt_cam.transform.rotation.x
+        tf_old.pose.orientation.y = self._tf_wrt_cam.transform.rotation.y
+        tf_old.pose.orientation.z = self._tf_wrt_cam.transform.rotation.z
+        tf_old.pose.orientation.w = self._tf_wrt_cam.transform.rotation.w
         tf_old.header.frame_id = parent_old
         tf_old.header.stamp = self.node_inf.get_clock().now().to_msg()
         try:
@@ -141,55 +136,60 @@ class Landmark:
             )
             raise e
 
-    def get_label(self) -> str:
+    @property
+    def label(self) -> str:
         """
         Get label.
 
         :return: label
         """
-        return self.label_
+        return self._label
 
-    def set_label(self, label: str):
+    @label.setter
+    def label(self, label: str) -> None:
         """
         Set label.
 
         :param label: new label for this landmark
         """
-        self.label_ = label
+        self._label = label
 
-    def get_x(self) -> float:
+    @property
+    def x(self) -> float:
         """
         Get landmark x position with respect to map frame.
 
         :return: landmark x position with respect to map frame
         :details: returns 0.0 if the TF of the landmark has not been set
         """
-        if self.tf_set_:
-            return self.tf_wrt_map.transform.translation.x
+        if self._tf_set:
+            return self._tf_wrt_map.transform.translation.x
         else:
             return 0.0
 
-    def get_y(self) -> float:
+    @property
+    def y(self) -> float:
         """
         Get landmark y position with respect to map frame.
 
         :return: landmark y position with respect to map frame
         :details: returns 0.0 if the TF of the landmark has not been set
         """
-        if self.tf_set_:
-            return self.tf_wrt_map.transform.translation.y
+        if self._tf_set:
+            return self._tf_wrt_map.transform.translation.y
         else:
             return 0.0
 
-    def get_theta(self) -> float:
+    @property
+    def theta(self) -> float:
         """
         Get landmark yaw rotation with respect to map frame.
 
         :return: landmark yaw rotation with respect to map frame
         :details: returns 0.0 if the TF of the landmark has not been set
         """
-        if self.tf_set_:
-            q = self.tf_wrt_map.transform.rotation
+        if self._tf_set:
+            q = self._tf_wrt_map.transform.rotation
             return euler_from_quaternion(
                 [q.x, q.y, q.z, q.w],
                 'rxyz'
@@ -197,80 +197,91 @@ class Landmark:
         else:
             return 0.0
 
-    def set_tf_wrt_cam(self, tf: Union[Transform, TransformStamped]):
+    @property
+    def tf_wrt_cam(self) -> TransformStamped:
+        """
+        Get for transform with respect to camera.
+
+        :return: pose transform with respect to camera
+        """
+        return self._tf_wrt_cam
+
+    @tf_wrt_cam.setter
+    def tf_wrt_cam(self, tf: Union[Transform, TransformStamped]) -> None:
         """
         Set for transform with respect to camera frame.
 
         :param tf: translation and orientation from cam to landmark
         """
         if isinstance(tf, Transform):
-            self.tf_wrt_cam.transform.translation = tf.translation
-            self.tf_wrt_cam.transform.rotation = tf.rotation
+            self._tf_wrt_cam.transform.translation = tf.translation
+            self._tf_wrt_cam.transform.rotation = tf.rotation
         elif isinstance(tf, TransformStamped):
-            self.tf_wrt_cam.transform.translation = tf.transform.translation
-            self.tf_wrt_cam.transform.rotation = tf.transform.rotation
+            self._tf_wrt_cam.transform.translation = tf.transform.translation
+            self._tf_wrt_cam.transform.rotation = tf.transform.rotation
         else:
             raise TypeError(
                 'Must be of type geometry_msgs.msg.Transform or '
                 f'geometry_msgs.msg.TransformStamped, was type {type(tf)}.'
             )
 
-    def set_cam_frame_id(self, frame_id: str):
+    @property
+    def cam_frame_id(self) -> str:
+        """
+        Get transform with respect to camera frame frame id.
+
+        :return: The frame_id the transform is relative to
+        """
+        return self._tf_wrt_cam.header.frame_id
+
+    @cam_frame_id.setter
+    def cam_frame_id(self, frame_id: str) -> None:
         """
         Set transform with respect to camera frame frame id.
 
         :param frame_id: The frame_id the transform should be relative to
         """
-        self.tf_wrt_cam.header.frame_id = frame_id
+        self._tf_wrt_cam.header.frame_id = frame_id
 
-    def get_tf_wrt_cam(self) -> TransformStamped:
+    def get_tf_wrt_map(self) -> TransformStamped:
         """
-        Get for transform with respect to camera.
+        Get transform with respect to map frame.
 
-        :return: pose transform with respect to camera
+        :return: transform with respect to map frame
         """
-        return self.tf_wrt_cam
+        return self._tf_wrt_map
 
-    def set_tf_wrt_map(self, pose: Union[Pose, PoseStamped], parent_new: str = 'map'):
+    def set_tf_wrt_map(self, pose: Union[Pose, PoseStamped], parent_new: str = 'map') -> None:
         """
         Set transform with respect to map frame.
 
         :param pose: translation and orientation from cam to landmark
-        :param parent_new: (optional) name of map frame. defaults to 'map'
         """
         if isinstance(pose, Pose):
-            self.tf_wrt_map.transform.translation.x = pose.position.x
-            self.tf_wrt_map.transform.translation.y = pose.position.y
-            self.tf_wrt_map.transform.translation.z = pose.position.z
-            self.tf_wrt_map.transform.rotation.x = pose.orientation.x
-            self.tf_wrt_map.transform.rotation.y = pose.orientation.y
-            self.tf_wrt_map.transform.rotation.z = pose.orientation.z
-            self.tf_wrt_map.transform.rotation.w = pose.orientation.w
+            self._tf_wrt_map.transform.translation.x = pose.position.x
+            self._tf_wrt_map.transform.translation.y = pose.position.y
+            self._tf_wrt_map.transform.translation.z = pose.position.z
+            self._tf_wrt_map.transform.rotation.x = pose.orientation.x
+            self._tf_wrt_map.transform.rotation.y = pose.orientation.y
+            self._tf_wrt_map.transform.rotation.z = pose.orientation.z
+            self._tf_wrt_map.transform.rotation.w = pose.orientation.w
         elif isinstance(pose, PoseStamped):
-            self.tf_wrt_map.transform.translation.x = pose.pose.position.x
-            self.tf_wrt_map.transform.translation.y = pose.pose.position.y
-            self.tf_wrt_map.transform.translation.z = pose.pose.position.z
-            self.tf_wrt_map.transform.rotation.x = pose.pose.orientation.x
-            self.tf_wrt_map.transform.rotation.y = pose.pose.orientation.y
-            self.tf_wrt_map.transform.rotation.z = pose.pose.orientation.z
-            self.tf_wrt_map.transform.rotation.w = pose.pose.orientation.w
+            self._tf_wrt_map.transform.translation.x = pose.pose.position.x
+            self._tf_wrt_map.transform.translation.y = pose.pose.position.y
+            self._tf_wrt_map.transform.translation.z = pose.pose.position.z
+            self._tf_wrt_map.transform.rotation.x = pose.pose.orientation.x
+            self._tf_wrt_map.transform.rotation.y = pose.pose.orientation.y
+            self._tf_wrt_map.transform.rotation.z = pose.pose.orientation.z
+            self._tf_wrt_map.transform.rotation.w = pose.pose.orientation.w
         else:
             raise TypeError(
                 'Must be of type geometry_msgs.msg.Pose or geometry_msgs.msg.PoseStamped, '
                 f'was {type(pose)}.'
             )
-        self.tf_wrt_map.header.stamp = self.node_inf.get_clock().now().to_msg()
-        self.tf_wrt_map.header.frame_id = parent_new
+        self._tf_wrt_map.header.stamp = self.node_inf.get_clock().now().to_msg()
+        self._tf_wrt_map.header.frame_id = parent_new
 
-    def get_tf_wrt_map(self) -> TransformStamped:
-        """
-        Set transform with respect to fixed frame.
-
-        :return: transform with respect to fixed frame
-        """
-        return self.tf_wrt_map
-
-    def update_tfs(self, parent_old: str, parent_new: str):
+    def update_tf(self, parent_old: str, parent_new: str) -> None:
         """
         Update the transformation to fixed frame.
 
@@ -282,56 +293,61 @@ class Landmark:
             pose=self.transform_to_new_frame(parent_old, parent_new),
             parent_new=parent_new
         )
-        self.tf_set_ = True
+        self._tf_set = True
 
-    def set_mounted(self, mounted: bool):
-        """
-        Set mounted status of this landmark.
-
-        :param mounted: boolean value to set the mounted status of this landmark to
-        """
-        self.mounted_ = mounted
-
-    def is_mounted(self) -> bool:
+    @property
+    def mounted(self) -> bool:
         """
         Get the mounted status of this landmark.
 
         :return: `True` if this landmark is mounted; `False` otherwise
         """
-        return self.mounted_
+        return self._mounted
 
-    def set_mounted_offset(self, offset: float = 0.0):
+    @mounted.setter
+    def mounted(self, mounted: bool) -> None:
         """
-        Set the mounted offset of this landmark.
+        Set mounted status of this landmark.
 
-        :param offset: (optional) the offset of this landmark. Defaults to 0.0
+        :param mounted: boolean value to set the mounted status of this landmark to
         """
-        self.mounted_offset = offset
+        self._mounted = mounted
 
-    def get_mounted_offset(self) -> float:
+    @property
+    def mounted_offset(self) -> float:
         """
         Get the mounted offset of this landmark.
 
         :return: the mounted offset of this landmark.
         """
-        return self.mounted_offset
+        return self._mounted_offset
 
-    def get_nav_goal(self) -> List[float]:
+    @mounted_offset.setter
+    def mounted_offset(self, offset: float = 0.0) -> None:
+        """
+        Set the mounted offset of this landmark.
+
+        :param offset: (optional) the offset of this landmark. Defaults to 0.0
+        """
+        self._mounted_offset = offset
+
+    @property
+    def nav_goal(self) -> List[float]:
         """
         Get for the [x, y, theta] navigation goal for this landmark.
 
         :return: list containing [x, y, theta] navigation goal for this landmark
         """
-        if not self.is_mounted():  # know offset is 0, can just return the [x, y, theta]
-            return [self.get_x(), self.get_y(), self.get_theta()]
+        if not self.mounted:  # know offset is 0, can just return the [x, y, theta]
+            return [self.x, self.y, self.theta]
         else:
             tf_goal = TransformStamped()
             tf_goal.header.stamp = Time()
-            tf_goal.header.frame_id = self.get_label()
-            tf_goal.child_frame_id = f'{self.get_label()}_goal'
+            tf_goal.header.frame_id = self.label
+            tf_goal.child_frame_id = f'{self.label}_goal'
 
             # z-axis is normal to tag face, 'front of tag'
-            tf_goal.transform.translation.z = self.get_mounted_offset()
+            tf_goal.transform.translation.z = self.mounted_offset
             tf_goal.transform.rotation.w = 1.0  # ensure valid quaternion
             self.tf_buffer.set_transform(
                 transform=tf_goal,
@@ -340,10 +356,11 @@ class Landmark:
 
             # get tf from map to goal frame [x, y, theta]
             tf_map_to_goal = self.tf_buffer.lookup_transform(
-                target_frame=self.landmark_ns,
+                target_frame=self._landmark_ns,
                 source_frame=tf_goal.child_frame_id,
                 time=Time()
             )
+
             return [
                 tf_map_to_goal.transform.translation.x,
                 tf_map_to_goal.transform.translation.y,
@@ -360,9 +377,9 @@ class Landmark:
         # spherical marker (location)
         self.marker_sphere = Marker()
         self.marker_sphere.id = 0
-        self.marker_sphere.header.frame_id = self.landmark_ns
+        self.marker_sphere.header.frame_id = self._landmark_ns
         self.marker_sphere.header.stamp = Time().to_msg()
-        self.marker_sphere.ns = self.get_label()
+        self.marker_sphere.ns = self.label
         self.marker_sphere.type = Marker.SPHERE
         self.marker_sphere.action = Marker.ADD
         self.marker_sphere.scale.x = 0.025
@@ -377,11 +394,11 @@ class Landmark:
         # text marker (label)
         self.marker_text = Marker()
         self.marker_text.id = 1
-        self.marker_text.header.frame_id = self.landmark_ns
+        self.marker_text.header.frame_id = self._landmark_ns
         self.marker_text.header.stamp = Time().to_msg()
-        self.marker_text.ns = self.get_label()
+        self.marker_text.ns = self.label
         self.marker_text.type = Marker.TEXT_VIEW_FACING
-        self.marker_text.text = f'{self.get_label()}_goal'
+        self.marker_text.text = f'{self.label}_goal'
         self.marker_text.scale.x = 0.05
         self.marker_text.scale.y = 0.05
         self.marker_text.scale.z = 0.05
@@ -391,36 +408,29 @@ class Landmark:
         self.marker_text.color.b = 1.0
         self.marker_text.pose.position.z = 0.05
 
-    def __eq__(self, other):
-        if isinstance(other, str):  # match label if string
-            return self.get_label() == other
-        elif isinstance(other, int):  # match id if int
-            return self.id_ == other
+    def __eq__(self, other: Landmark) -> bool:
+        if isinstance(other, Landmark):
+            return (
+                self.tag_id == other.tag_id and
+                self.label == other.label and
+                self.x == other.x and
+                self.y == other.y and
+                self.theta == other.theta
+            )
+        else:
+            raise TypeError(f'Must be of type Landmark, was {type(other)}.')
 
-        if isinstance(other, Landmark):  # if Landmark, check both
-            return (self.get_id() == other.get_id() or self.get_label() == other.get_label())
-
-    def __repr__(self):
-        """
-        Define repr.
-
-        Prints in the form of:
-        ---
-        label: {}
-        id: {}
-        tf_self: {}
-        mounted: {}
-        mounted_offset: {}
-        tf: {
-            ...
-        }
-        ---
-        """
-        tf = self.get_tf_wrt_map() if self.tf_set_ else self.get_tf_wrt_cam()
+    def __repr__(self) -> str:
+        tf = self._tf_wrt_map if self._tf_set else self.tf_wrt_cam
         return (
-            f'---\nlabel: {self.get_label()}\nid: {self.get_id()}\ntf_set: {self.tf_set_}\n'
-            f'mounted: {self.is_mounted()}\nmounted_offset: {self.get_mounted_offset()}\n'
-            f'tf:\n{tf}\n---'
+            'interbotix_landmark_modules.landmark.Landmark('
+            f'label={self.label},'
+            f'tag_id={self.tag_id},'
+            f'tf_set={self._tf_set},'
+            f'mounted={self.mounted},'
+            f'mounted_offset={self.mounted_offset},'
+            f'tf={tf}'
+            ')'
         )
 
 
@@ -433,7 +443,7 @@ class LandmarkCollection:
     def __init__(
         self,
         node_inf: Node,
-        landmarks: Dict = {},
+        landmarks: Dict[int, Landmark] = {},
         observation_frame: str = None,
         fixed_frame: str = None,
         ros_on: bool = False,
@@ -452,96 +462,101 @@ class LandmarkCollection:
             to. Defaults to `None`.
         :param ros_on: (optional): Whether or not ROS is on. Defaults to `False`.
         """
-        self.node_inf = node_inf
-        self.data = landmarks
+        self._node_inf = node_inf
+        self._landmarks = landmarks
 
         # tf buffer and listener
-        self.tf_buffer = tf_buffer if tf_buffer is not None else tf2_ros.Buffer(node=self.node_inf)
+        self.tf_buffer = tf_buffer if tf_buffer is not None else tf2_ros.Buffer(
+            node=self._node_inf
+        )
         self.listener = tf_listener if tf_listener is not None else tf2_ros.TransformListener(
-            buffer=self.tf_buffer, node=self.node_inf
+            buffer=self.tf_buffer, node=self._node_inf
         )
 
         # if we will use ROS, get params and set up pubs/subs
         if ros_on:
             self.ROS = True
 
-            self.observation_frame = self.node_inf.get_parameter_or(
+            self.observation_frame = self._node_inf.get_parameter_or(
                 'observation_frame',
-                observation_frame
+                observation_frame,
             )
-            self.fixed_frame = self.node_inf.get_parameter_or(
+            self.fixed_frame = self._node_inf.get_parameter_or(
                 'fixed_frame',
-                fixed_frame)
+                fixed_frame,
+            )
 
-            self.static_tf_pub = self.node_inf.create_publisher(
+            self.static_tf_pub = self._node_inf.create_publisher(
                 TransformStamped,
                 'static_transforms',
                 qos_profile=10,
             )
 
-            self.marker_pub = self.node_inf.create_publisher(
+            self.marker_pub = self._node_inf.create_publisher(
                 MarkerArray,
                 'landmark_markers',
-                qos_profile=10,)
+                qos_profile=10,
+            )
 
         else:
             self.ROS = False
             self.observation_frame = observation_frame
             self.fixed_frame = fixed_frame
 
-    def get_landmark(self, id_num: int) -> Landmark:
+    def get_landmark(self, tag_id: int) -> Landmark:
         """
-        Get the specified landmark corresponding to the ID numbers.
+        Get the specified landmark corresponding to the tag_id.
 
-        :return: landmark with specified ID number
+        :return: landmark with specified tag_id
         """
-        return self.data.get(id_num)
+        return self._landmarks.get(tag_id)
 
-    def get_landmarks(self, id_nums: Union[List[int], None] = None) -> List[Landmark]:
+    def get_landmarks(self, tag_ids: Union[List[int], None] = None) -> List[Landmark]:
         """
-        Get the specified landmarks corresponding to the ID numbers.
+        Get the specified landmarks corresponding to their tag_ids.
 
-        :return: landmarks with specified ID number
-        :details: If id_num is not given, returns all landmarks as dict_values. If id_num is a list
-            of ints, returns landmarks corresponding to the ID numbers in that list
+        :return: landmarks with specified label
+        :details: If tag_ids is not given, returns all landmarks as dict_values. If tag_ids is a
+            list of strs, returns landmarks corresponding to the tag_ids in that list
         """
-        if id_nums is None:
-            return self.data.values()
-        elif isinstance(id_nums, list):
-            return [self.data[x] for x in id_nums]
+        if tag_ids is None:
+            return list(self._landmarks.values())
+        elif isinstance(tag_ids, list):
+            return [self._landmarks.get(label) for label in tag_ids]
         else:
-            raise TypeError('Must be of type List[int], or None.')
+            raise TypeError(f'Must be of type List[int] or None, was {type(tag_ids)}')
 
-    def add_landmark(self, label: str, id_num: int):
+    def add_landmark(self, label: str, tag_id: int):
         """
         Add landmark to data dictionary.
 
         :param label: label for added landmark to add
-        :param id_num: tag id for added landmark and dictionary key
+        :param tag_id: tag_id for added landmark and dictionary key
         """
-        self.data.update({
-            id_num: Landmark(
+        self._landmarks.update({
+            tag_id: Landmark(
                 label=label,
-                id_num=id_num,
-                node_inf=self.node_inf,
+                tag_id=tag_id,
+                node_inf=self._node_inf,
                 tf_listener=self.listener,
                 tf_buffer=self.tf_buffer,
             )
         })
 
-    def remove_landmark(self, id_num: int):
+    def pop_landmark(self, tag_id: int) -> Landmark:
         """
-        Remove landmark from data dictionary.
+        Remove Landmark from data dictionary.
 
-        :param id_num: id to remove
+        :param tag_id: tag_id of Landmark to remove
+        :return: Removed Landmark
         """
-        self.data.pop(id_num)
+        return self._landmarks.pop(tag_id)
 
     def get_valid_tags(self) -> List[int]:
         """
-        Return the ids of the tags of any landmark in the Collection.
+        Return the tag_ids of the tags of any Landmark in the Collection.
 
-        :return: list of ids corresponding to landmarks in the Collection
+        :return: list of tag_ids corresponding to landmarks in the Collection
         :details: updates the list of valid tags before returning
         """
         self.update_valid_tags()
@@ -549,7 +564,7 @@ class LandmarkCollection:
 
     def update_valid_tags(self) -> None:
         """Update the list of valid tags."""
-        self.valid_tags = [lm.get_id() for lm in self.get_landmarks()]
+        self.valid_tags = [lm.tag_id for lm in self.get_landmarks()]
 
     def get_set_tags(self) -> List[int]:
         """
@@ -557,7 +572,7 @@ class LandmarkCollection:
 
         :return: list of ids corresponding to seen landmarks in the Collection
         """
-        return [lm.get_id() for lm in self.get_landmarks() if lm.tf_set_]
+        return [lm.tag_id for lm in self.get_landmarks() if lm._tf_set]
 
     def get_set_landmarks(self) -> List[Landmark]:
         """
@@ -565,7 +580,7 @@ class LandmarkCollection:
 
         :return: list of seen landmarks in the Collection
         """
-        return [lm for lm in self.get_landmarks() if lm.tf_set_]
+        return [lm for lm in self.get_landmarks() if lm._tf_set]
 
     def save(self, filepath, ids: Union[List[int], None] = None) -> bool:
         """
@@ -582,14 +597,14 @@ class LandmarkCollection:
 
         lm_yaml = {}
         for lm in self.get_landmarks(ids):
-            tf_map = lm.get_tf_wrt_map()
+            tf_map = lm._tf_wrt_map
             lm_dict = {}
-            lm_dict['id'] = lm.id_
-            lm_dict['label'] = lm.label_
-            lm_dict['set'] = lm.tf_set_
-            lm_dict['mounted'] = lm.is_mounted()
-            lm_dict['mounted_offset'] = lm.mounted_offset
-            if lm.tf_set_:
+            lm_dict['id'] = lm.tag_id
+            lm_dict['label'] = lm._label
+            lm_dict['set'] = lm._tf_set
+            lm_dict['mounted'] = lm.mounted
+            lm_dict['mounted_offset'] = lm._mounted_offset
+            if lm._tf_set:
                 lm_dict['tf'] = {}
                 lm_dict['tf']['frame_id'] = tf_map.header.frame_id
                 lm_dict['tf']['child_frame_id'] = tf_map.child_frame_id
@@ -600,11 +615,15 @@ class LandmarkCollection:
                 lm_dict['tf']['qy'] = float(tf_map.transform.rotation.y)
                 lm_dict['tf']['qz'] = float(tf_map.transform.rotation.z)
                 lm_dict['tf']['qw'] = float(tf_map.transform.rotation.w)
-            lm_yaml[lm.id_] = lm_dict
+            lm_yaml[lm.tag_id] = lm_dict
 
-        with open(filepath, 'w') as yamlfile:
-            yaml.dump(lm_yaml, yamlfile, default_flow_style=False)
-        self.node_inf.get_logger().info(f"Saved landmarks to '{filepath}'.")
+        try:
+            with open(filepath, 'w') as yamlfile:
+                yaml.dump(lm_yaml, yamlfile, default_flow_style=False)
+            self._node_inf.get_logger().info(f"Saved landmarks to '{filepath}'.")
+        except IOError as e:
+            self._node_inf.get_logger().error(f"Could not save landmarks to '{filepath}': {e}")
+            return False
 
         return True
 
@@ -615,12 +634,14 @@ class LandmarkCollection:
         :param filepath: path to yaml file containing structured landmark data
         :return: `True` if loaded successfully, `False` otherwise
         """
+        lm_dict: Dict[str, Dict]
         try:
             with open(filepath, 'r') as yamlfile:
                 lm_dict = yaml.safe_load(yamlfile)
 
             if lm_dict is None:
-                return
+                self._node_inf.get_logger().warning(f"No landmarks found in file '{filepath}'.")
+                return True
 
             for key in lm_dict.keys():
 
@@ -630,45 +651,60 @@ class LandmarkCollection:
 
                 # get transform from configs
                 if 'tf' in lm_dict[key].keys():
-                    self.data[key].tf_wrt_map = TransformStamped()
-                    self.data[key].tf_wrt_map.header.stamp = (
-                        self.node_inf.get_clock().now().to_msg()
+                    self._landmarks[key]._tf_wrt_map = TransformStamped()
+                    self._landmarks[key]._tf_wrt_map.header.stamp = (
+                        self._node_inf.get_clock().now().to_msg()
                     )
                     if lm_dict[key]['tf']['frame_id'] == '':
-                        self.data[key].tf_wrt_map.header.frame_id = self.observation_frame
+                        self._landmarks[key]._tf_wrt_map.header.frame_id = self.observation_frame
                     else:
-                        self.data[key].tf_wrt_map.header.frame_id = lm_dict[key]['tf']['frame_id']
-                    self.data[key].tf_wrt_map.child_frame_id = lm_dict[key]['tf']['child_frame_id']
-                    self.data[key].tf_wrt_map.transform.translation.x = lm_dict[key]['tf']['x']
-                    self.data[key].tf_wrt_map.transform.translation.y = lm_dict[key]['tf']['y']
-                    self.data[key].tf_wrt_map.transform.translation.z = lm_dict[key]['tf']['z']
-                    self.data[key].tf_wrt_map.transform.rotation.x = lm_dict[key]['tf']['qx']
-                    self.data[key].tf_wrt_map.transform.rotation.y = lm_dict[key]['tf']['qy']
-                    self.data[key].tf_wrt_map.transform.rotation.z = lm_dict[key]['tf']['qz']
-                    self.data[key].tf_wrt_map.transform.rotation.w = lm_dict[key]['tf']['qw']
-                    self.data[key].tf_set_ = True
+                        self._landmarks[key]._tf_wrt_map.header.frame_id = (
+                            lm_dict[key]['tf']['frame_id']
+                        )
+                    self._landmarks[key]._tf_wrt_map.child_frame_id = (
+                        lm_dict[key]['tf']['child_frame_id']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.translation.x = (
+                        lm_dict[key]['tf']['x']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.translation.y = (
+                        lm_dict[key]['tf']['y']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.translation.z = (
+                        lm_dict[key]['tf']['z']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.rotation.x = (
+                        lm_dict[key]['tf']['qx']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.rotation.y = (
+                        lm_dict[key]['tf']['qy']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.rotation.z = (
+                        lm_dict[key]['tf']['qz']
+                    )
+                    self._landmarks[key]._tf_wrt_map.transform.rotation.w = (
+                        lm_dict[key]['tf']['qw']
+                    )
+                    self._landmarks[key]._tf_set = True
                 else:
-                    self.data[key].tf_wrt_cam.header.frame_id = self.observation_frame
-                    self.data[key].tf_wrt_cam.child_frame_id = self.data[key].get_label()
-                    self.data[key].tf_set_ = False
+                    self._landmarks[key]._tf_wrt_cam.header.frame_id = self.observation_frame
+                    self._landmarks[key]._tf_wrt_cam.child_frame_id = self._landmarks[key].label
+                    self._landmarks[key]._tf_set = False
 
                 # get mounted/mounted_offset values from configs
                 if 'mounted' in lm_dict[key].keys():
-                    m = lm_dict[key]['mounted']
-                    mo = lm_dict[key]['mounted_offset']
-
-                self.data[key].mounted_ = m
-                self.data[key].set_mounted_offset(mo)
+                    self._landmarks[key].mounted = lm_dict[key]['mounted']
+                    self._landmarks[key].mounted_offset = lm_dict[key]['mounted_offset']
 
             self.update_valid_tags()
             if self.ROS:
                 self.pub_tfs(self.valid_tags)
-                time.sleep(1.0)  # wait to make sure tf is published
+                rclpy.spin_once(self._node_inf, timeout_sec=0.1)
                 self.pub_markers(self.valid_tags)
             return True
 
         except IOError:
-            self.node_inf.get_logger().warn(
+            self._node_inf.get_logger().warning(
                 f"File at '{filepath}' does not exist yet. No landmarks loaded."
             )
             return False
@@ -679,9 +715,9 @@ class LandmarkCollection:
 
         :return: `True` if landmarks is empty, `False` otherwise
         """
-        return self.data == {}
+        return len(self._landmarks) == 0
 
-    def pub_tfs(self, tag_ids: Union[List[int], None] = None) -> None:
+    def pub_tfs(self, tag_ids: Union[List[int], int, None] = None) -> None:
         """
         Publish TFs to static transforms.
 
@@ -691,24 +727,29 @@ class LandmarkCollection:
         if self.is_empty():
             return True
 
+        if isinstance(tag_ids, int):
+            tag_ids = [tag_ids]
+
         if tag_ids is None:
             # when no tags are specified, pubs all
             for lm in self.get_landmarks():
-                if lm.tf_set_:
+                if lm._tf_set:
                     self.static_tf_pub.publish(
-                        lm.get_tf_wrt_map())
+                        lm._tf_wrt_map
+                    )
         else:
             # when list of tags is specified, pubs tags in list
-            for lm in [self.get_landmark(x) for x in tag_ids]:
-                if lm.tf_set_:
+            for lm in [self.get_landmark(tag_id) for tag_id in tag_ids]:
+                if lm._tf_set:
                     self.static_tf_pub.publish(
-                        lm.get_tf_wrt_map())
-        self.node_inf.executor.spin_once(timeout_sec=1.0)
+                        lm._tf_wrt_map
+                    )
+                    print(f'published lm {lm.label}')
 
     def update_markers(self) -> None:
         """Update markers."""
         for lm in self.get_set_landmarks():  # only publish seen tags
-            g = lm.get_nav_goal()
+            g = lm.nav_goal
             lm.marker_sphere.pose.position.x = g[0]
             lm.marker_sphere.pose.position.y = g[1]
             lm.marker_sphere.pose.position.z = 0.1
@@ -735,7 +776,7 @@ class LandmarkCollection:
             `None`
         """
         if not self.ROS:
-            self.node_inf.get_logger().warn('Tried to publish marker but node is not active.')
+            self._node_inf.get_logger().warning('Tried to publish marker but node is not active.')
             return
         else:
             self.update_markers()
@@ -745,16 +786,17 @@ class LandmarkCollection:
                     msg.markers.append(lm.marker_sphere)
                     msg.markers.append(lm.marker_text)
                     self.marker_pub.publish(msg)
-                if lm.get_id() in tag_ids:
+                if lm.tag_id in tag_ids:
                     msg.markers.append(lm.marker_sphere)
                     msg.markers.append(lm.marker_text)
                     self.marker_pub.publish(msg)
 
     def __repr__(self):
-        ls = []
-        for lm in self.get_landmarks():
-            ls.append(lm)
-        return str(ls)
+        return (
+            'interbotix_landmark_modules.landmark.LandmarkCollection('
+            f'landmarks={self.get_landmarks()}'
+            ')'
+        )
 
     def __len__(self):
-        return len(self.data)
+        return len(self._landmarks)
