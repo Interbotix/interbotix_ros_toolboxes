@@ -10,6 +10,7 @@
 
   <depend>geometry_msgs</depend>
   <depend>tf_transformations</depend>
+  <depend>python-transforms3d-pip</depend>
   <depend>python3-numpy</depend>
 
   <test_depend>ament_lint_auto</test_depend>
