@@ -5,13 +5,13 @@
   <version>0.0.0</version>
   <description>The interbotix_common_modules package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <depend>geometry_msgs</depend>
-  <depend>tf_transformations</depend>
-  <depend>python-transforms3d-pip</depend>
-  <depend>python3-numpy</depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
+  <exec_depend>python-transforms3d-pip</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

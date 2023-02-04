@@ -4,12 +4,12 @@
   <version>0.0.0</version>
   <description>The interbotix_common_sim package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
-
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>gazebo_ros</depend>
+
+  <exec_depend>gazebo_ros</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
