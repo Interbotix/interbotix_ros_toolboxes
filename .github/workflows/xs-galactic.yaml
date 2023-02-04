@@ -46,7 +46,7 @@ jobs:
       #     rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_landmark_modules/COLCON_IGNORE
       #     rm src/interbotix_ros_toolboxes/interbotix_perception_toolbox/COLCON_IGNORE
       - name: Get cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.ROS_DISTRO }}-${{ matrix.ROS_REPO }}-${{github.run_id}}
