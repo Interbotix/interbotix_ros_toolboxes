@@ -7,7 +7,7 @@
     interbotix_rpi_msgs provides messages for Interbotix Raspberry Pi applications
   </description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

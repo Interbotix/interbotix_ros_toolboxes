@@ -5,11 +5,11 @@
   <version>0.0.0</version>
   <description>The interbotix_moveit_interface package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
-
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>

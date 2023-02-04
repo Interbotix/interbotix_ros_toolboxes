@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>The interbotix_xs_modules package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
   <exec_depend>interbotix_xs_msgs</exec_depend>
