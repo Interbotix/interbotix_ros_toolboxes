@@ -5,10 +5,11 @@
   <version>0.0.0</version>
   <description>The interbotix_xs_rviz package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <build_depend>qtbase5-dev</build_depend>
 
   <depend>pluginlib</depend>
