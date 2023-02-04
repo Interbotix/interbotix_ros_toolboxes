@@ -52,6 +52,8 @@ jobs:
           key: ccache-${{ matrix.ROS_DISTRO }}-${{ matrix.ROS_REPO }}-${{github.run_id}}
           restore-keys: |
             ccache-${{ matrix.ROS_DISTRO }}-${{ matrix.ROS_REPO }}-
+      - name: Install non-rosdep Python dependencies transforms3d
+        run: python3 -m pip install modern-robotics
       - name: ROS-I CI
         uses: ros-industrial/industrial_ci@master
         with:
