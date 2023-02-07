@@ -16,6 +16,7 @@ struct Frame
   std::string parent_frame_id;
   std::string child_frame_id;
   std::string prefix;
+  bool logged = false;
 };
 
 class TFRebroadcaster
@@ -47,7 +48,7 @@ private:
   // YAML node containing configuration info
   YAML::Node config_;
 
-  // Vector containing all frames to be re-broadcasted from the configuraiton
+  // Vector containing all frames to be re-broadcasted from the configuration
   std::vector<Frame> frames_;
 };
 

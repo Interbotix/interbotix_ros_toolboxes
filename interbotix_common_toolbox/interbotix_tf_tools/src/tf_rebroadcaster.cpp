@@ -36,24 +36,25 @@ TFRebroadcaster::TFRebroadcaster(ros::NodeHandle *node_handle)
     frame_itr != all_frames.end();
     frame_itr++)
   {
+    Frame frame = Frame();
     // Get all parent and child frames, insert into map
-    std::string frame_parent = frame_itr->first.as<std::string>();
-    std::string frame_child = frame_itr->second["child_frame_id"].as<std::string>();
-    std::string prefix = frame_itr->second["prefix"].as<std::string>();
-    frames_.push_back(Frame{frame_parent, frame_child, prefix});
+    frame.parent_frame_id = frame_itr->first.as<std::string>();
+    frame.child_frame_id = frame_itr->second["child_frame_id"].as<std::string>();
+    frame.prefix = frame_itr->second["prefix"].as<std::string>();
+    frames_.push_back(frame);
 
-    if (prefix == "") {
+    if (frame.prefix == "") {
       ROS_INFO(
         "[tf_rebroadcaster] Will broadcast TF from frame '%s' to frame '%s'.",
-        frame_child.c_str(),
-        prefix.c_str());
+        frame.child_frame_id.c_str(),
+        frame.prefix.c_str());
     } else {
       // Print out which frames will be rebroadcasted
       ROS_INFO(
         "[tf_rebroadcaster] Will broadcast TF from frame '%s' to frame '%s', prepending prefix '%s'.",
-        frame_parent.c_str(),
-        frame_child.c_str(),
-        prefix.c_str());
+        frame.parent_frame_id.c_str(),
+        frame.child_frame_id.c_str(),
+        frame.prefix.c_str());
     }
   }
 
@@ -66,7 +67,7 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::TFMessage & msg)
 {
   // TODO(lsinterbotix): optimize
   // Loop over each parent/child frame
-  for (const auto & frame : frames_) {
+  for (auto & frame : frames_) {
     // Loop over every transform in message
     for (auto & tf : msg.transforms) {
       // Check if parent and child match
@@ -83,6 +84,13 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::TFMessage & msg)
         }
         rebroadcast_tf.transforms.push_back(tf_);
         pub_tf_.publish(rebroadcast_tf);
+        if (!frame.logged) {
+          ROS_INFO(
+            "Broadcasted TF from frame '%s' to frame '%s'. This will only log once.",
+            tf_.child_frame_id.c_str(),
+            tf_.header.frame_id.c_str());
+          frame.logged = true;
+        }
       }
     }
   }
