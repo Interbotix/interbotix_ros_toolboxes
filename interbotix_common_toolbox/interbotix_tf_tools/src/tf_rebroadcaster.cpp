@@ -9,6 +9,7 @@ TFRebroadcaster::TFRebroadcaster(ros::NodeHandle *node_handle)
   ros::param::get("~filepath_config", filepath_config_);
   ros::param::get("~topic_to", topic_to_);
   ros::param::get("~topic_from", topic_from_);
+  ros::param::get("~use_incoming_time", use_incoming_time_);
 
   // Load configuration file
   try {
@@ -81,6 +82,9 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::TFMessage & msg)
         if (frame.prefix != "") {
           tf_.child_frame_id = frame.prefix + tf.child_frame_id;
           tf_.header.frame_id = frame.prefix + tf.header.frame_id;
+        }
+        if (!use_incoming_time_) {
+          tf_.header.stamp = ros::Time::now();
         }
         rebroadcast_tf.transforms.push_back(tf_);
         pub_tf_.publish(rebroadcast_tf);

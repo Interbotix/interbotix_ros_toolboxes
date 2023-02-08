@@ -45,6 +45,9 @@ private:
   // String containing the topic that the rebroadcaster should publish to
   std::string topic_to_;
 
+  // Whether or not to use the timestamp on the incoming TF
+  bool use_incoming_time_;
+
   // YAML node containing configuration info
   YAML::Node config_;
 

@@ -8,11 +8,12 @@ This tool, built as a composable node, allows users to rebroadcast specific TFs 
 
 ### Parameters
 
-The tool takes three parameters:
+The tool takes four parameters:
 
 1. `filepath_config`: (string) absolute filepath to the configuration file.
 2. `topic_from`: (string) topic from which the TFs will be retrieved.
 3. `topic_to`: (string) topic to which the TF messages will be re-broadcasted.
+4. `use_incoming_time`: (bool) whether or not to use the timestamp of the incoming TF message.
 
 ### Configuration File Format
 
@@ -52,6 +53,7 @@ An example launch file is provided for a usage example.
   <arg name="topic_to"                    default=""/>
   <arg name="topic_from"                  default=""/>
   <arg name="tf_rebroadcaster_config"     default="$(find interbotix_tf_tools)/config/tf_rebroadcaster.yaml"/>
+  <arg name="use_incoming_time"           default="true"/>
 
   <node
     name="tf_rebroadcaster"
@@ -61,8 +63,8 @@ An example launch file is provided for a usage example.
     <param name="topic_to"                value="$(arg topic_to)"/>
     <param name="topic_from"              value="$(arg topic_from)"/>
     <param name="filepath_config"         value="$(arg tf_rebroadcaster_config)"/>
+    <param name="use_incoming_time"       value="$(arg use_incoming_time)"/>
   </node>
 
 </launch>
-
 ```

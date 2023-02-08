@@ -3,6 +3,7 @@
   <arg name="topic_to"                    default=""/>
   <arg name="topic_from"                  default=""/>
   <arg name="tf_rebroadcaster_config"     default="$(find interbotix_tf_tools)/config/tf_rebroadcaster.yaml"/>
+  <arg name="use_incoming_time"           default="true"/>
 
   <node
     name="tf_rebroadcaster"
@@ -12,6 +13,7 @@
     <param name="topic_to"                value="$(arg topic_to)"/>
     <param name="topic_from"              value="$(arg topic_from)"/>
     <param name="filepath_config"         value="$(arg tf_rebroadcaster_config)"/>
+    <param name="use_incoming_time"       value="$(arg use_incoming_time)"/>
   </node>
 
 </launch>
