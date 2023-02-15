@@ -51,7 +51,7 @@
 namespace interbotix
 {
 
-using MoveItErrorCode = moveit::planning_interface::MoveItErrorCode;
+using MoveItErrorCode = moveit::core::MoveItErrorCode;
 using MoveItPlan = interbotix_moveit_interface_msgs::srv::MoveItPlan;
 using Empty = std_srvs::srv::Empty;
 
