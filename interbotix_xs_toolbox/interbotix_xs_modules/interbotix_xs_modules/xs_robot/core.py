@@ -127,7 +127,7 @@ class InterbotixRobotXSCore(Node):
         )
 
         # Check for xs_sdk by looking for set_operating_modes
-        if not self.srv_set_op_modes.wait_for_service(timeout_sec=5.0):
+        if not self.srv_set_op_modes.wait_for_service(timeout_sec=10.0):
             self.get_logger().error(
                 (
                     'Failed to find services under namespace '
