@@ -16,9 +16,9 @@
   <depend>rclcpp</depend>
   <depend>rviz_common</depend>
   <depend>interbotix_xs_msgs</depend>
-  <depend>interbotix_xs_sdk</depend>
   <depend>rviz2</depend>
 
+  <exec_depend>interbotix_xs_sdk</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>

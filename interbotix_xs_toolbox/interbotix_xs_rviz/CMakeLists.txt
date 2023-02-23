@@ -19,7 +19,6 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 find_package(rclcpp REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(interbotix_xs_msgs REQUIRED)
-find_package(interbotix_xs_sdk REQUIRED)
 
 set(UIC_FILES
   src/ui/interbotix_control_panel.ui
