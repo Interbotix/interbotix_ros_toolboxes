@@ -130,8 +130,8 @@ class InterbotixRobotXSCore(Node):
         if not self.srv_set_op_modes.wait_for_service(timeout_sec=10.0):
             self.get_logger().error(
                 (
-                    'Failed to find services under namespace '
-                    f"'{self.robot_name}'. Shutting down..."
+                    f"Failed to find services under namespace '{self.robot_name}'. Is the xs_sdk "
+                    'running? Shutting down...'
                 )
             )
             sys.exit(1)
