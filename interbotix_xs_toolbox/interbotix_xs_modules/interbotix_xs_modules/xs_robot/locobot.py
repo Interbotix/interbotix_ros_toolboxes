@@ -36,8 +36,6 @@ from enum import Enum
 from threading import Thread
 import time
 
-from interbotix_perception_modules.armtag import InterbotixArmTagInterface
-from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 from interbotix_xs_modules.xs_robot.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
@@ -143,6 +141,7 @@ class InterbotixLocobotXS:
                     use_nav=use_nav,
                 )
         if use_perception:
+            from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
             self.pcl = InterbotixPointCloudInterface(
                 filter_ns=f'{robot_name}/pc_filter'
             )
@@ -157,6 +156,7 @@ class InterbotixLocobotXS:
                 gripper_name=gripper_name
             )
             if use_armtag:
+                from interbotix_perception_modules.armtag import InterbotixArmTagInterface
                 self.armtag = InterbotixArmTagInterface(
                     armtag_ns=f'{robot_name}/armtag',
                     apriltag_ns=f'{robot_name}/apriltag',
