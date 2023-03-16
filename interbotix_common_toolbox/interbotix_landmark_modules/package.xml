@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>interbotix_landmark_modules</name>
   <version>0.0.0</version>
@@ -6,22 +7,22 @@
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
-  
+
   <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>rostest</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
-  
+
   <build_depend>geometry_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
-  
+
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
   <build_export_depend>tf2_geometry_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>interbotix_common_modules</build_export_depend>
-  
+
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
@@ -29,7 +30,7 @@
   <exec_depend>interbotix_common_modules</exec_depend>
   <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-six</exec_depend>
   <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-six</exec_depend>
-  
+
   <test_depend>rosunit</test_depend>
   <test_depend>interbotix_perception_modules</test_depend>
 
