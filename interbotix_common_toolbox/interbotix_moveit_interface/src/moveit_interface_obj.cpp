@@ -39,11 +39,10 @@ InterbotixMoveItInterface::InterbotixMoveItInterface(
   rclcpp::Node::SharedPtr & node)
 : node_(node)
 {
-  // We spin up a MultiThreadedExecutor for the current state monitor to get information
-  // about the robot's state.
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(node_);
-  std::thread([&executor]() {executor.spin();}).detach();
+  // Create executor to spin just in the constructor so MoveGroupInterface can initialize
+  auto exec_temp = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  exec_temp->add_node(node_);
+  std::thread([&exec_temp]() {exec_temp->spin();}).detach();
 
   move_group = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
     node_,
@@ -84,6 +83,10 @@ InterbotixMoveItInterface::InterbotixMoveItInterface(
   RCLCPP_INFO(
     node_->get_logger(),
     "End effector link: %s", move_group->getEndEffectorLink().c_str());
+
+  // Stop executor and remove node from it so exec_ can be used later
+  exec_temp->cancel();
+  exec_temp->remove_node(node_);
 }
 
 InterbotixMoveItInterface::~InterbotixMoveItInterface()

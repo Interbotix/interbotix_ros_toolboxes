@@ -53,7 +53,7 @@ from rclpy.node import Node
 from std_srvs.srv import Empty
 from tf_transformations import quaternion_from_euler
 
-# There are arbitrariliy 10,000 'steps' from one end of a slider bar to the other
+# There are arbitrarily 10,000 'steps' from one end of a slider bar to the other
 RANGE = 10000
 
 # Currently, the VX300 arm has the longest reach around 0.7 meters - so set that as the limit for
