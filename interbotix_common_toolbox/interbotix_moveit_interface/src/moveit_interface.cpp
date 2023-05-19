@@ -37,6 +37,9 @@ int main(int argc, char ** argv)
   node_options.automatically_declare_parameters_from_overrides(true);
   auto node = std::make_shared<rclcpp::Node>("interbotix_moveit_node", node_options);
   auto moveit_interface = std::make_shared<interbotix::InterbotixMoveItInterface>(node);
+  auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
+  executor->add_node(node);
+  executor->spin();
   rclcpp::shutdown();
   return 0;
 }
