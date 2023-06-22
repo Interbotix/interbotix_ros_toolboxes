@@ -31,11 +31,13 @@
 from .xs_common import (
     get_interbotix_xsarm_joints,
     get_interbotix_xsarm_models,
+    get_interbotix_xscobot_models,
     get_interbotix_xslocobot_models,
 )
 
 __all__ = [
     'get_interbotix_xsarm_joints',
     'get_interbotix_xsarm_models',
+    'get_interbotix_xscobot_models',
     'get_interbotix_xslocobot_models',
 ]
