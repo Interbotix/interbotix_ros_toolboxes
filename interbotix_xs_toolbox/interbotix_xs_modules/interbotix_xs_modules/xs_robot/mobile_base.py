@@ -174,7 +174,7 @@ class InterbotixMobileBaseInterface(ABC):
             self.core.get_logger().error('`use_nav` set to `False`. Will not execute navigation.')
             return False
         goal = NavigateToPose.Goal(
-            goal=self._stamp_pose(pose=goal_pose, frame_id=frame_id),
+            pose=self._stamp_pose(pose=goal_pose, frame_id=frame_id),
             behavior_tree=behavior_tree
         )
 
