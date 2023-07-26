@@ -9,17 +9,17 @@
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
+  <depend>interbotix_xscobot_moveit</depend>
   <depend>geometry_msgs</depend>
-  <depend>interbotix_moveit_interface_msgs</depend>
   <depend>moveit_msgs</depend>
-  <!-- <depend>moveit_commander</depend> -->
   <depend>moveit_ros_planning_interface</depend>
   <depend>moveit_visual_tools</depend>
-  <depend>python_qt_binding</depend>
-  <depend>tf_transformations</depend>
+  <!-- <depend>python_qt_binding</depend> -->
+  <!-- <depend>tf_transformations</depend> -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
