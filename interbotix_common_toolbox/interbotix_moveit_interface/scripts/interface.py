@@ -13,11 +13,13 @@ from geometry_msgs.msg import PoseStamped, Pose
 from moveit.planning import MoveItPy
 from moveit.core.robot_state import RobotState
 
+from rclpy.logging import get_logger
+
 # config file libraries
 from moveit_configs_utils import MoveItConfigsBuilder
 from ament_index_python.packages import get_package_share_directory
 
-
+from interbotix_moveit_interface import moveit_interface_core
 # we need to specify our moveit_py config at the top of each notebook we use.
 # this is since we will start spinning a moveit_py node within this notebook.
 def main():
@@ -38,11 +40,38 @@ def main():
     # ).to_dict()
 
     # # initialise rclpy (only for logging purposes)
-    # rclpy.init()
+    rclpy.init()
+    logger = get_logger("moveit_py.pose_goal")
 
-    # # instantiate moveit_py instance and a planning component for the panda_arm
-    # xscobot = MoveItPy(node_name="moveit_py", config_dict=moveit_config)
-    # interbotix_arm = xscobot.get_planning_component("interbotix_arm")
+    # instantiate moveit_py instance and a planning component for the panda_arm
+    xscobot = MoveItPy(node_name="moveit_py", )
+    interbotix_arm = xscobot.get_planning_component("interbotix_arm")
+    logger.info("MoveItPy instance created")
+
+    interbotix_arm.set_start_state_to_current_state()
+
+    # set pose goal using predefined state
+    interbotix_arm.set_goal_state(configuration_name="home")
+
+    # plan to goal
+    moveit_interface_core.plan_and_execute(xscobot, interbotix_arm, logger, sleep_time=3.0)
+
+
+    # robot_model = xscobot.get_robot_model()
+    # robot_state = RobotState(robot_model)
+
+    # # randomize the robot state
+    # robot_state.set_to_random_positions()
+
+    # # set plan start state to current state
+    # interbotix_arm.set_start_state_to_current_state()
+
+    # # set goal state to the initialized robot state
+    # logger.info("Set goal state to the initialized robot state")
+    # interbotix_arm.set_goal_state(robot_state=robot_state)
+
+    # plan to goal
+    moveit_interface_core.plan_and_execute(xscobot, interbotix_arm, logger, sleep_time=3.0)
 
 
 
