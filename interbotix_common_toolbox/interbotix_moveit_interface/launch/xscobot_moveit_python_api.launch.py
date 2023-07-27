@@ -7,7 +7,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
@@ -64,6 +64,27 @@ def launch_setup(context, *args, **kwargs):
         hardware_type_launch_arg=hardware_type_launch_arg
     )
 
+    remappings = [
+        (
+            f'{robot_name_launch_arg.perform(context)}/get_planning_scene',
+            f'/{robot_name_launch_arg.perform(context)}/get_planning_scene'
+        ),
+        (
+            '/arm_controller/follow_joint_trajectory',
+            f'/{robot_name_launch_arg.perform(context)}/arm_controller/follow_joint_trajectory'
+        ),
+        (
+            '/gripper_controller/follow_joint_trajectory',
+            f'/{robot_name_launch_arg.perform(context)}/gripper_controller/follow_joint_trajectory'
+        ),
+        ]
+
+    planning_scene_monitor_parameters = {
+        'publish_planning_scene': True,
+        'publish_geometry_updates': True,
+        'publish_state_updates': True,
+        'publish_transforms_updates': True,
+    }
 
     moveit_config = (
         MoveItConfigsBuilder(
@@ -73,10 +94,13 @@ def launch_setup(context, *args, **kwargs):
         .robot_description_semantic(file_path="config/srdf/dx400.srdf.xacro")
         .trajectory_execution(file_path="config/moveit_controllers.yaml")
         .joint_limits(file_path="config/joint_limits/dx400_joint_limits.yaml")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .planning_scene_monitor(planning_scene_monitor_parameters)
         .moveit_cpp(
             file_path=get_package_share_directory("interbotix_moveit_interface")
             + "/config/planning.yaml"
         )
+        .pilz_cartesian_limits(file_path="config/pilz_cartesian_limits.yaml")
         .to_moveit_configs()
     )
 
@@ -100,17 +124,48 @@ def launch_setup(context, *args, **kwargs):
         "xsarm_moveit.rviz",
     )
 
+
+    move_group_node = Node(
+        package='moveit_ros_move_group',
+        executable='move_group',
+        # namespace=robot_name_launch_arg,
+        parameters=[
+            {
+                'planning_scene_monitor_options': {
+                    'robot_description':
+                        'robot_description',
+                    'joint_state_topic':
+                        f'/{robot_name_launch_arg.perform(context)}/joint_states',
+                },
+                'use_sim_time': use_sim_time_param,
+            },
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.planning_pipelines,
+            moveit_config.joint_limits,
+        ],
+        remappings=remappings,
+        output={'both': 'screen'},
+    )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
         name="rviz2",
-        output="log",
-        arguments=["-d", rviz_config_file],
+        output={'both': 'log'},
+        arguments=["-d", rviz_config_file,
+                   "-f", rviz_frame_launch_arg,],
         parameters=[
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.planning_pipelines,
+            moveit_config.joint_limits,
         ],
+        remappings=remappings,
     )
+
 
     static_tf = Node(
         package="tf2_ros",
@@ -134,7 +189,7 @@ def launch_setup(context, *args, **kwargs):
             'robot_name': robot_name_launch_arg,
             'base_link_frame': base_link_frame_launch_arg,
             # 'show_ar_tag': show_ar_tag_launch_arg,
-            'show_gripper_bar': 'true',
+            # 'show_gripper_bar': 'true',
             'show_gripper_fingers': 'true',
             'use_world_frame': use_world_frame_launch_arg,
             'external_urdf_loc': external_urdf_loc_launch_arg,
@@ -151,13 +206,20 @@ def launch_setup(context, *args, **kwargs):
             )
         ),
     )
+
+
     return [
+            TimerAction(
+                period=5.0,
+                actions=[moveit_py_node],
+                    ),
             example_file,
-            moveit_py_node,
+            # moveit_py_node,
+            move_group_node,
             xscobot_ros_control_launch_include,
+            rviz_node,
             # robot_state_publisher,
             # ros2_control_node,
-            rviz_node,
             # static_tf,
         ]
 
