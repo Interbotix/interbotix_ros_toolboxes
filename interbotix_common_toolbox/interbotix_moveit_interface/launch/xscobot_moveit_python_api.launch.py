@@ -106,7 +106,7 @@ def launch_setup(context, *args, **kwargs):
 
     example_file = DeclareLaunchArgument(
         "example_file",
-        default_value="interface.py",
+        default_value="bartender.py",
         description="Python API tutorial file name",
     )
 
@@ -172,7 +172,7 @@ def launch_setup(context, *args, **kwargs):
         executable="static_transform_publisher",
         name="static_transform_publisher",
         output="log",
-        arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
+        arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "dx400/base_link"],
     )
 
 
@@ -214,13 +214,13 @@ def launch_setup(context, *args, **kwargs):
                 actions=[moveit_py_node],
                     ),
             example_file,
-            # moveit_py_node,
             move_group_node,
             xscobot_ros_control_launch_include,
             rviz_node,
+            static_tf,
+            # moveit_py_node,
             # robot_state_publisher,
             # ros2_control_node,
-            # static_tf,
         ]
 
 

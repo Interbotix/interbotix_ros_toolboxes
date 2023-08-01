@@ -34,8 +34,10 @@ robots possible without writing a single line of ROS code.
 """
 
 from . import moveit_interface_core
+from . import move_arm
 
 
 __all__ = [
     'moveit_interface_core',
+    'move_arm',
 ]

@@ -71,10 +71,12 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
+# install(PROGRAMS scripts/bartender.py DESTINATION share/${PROJECT_NAME})
 
 install(
   PROGRAMS
     scripts/interface.py
+    scripts/bartender.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

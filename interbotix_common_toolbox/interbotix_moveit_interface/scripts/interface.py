@@ -5,6 +5,7 @@ import sys
 import yaml
 import rclpy
 import numpy as np
+import time
 
 # message libraries
 from geometry_msgs.msg import PoseStamped, Pose
@@ -22,6 +23,40 @@ from ament_index_python.packages import get_package_share_directory
 from interbotix_moveit_interface import moveit_interface_core
 # we need to specify our moveit_py config at the top of each notebook we use.
 # this is since we will start spinning a moveit_py node within this notebook.
+def plan_and_execute(
+    robot,
+    planning_component,
+    logger,
+    single_plan_parameters=None,
+    multi_plan_parameters=None,
+    sleep_time=0.0,
+):
+    """Helper function to plan and execute a motion."""
+    # plan to goal
+    logger.info("Planning trajectory")
+    if multi_plan_parameters is not None:
+        plan_result = planning_component.plan(
+            multi_plan_parameters=multi_plan_parameters
+        )
+    elif single_plan_parameters is not None:
+        plan_result = planning_component.plan(
+            single_plan_parameters=single_plan_parameters
+        )
+    else:
+        plan_result = planning_component.plan()
+
+    # execute the plan
+    if plan_result:
+        logger.info("Executing plan")
+        robot_trajectory = plan_result.trajectory
+        robot.execute(robot_trajectory, controllers=[])
+    else:
+        logger.error("Planning failed")
+
+    time.sleep(sleep_time)
+
+
+
 def main():
 
     print("This works")
@@ -57,8 +92,11 @@ def main():
     moveit_interface_core.plan_and_execute(xscobot, interbotix_arm, logger, sleep_time=3.0)
 
 
-    # robot_model = xscobot.get_robot_model()
-    # robot_state = RobotState(robot_model)
+    robot_model = xscobot.get_robot_model()
+    robot_state = RobotState(robot_model)
+    robot_state.update()
+
+    print("See Joints:",robot_state.joint_positions)
 
     # # randomize the robot state
     # robot_state.set_to_random_positions()
@@ -71,7 +109,7 @@ def main():
     # interbotix_arm.set_goal_state(robot_state=robot_state)
 
     # plan to goal
-    moveit_interface_core.plan_and_execute(xscobot, interbotix_arm, logger, sleep_time=3.0)
+    # moveit_interface_core.plan_and_execute(xscobot, interbotix_arm, logger, sleep_time=3.0)
 
 
 
