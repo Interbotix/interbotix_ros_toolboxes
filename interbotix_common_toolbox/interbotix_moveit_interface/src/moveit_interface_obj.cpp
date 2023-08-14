@@ -107,7 +107,7 @@ bool InterbotixMoveItInterface::moveit_plan_joint_positions(
     rviz_visual_tools::WHITE,
     rviz_visual_tools::XLARGE);
   visual_tools->publishTrajectoryLine(
-    saved_plan.trajectory,
+    saved_plan.trajectory_,
     joint_model_group);
   visual_tools->trigger();
 
@@ -127,7 +127,7 @@ bool InterbotixMoveItInterface::moveit_plan_ee_pose(const geometry_msgs::msg::Po
     rviz_visual_tools::WHITE,
     rviz_visual_tools::XLARGE);
   visual_tools->publishTrajectoryLine(
-    saved_plan.trajectory,
+    saved_plan.trajectory_,
     joint_model_group);
   visual_tools->trigger();
 
@@ -159,7 +159,7 @@ bool InterbotixMoveItInterface::moveit_plan_ee_position(double x, double y, doub
     rviz_visual_tools::WHITE,
     rviz_visual_tools::XLARGE);
   visual_tools->publishTrajectoryLine(
-    saved_plan.trajectory,
+    saved_plan.trajectory_,
     joint_model_group);
   visual_tools->trigger();
 
@@ -185,7 +185,7 @@ bool InterbotixMoveItInterface::moveit_plan_ee_orientation(
     rviz_visual_tools::WHITE,
     rviz_visual_tools::XLARGE);
   visual_tools->publishTrajectoryLine(
-    saved_plan.trajectory,
+    saved_plan.trajectory_,
     joint_model_group);
   visual_tools->trigger();
 
@@ -208,7 +208,7 @@ bool InterbotixMoveItInterface::moveit_plan_cartesian_path(
     trajectory);
   RCLCPP_INFO(
     node_->get_logger(),
-    "Visualizing (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+    "Visualizing (Cartesian path) (%.2f%% achieved)", fraction * 100.0);
 
   visual_tools->deleteAllMarkers();
   visual_tools->publishText(
@@ -230,7 +230,7 @@ bool InterbotixMoveItInterface::moveit_plan_cartesian_path(
 
   moveit::planning_interface::MoveGroupInterface::Plan plan;
   saved_plan = plan;
-  saved_plan.trajectory = trajectory;
+  saved_plan.trajectory_ = trajectory;
 
   // If a plan was found for over 90% of the waypoints...
   // consider that a successful planning attempt
