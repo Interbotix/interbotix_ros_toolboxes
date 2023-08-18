@@ -33,7 +33,7 @@ import sys
 import yaml
 import rclpy
 import numpy as np
-
+import quaternion
 # message libraries
 from geometry_msgs.msg import PoseStamped, Pose
 
@@ -75,40 +75,33 @@ def main():
         gripper_name='interbotix_gripper'
     )
 
-    # rclpy.init()
-    # logger = get_logger("moveit_py.pose_goal")
+    pose_goal1 = Pose()
+    q1 = np.quaternion(0.7048, 0.0424, -0.0423, 0.7068).normalized()
+    pose_goal1.position.x = -0.022
+    pose_goal1.position.y = 0.221
+    pose_goal1.position.z = 0.061
+    pose_goal1.orientation.x = q1.x
+    pose_goal1.orientation.y = q1.y
+    pose_goal1.orientation.z = q1.z
+    pose_goal1.orientation.w = q1.w
 
-    # # instantiate moveit_py instance and a planning component for the panda_arm
-    # xscobot = MoveItPy(node_name="moveit_py")
-    # interbotix_arm = xscobot.get_planning_component("interbotix_arm")
-    # logger.info("MoveItPy instance created")
 
-    # if (bot.arm.group_info.num_joints < 5):
-    #     bot.core.get_logger().fatal('This demo requires the robot to have at least 5 joints!')
-    #     bot.shutdown()
-    #     sys.exit()
-
-    # bot.arm.set_ee_pose_components(x=0.3, z=0.2)
-    # bot.arm.set_single_joint_position(joint_name='j1', position=np.pi/2.0)
-    # bot.arm.set_ee_cartesian_trajectory(x=-0.1, z=0.16)
-    # bot.arm.set_single_joint_position(joint_name='j1', position=-np.pi/2.0)
-    # bot.arm.set_ee_cartesian_trajectory(pitch=1.5)
-    # bot.arm.set_ee_cartesian_trajectory(pitch=-1.5)
-    # bot.arm.set_single_joint_position(joint_name='j1', position=np.pi/2.0)
-    # bot.arm.set_ee_cartesian_trajectory(x=0.1, z=-0.16)
-    # bot.gripper.release()
-    # bot.arm.set_ee_cartesian_trajectory(x=-0.1, z=0.16)
+    pose_goal2 = Pose()
+    q1 = np.quaternion(0.886, 0.027, 0.056, 0.459).normalized()
+    pose_goal2.position.x = 0.204
+    pose_goal2.position.y = 0.199
+    pose_goal2.position.z = 0.214
+    pose_goal2.orientation.x = q1.x
+    pose_goal2.orientation.y = q1.y
+    pose_goal2.orientation.z = q1.z
+    pose_goal2.orientation.w = q1.w
     # bot.arm.go_to_home_pose()
-    # bot.arm.go_to_home_pose()
-    bot.arm.go_to_pose()
-    # bot.arm.go_to_sleep_pose()
-    # bot.arm.go_to_pose()
-    # bot.arm.go_to_sleep_pose()
-    # bot.gripper.gripper_open()
-    # bot.arm.set_ee_cartesian_trajectory(x=0.1, z=-0.16)
-    # bot.gripper.gripper_close()
+    bot.arm.go_to_ee_pose(pose_goal1)
+    bot.arm.go_to_ee_pose(pose_goal2)
+    bot.arm.go_to_sleep_pose()
+    bot.arm.go_to_joint_positions()
+    bot.arm.go_to_sleep_pose()
 
-    # bot.arm.shutdown()
 
 
 if __name__ == '__main__':

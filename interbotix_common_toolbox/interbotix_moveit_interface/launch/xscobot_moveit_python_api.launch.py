@@ -94,8 +94,9 @@ def launch_setup(context, *args, **kwargs):
         .robot_description_semantic(file_path="config/srdf/dx400.srdf.xacro")
         .trajectory_execution(file_path="config/moveit_controllers.yaml")
         .joint_limits(file_path="config/joint_limits/dx400_joint_limits.yaml")
-        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .robot_description_kinematics(file_path="config/moveit_kinematics.yaml")
         .planning_scene_monitor(planning_scene_monitor_parameters)
+        # .planning_pipelines(pipelines=["ompl"])
         .moveit_cpp(
             file_path=get_package_share_directory("interbotix_moveit_interface")
             + "/config/planning.yaml"
@@ -103,6 +104,7 @@ def launch_setup(context, *args, **kwargs):
         .pilz_cartesian_limits(file_path="config/pilz_cartesian_limits.yaml")
         .to_moveit_configs()
     )
+
 
     example_file = DeclareLaunchArgument(
         "example_file",
@@ -144,6 +146,7 @@ def launch_setup(context, *args, **kwargs):
             moveit_config.robot_description_kinematics,
             moveit_config.planning_pipelines,
             moveit_config.joint_limits,
+            moveit_config.trajectory_execution,
         ],
         remappings=remappings,
         output={'both': 'screen'},
@@ -217,7 +220,7 @@ def launch_setup(context, *args, **kwargs):
             move_group_node,
             xscobot_ros_control_launch_include,
             rviz_node,
-            static_tf,
+            # static_tf,
             # moveit_py_node,
             # robot_state_publisher,
             # ros2_control_node,

@@ -52,6 +52,7 @@ from builtin_interfaces.msg import Duration
 # from interbotix_xs_msgs.srv import RegisterValues, RobotInfo
 # import modern_robotics as mr
 import numpy as np
+import quaternion
 import rclpy
 from rclpy.constants import S_TO_NS
 from rclpy.executors import MultiThreadedExecutor
@@ -83,7 +84,6 @@ class InterbotixManipulatorXS:
         robot_model: str,
         group_name: str = 'interbotix_arm',
         gripper_name: str = 'interbotix_gripper',
-        robot_name: float = None,
         moving_time: float = 2.0,
         accel_time: float = 0.3,
         gripper_pressure: float = 0.5,
@@ -132,14 +132,6 @@ class InterbotixManipulatorXS:
             either call the `start()` method later on, or add the core to an executor in another
             thread.
         """
-        # self.core = InterbotixRobotXSCore(
-        #     robot_model=robot_model,
-        #     robot_name=robot_name,
-        #     topic_joint_states=topic_joint_states,
-        #     logging_level=logging_level,
-        #     node_name=node_name,
-        #     args=args
-        # )
         rclpy.init()
 
         self.arm = InterbotixArmXSInterface(
@@ -210,7 +202,8 @@ class InterbotixArmXSInterface:
 
         # instantiate moveit_py instance and a planning component for the panda_arm
         self.robot = MoveItPy(node_name=moveit_node_name)
-        self.planning_component = self.robot.get_planning_component(group_name)
+        self.group_name = group_name
+        self.planning_component = self.robot.get_planning_component(self.group_name)
         self.logger.info("MoveItPy instance created")
 
     def plan_and_execute(
@@ -253,6 +246,7 @@ class InterbotixArmXSInterface:
 
         # plan to goal
         self.plan_and_execute(sleep_time=3.0)
+        self.logger.info("Reached Home Pose")
 
     def go_to_sleep_pose(self):
         """Move robot to home configuartion"""
@@ -263,76 +257,66 @@ class InterbotixArmXSInterface:
 
         # plan to goal
         self.plan_and_execute(sleep_time=3.0)
+        self.logger.info("Reached Sleep Pose")
 
-    def go_to_pose(self):
+
+    def go_to_ee_pose(self,
+        pose_goal: Pose
+        ):
+        """Move robot to the EE pose"""
         planning_scene_monitor = self.robot.get_planning_scene_monitor()
         with planning_scene_monitor.read_write() as scene:
-            # instantiate a RobotState instance using the current robot model
+
+            # instantiate a RobotState instance using the current planning scene of robot
             robot_state = scene.current_state
-            robot_state.update()
             original_joint_positions = robot_state.get_joint_group_positions("interbotix_arm")
-        # robot_state.get_joint_group_positions("interbotix_arm")
-        # robot_model = self.robot.get_robot_model()
-        # robot_state = RobotState(robot_model)
-        # robot_state.update()
-
-
             robot_state.update()
-            # link_pose = robot_state.get_global_link_transform("dx400/link_5")
-            print("See initial joints:",original_joint_positions)
-
-
-            # pose_goal.position.x = 0.223
-            # pose_goal.position.y = -0.0056
-            # pose_goal.position.z = 0.1192
-            # pose_goal.orientation.x = 0.74
-            # pose_goal.orientation.y = -0.642
-            # pose_goal.orientation.z = 0.181
-            # pose_goal.orientation.w = -0.087
-    ##################################################
-            pose_goal = Pose()
-            pose_goal.position.x = -0.091
-            pose_goal.position.y = 0.028
-            pose_goal.position.z = 0.40
-            pose_goal.orientation.x = -0.183
-            pose_goal.orientation.y = -0.136
-            pose_goal.orientation.z = -0.943
-            pose_goal.orientation.w = -0.238
-            # pose_goal.position.x = -0.0541
-            # pose_goal.position.y = 0.07905
-            # pose_goal.position.z = 0.27134
-            # pose_goal.orientation.x = -0.352
-            # pose_goal.orientation.y = -0.377
-            # pose_goal.orientation.z = 0.303
-            # pose_goal.orientation.w = 0.8012
-            # robot_state.update()
-
-            # randomize the robot state
-            robot_state.set_from_ik(joint_model_group_name="interbotix_arm",
+            # find the goal RobotState for given ee pose
+            result = robot_state.set_from_ik(joint_model_group_name=self.group_name,
                 geometry_pose=pose_goal,
-                tip_name="dx400/link_5",
-                timeout=2.0)
+                tip_name="dx400/gripper_link",
+                timeout=5.0)
+
+            # Check the result of the IK solver
+            if not result:
+                self.logger.error("IK solution was not found!")
+                return
+            else:
+                self.logger.info("IK solution found!")
 
             robot_state.update()
-            print("see joints:",robot_state.joint_positions)
 
             # set plan start state to current state
             self.planning_component.set_start_state_to_current_state()
-            # robot_state.update()
-            # print("Look", robot_state.joint_positions)
-
-            # robot_state.update(force=True)
 
             # set goal state to the initialized robot state
-            self.logger.info("Goal to go_to_pose")
             self.planning_component.set_goal_state(robot_state=robot_state)
-            self.logger.info("Reached EE Pose")
             robot_state.update()
-            # plan to goal
-            self.plan_and_execute(sleep_time=3.0)
 
-            # # set pose goal with PoseStamped message
-            # self.planning_component.set_goal_state(pose_stamped_msg=pose_goal, pose_link="dx400/gripper_link")
+        self.plan_and_execute(sleep_time=3.0)
+        self.logger.info("Reached EE Pose")
+
+
+
+    def go_to_joint_positions(self):
+        """Move robot to the input joint positions"""
+        robot_model = self.robot.get_robot_model()
+        robot_state = RobotState(robot_model)
+        robot_state.update()
+        joint_group_positions = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        robot_state.set_joint_group_positions(
+            joint_model_group_name= self.group_name,
+            position_values=joint_group_positions
+        )
+        robot_state.update()
+
+        # set plan start state to current state
+        self.planning_component.set_start_state_to_current_state()
+
+        # set goal state to the initialized robot state
+        self.planning_component.set_goal_state(robot_state=robot_state)
+        self.plan_and_execute(sleep_time=3.0)
+        self.logger.info("Reached joint Positions")
 
 
 
