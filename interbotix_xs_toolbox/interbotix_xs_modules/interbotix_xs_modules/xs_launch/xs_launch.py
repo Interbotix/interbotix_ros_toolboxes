@@ -231,7 +231,7 @@ def construct_interbotix_xscobot_semantic_robot_description_command(
         'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
         'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
         # 'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
-        'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
+        # 'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
         'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
         'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
         'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',

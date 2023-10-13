@@ -95,11 +95,13 @@ def main():
     pose_goal2.orientation.y = q1.y
     pose_goal2.orientation.z = q1.z
     pose_goal2.orientation.w = q1.w
-    # bot.arm.go_to_home_pose()
-    bot.arm.go_to_ee_pose(pose_goal1)
-    bot.arm.go_to_ee_pose(pose_goal2)
+    joint_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    bot.arm.go_to_joint_positions(joint_pos)
     bot.arm.go_to_sleep_pose()
-    bot.arm.go_to_joint_positions()
+    bot.arm.go_to_ee_pose(pose_goal1)
+    bot.arm.go_to_sleep_pose()
+    bot.arm.go_to_ee_pose(pose_goal2)
+    bot.arm.go_to_home_pose()
     bot.arm.go_to_sleep_pose()
 
 
