@@ -15,9 +15,12 @@
   <depend>rclpy</depend>
   <depend>interbotix_xscobot_moveit</depend>
   <depend>geometry_msgs</depend>
+  <!-- <depend>moveit</depend> -->
   <depend>moveit_msgs</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>moveit_visual_tools</depend>
+  <exec_depend>moveit</exec_depend>
+
   <!-- <depend>python_qt_binding</depend> -->
   <!-- <depend>tf_transformations</depend> -->
 
