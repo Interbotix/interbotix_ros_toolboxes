@@ -92,7 +92,6 @@ class InterbotixManipulatorXS:
         topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         moveit_node_name: str = 'moveit_py',
-        start_on_init: bool = True,
         args=None,
     ) -> None:
         """
@@ -100,18 +99,13 @@ class InterbotixManipulatorXS:
 
         :param robot_model: Interbotix Arm model (ex. 'wx200' or 'vx300s')
         :param group_name: (optional) joint group name that contains the 'arm' joints as defined in
-            the 'motor_config' yaml file; typically, this is 'arm'
+            the 'motor_config' yaml file; typically, this is 'interbotix_arm'
         :param gripper_name: (optional) name of the gripper joint as defined in the 'motor_config'
-            yaml file; typically, this is 'gripper'
-        :param robot_name: (optional) defaults to value given to `robot_model`; this can be
-            customized if controlling two of the same arms from one computer (like 'arm1/wx200' and
-            'arm2/wx200')
+            yaml file; typically, this is 'interbotix_gripper'
         :param moving_time: (optional) time [s] it should take for all joints in the arm to
             complete one move
         :param accel_time: (optional) time [s] it should take for all joints in the arm to
             accelerate/decelerate to/from max speed
-        :param use_gripper: (optional) `True` if the gripper module should be initialized;
-            otherwise, it won't be.
         :param gripper_pressure: (optional) fraction from 0 - 1 where '0' means the gripper
             operates at `gripper_pressure_lower_limit` and '1' means the gripper operates at
             `gripper_pressure_upper_limit`
@@ -125,13 +119,10 @@ class InterbotixManipulatorXS:
             node
         :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
             ERROR, or FATAL. defaults to INFO
-        :param node_name: (optional) name to give to the core started by this class, defaults to
-            'robot_manipulation'
-        :param start_on_init: (optional) set to `True` to start running the spin thread after the
-            object is built; set to `False` if intending to sub-class this. If set to `False`,
-            either call the `start()` method later on, or add the core to an executor in another
-            thread.
+        :param moveit_node_name: (optional) name to give to the core started by this class, defaults to
+            'moveit_py'
         """
+
         rclpy.init()
 
         self.arm = InterbotixArmXSInterface(
@@ -152,26 +143,9 @@ class InterbotixManipulatorXS:
                 gripper_pressure_upper_limit=gripper_pressure_upper_limit,
             )
 
-        # if start_on_init:
-        #     self.start()
-
-    # def start(self) -> None:
-    #     """Start a background thread that builds and spins an executor."""
-    #     self._execution_thread = Thread(target=self.run)
-    #     self._execution_thread.start()
-
-    # def run(self) -> None:
-    #     """Thread target."""
-    #     self.ex = MultiThreadedExecutor()
-    #     self.ex.add_node(self.core)
-    #     self.ex.spin()
-
     def shutdown(self) -> None:
         """Destroy the node and shut down all threads and processes."""
-        # self.core.destroy_node()
         rclpy.shutdown()
-        # self._execution_thread.join()
-        # time.sleep(0.5)
 
 
 class InterbotixArmXSInterface:
@@ -190,8 +164,8 @@ class InterbotixArmXSInterface:
 
         :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
             plumbing that drives the Python API
-        :param robot_model: Interbotix Arm model (ex. 'wx200' or 'vx300s')
-        :param group_name: joint group name that contains the 'arm' joints as defined in the
+        :param robot_model: Interbotix Arm model (ex. 'wx200' or 'dx400')
+        :param group_name: joint group name that contains the 'interbotix_arm' joints as defined in the
             'motor_config' yaml file; typically, this is 'arm'
         :param moving_time: (optional) time [s] it should take for all joints in the arm to
             complete one move
@@ -342,7 +316,7 @@ class InterbotixGripperXSInterface:
         :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
             plumbing that drives the Python API
         :param gripper_name: name of the gripper joint as defined in the 'motor_config' yaml file;
-            typically, this is 'gripper'
+            typically, this is 'interbotix_gripper'
         :param gripper_pressure: (optional) fraction from 0 - 1 where '0' means the gripper
             operates at 'gripper_pressure_lower_limit' and '1' means the gripper operates at
             'gripper_pressure_upper_limit'
@@ -353,7 +327,6 @@ class InterbotixGripperXSInterface:
             the gripper if gripper_pressure is set to 1; it should be low enough that the motor
             doesn't 'overload' when gripping an object for a few seconds (~350 PWM or ~900 mA)
         """
-        # rclpy.init()
         self.logger = get_logger("moveit_py.gripper")
 
         # instantiate moveit_py instance and a planning component for the panda_arm
@@ -408,7 +381,7 @@ class InterbotixGripperXSInterface:
         # set pose goal using predefined state
         self.planning_component.set_goal_state(configuration_name="close")
 
-    #     # plan to goal
+        # plan to goal
         self.plan_and_execute(sleep_time=3.0)
 
 
