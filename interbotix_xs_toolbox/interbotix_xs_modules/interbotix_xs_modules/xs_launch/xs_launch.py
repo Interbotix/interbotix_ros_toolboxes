@@ -99,6 +99,7 @@ class DeclareInterbotixXSCobotRobotDescriptionLaunchArgument(DeclareLaunchArgume
             'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
             'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
+            'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
             'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
             'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
             'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
@@ -348,6 +349,7 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
     base_link_frame: Text = 'base_link',
     use_gripper: Text = 'true',
     show_gripper_fingers: Text = 'true',
+    show_ar_tag: Text = 'false',
     use_world_frame: Text = 'true',
     external_urdf_loc: Text = '',
     hardware_type: Text = 'actual',
@@ -358,6 +360,7 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
     DeclareLaunchArgument objects:
         - `base_link_frame`
         - `use_gripper`
+        - `show_ar_tag`
         - `show_gripper_fingers`
         - `use_world_frame`
         - `external_urdf_loc`
@@ -382,6 +385,15 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
             description=(
                 'if `true`, the default gripper is included in the `robot_description`; '
                 'if `false`, it is left out; set to `false` if not using the default gripper.'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'show_ar_tag',
+            default_value=show_ar_tag,
+            choices=('true', 'false'),
+            description=(
+                'if `true`, the AR tag mount is included in the `robot_description`; if '
+                '`false`, it is left out; set to `true` if using the AR tag mount in your project.'
             ),
         ),
         DeclareLaunchArgument(
