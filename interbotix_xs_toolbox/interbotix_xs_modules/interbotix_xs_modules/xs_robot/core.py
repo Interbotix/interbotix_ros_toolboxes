@@ -52,6 +52,7 @@ import rclpy
 from rclpy.duration import Duration
 from rclpy.logging import LoggingSeverity, set_logger_level
 from rclpy.node import Node
+from rclpy.utilities import ok
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -93,7 +94,9 @@ class InterbotixRobotXSCore(Node):
         else:
             self.ns = f'/{self.robot_name}'
 
-        rclpy.init(args=args)
+        if not ok():
+            rclpy.init(args=args)
+
         super().__init__(node_name=self.node_name, namespace=robot_name)
         set_logger_level(self.node_name, logging_level)
         self.get_logger().debug((
