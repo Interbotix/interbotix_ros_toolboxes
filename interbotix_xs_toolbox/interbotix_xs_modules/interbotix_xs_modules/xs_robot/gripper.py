@@ -34,7 +34,6 @@ These two classes can be used to control an X-Series standalone gripper using Py
 
 import sys
 from threading import Thread
-import time
 
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_msgs.msg import JointSingleCommand
@@ -124,7 +123,7 @@ class InterbotixGripperXS:
         self.core.destroy_node()
         rclpy.shutdown()
         self._execution_thread.join()
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(0.5)
 
 
 class InterbotixGripperXSInterface:
@@ -189,7 +188,7 @@ class InterbotixGripperXSInterface:
             )
             sys.exit(1)
 
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(0.5)
         self.core.get_logger().info(
             (
                 '\n'
@@ -236,7 +235,7 @@ class InterbotixGripperXSInterface:
         ):
             self.core.pub_single.publish(self.gripper_command)
             self.gripper_moving = True
-            time.sleep(delay)
+            self.core.get_clock().sleep_for(delay)
 
     def set_pressure(self, pressure: float) -> None:
         """

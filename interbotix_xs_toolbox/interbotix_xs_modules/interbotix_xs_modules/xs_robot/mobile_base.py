@@ -33,7 +33,6 @@ These classes should be used to build out mobile bases for Interbotix X-Series L
 """
 
 from abc import ABC, abstractmethod
-import time
 from typing import List
 
 from action_msgs.msg import GoalStatus
@@ -104,7 +103,7 @@ class InterbotixMobileBaseInterface(ABC):
             action_name='navigate_to_pose'
         )
 
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(0.5)
         self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
 
     def command_velocity_xyaw(
