@@ -351,9 +351,9 @@ class InterbotixTurretXSInterface:
             self.core.pub_single.publish(JointSingleCommand(name=joint_name, cmd=position))
             self.info[joint_name]['command'] = position
             if (self.info[joint_name]['profile_type'] == 'time' and blocking):
-                time.sleep(self.info[joint_name]['profile_velocity'])
+                self.core.get_clock().sleep_for(self.info[joint_name]['profile_velocity'])
             else:
-                time.sleep(delay)
+                self.core.get_clock().sleep_for(delay)
         else:
             self.core.get_logger().error(
                 f"Goal position is outside the '{joint_name}' joint's limits. Will not execute."
@@ -535,14 +535,14 @@ class InterbotixTurretXSInterface:
                 (self.info[self.tilt_name]['profile_type'] == 'time') and
                 (blocking)
             ):
-                time.sleep(
+                self.core.get_clock().sleep_for(
                     max(
                         self.info[self.pan_name]['profile_velocity'],
                         self.info[self.tilt_name]['profile_velocity']
                     )
                 )
             else:
-                time.sleep(delay)
+                self.core.get_clock().sleep_for(delay)
         else:
             self.core.get_logger().error(
                 'One or both goal positions are outside the limits. Will not execute'
