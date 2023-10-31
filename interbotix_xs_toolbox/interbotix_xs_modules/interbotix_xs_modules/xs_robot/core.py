@@ -28,7 +28,6 @@
 
 """Contains the `InterbotixRobotXSCore` class that interfaces with the interbotix_xs_sdk."""
 
-from asyncio import Future
 import copy
 import sys
 from threading import Lock
@@ -52,6 +51,7 @@ import rclpy
 from rclpy.duration import Duration
 from rclpy.logging import LoggingSeverity, set_logger_level
 from rclpy.node import Node
+from rclpy.task import Future
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -456,9 +456,21 @@ class InterbotixRobotXSCore(Node):
         timeout_sec: float = 0.1
     ) -> None:
         """
-        Spin the core's executor until the given future is complete within the timeout.
+        Spin the core's executor once until the given future is complete within the timeout.
 
         :param future: future to complete
         :timeout_sec: seconds to wait. defaults to 0.1 seconds
         """
         self.executor.spin_once_until_future_complete(future=future, timeout_sec=timeout_sec)
+
+    def robot_spin_until_future_complete(
+        self, future: Future,
+        timeout_sec: float = None
+    ) -> None:
+        """
+        Spin the core's executor until the given future is complete within the timeout.
+
+        :param future: future to complete
+        :timeout_sec: seconds to wait. defaults to None (no timeout)
+        """
+        self.executor.spin_until_future_complete(future=future, timeout_sec=timeout_sec)
