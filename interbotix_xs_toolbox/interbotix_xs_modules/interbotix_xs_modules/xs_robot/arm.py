@@ -37,7 +37,6 @@ from threading import Thread
 import time
 from typing import Any, List, Tuple, Union
 
-from builtin_interfaces.msg import Duration
 import interbotix_common_modules.angle_manipulation as ang
 from interbotix_xs_modules.xs_robot import mr_descriptions as mrd
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
@@ -52,6 +51,7 @@ import modern_robotics as mr
 import numpy as np
 import rclpy
 from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -269,7 +269,7 @@ class InterbotixArmXSInterface:
         )
         self.core.pub_group.publish(joint_commands)
         if blocking:
-            self.core.get_clock().sleep_for(self.moving_time)
+            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
         self._update_Tsb()
 
     def set_trajectory_time(
@@ -463,7 +463,7 @@ class InterbotixArmXSInterface:
         single_command = JointSingleCommand(name=joint_name, cmd=position)
         self.core.pub_single.publish(single_command)
         if blocking:
-            self.core.get_clock().sleep_for(self.moving_time)
+            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
         self._update_Tsb()
         return True
 
@@ -655,8 +655,8 @@ class InterbotixArmXSInterface:
             joint_traj_point = JointTrajectoryPoint()
             joint_traj_point.positions = tuple(joint_positions)
             joint_traj_point.time_from_start = Duration(
-                nanosec=int(i * wp_period * S_TO_NS)
-            )
+                nanoseconds=int(i * wp_period * S_TO_NS)
+            ).to_msg()
             joint_traj.points.append(joint_traj_point)
             if i == N:
                 break
@@ -696,7 +696,9 @@ class InterbotixArmXSInterface:
                     cmd_type='group', name=self.group_name, traj=joint_traj
                 )
             )
-            self.core.get_clock().sleep_for(moving_time + wp_moving_time)
+            self.core.get_clock().sleep_for(
+                Duration(nanoseconds=int((moving_time + wp_moving_time)*S_TO_NS))
+            )
             self.T_sb = T_sd
             self.joint_commands = joint_positions
             self.set_trajectory_time(moving_time, accel_time)
