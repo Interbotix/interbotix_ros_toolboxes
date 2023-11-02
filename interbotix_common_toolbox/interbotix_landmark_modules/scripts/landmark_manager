@@ -9,28 +9,33 @@ from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection
 class LandmarkManagerCLI(object):
     cursor = "  >  "
     def __init__(self):
-        print(("\n\nThis CLI application will be used to define and "
-                "enable user-specified landmarks."))
+        print(
+            "\n\nThis CLI application will be used to define and enable user-specified landmarks."
+        )
         r = rospkg.RosPack()
         lm_path = r.get_path("interbotix_landmark_modules")
 
         # load params
         self.filepath = rospy.get_param(
-            "~landmark_config", 
-            default="{}/landmarks/landmarks.yaml".format(lm_path))
+            "~landmark_config",
+            default="{}/landmarks/landmarks.yaml".format(lm_path)
+        )
         self.fixed_frame = rospy.get_param(
             "~fixed_frame",
-            default="landmarks")
+            default="landmarks"
+        )
         self.obs_frame = rospy.get_param(
             "~obs_frame",
-            default="camera_color_optical_frame")
+            default="camera_color_optical_frame"
+        )
         param_tags = rospy.get_param(
             "~standalone_tags",
             default=[{'id':   5, 'size': 0.02},
                     {'id':  413, 'size': 0.02},
                     {'id':  820, 'size': 0.02},
                     {'id':  875, 'size': 0.02},
-                    {'id': 1050, 'size': 0.02}])
+                    {'id': 1050, 'size': 0.02}]
+        )
         self.valid_tags = [tag['id'] for tag in param_tags]
 
         self.landmarks = LandmarkCollection(
@@ -45,22 +50,21 @@ class LandmarkManagerCLI(object):
     def add_landmarks(self):
         """walks the user through adding landmarks to collection"""
         while True:
-            print(("Select landmark id you wish to create. Options: "
-                    "\n\t{}".format(self._print_tags())))
+            print("Select landmark id you wish to create. Options: ")
+            print("\t{}".format(self._print_tags()))
             while True:
                 id_ = self._get_input(int)
                 if id_ in self.valid_tags:
                     break
                 else:
-                    print(
-                        "Please choose from the list of valid tags: {}".format(
-                            self.valid_tags))
+                    print("Please choose from the list of valid tags: ")
+                    print(self.valid_tags)
 
             print("Landmark label (all lowercase).")
             label = self._get_input(str).lower()
             self.landmarks.add_landmark(label=label, id_num=id_)
 
-            print(("Is the tag mounted? Options: [y/n]"))
+            print("Is the tag mounted? Options: [y/n]")
             mounted_yn = self._get_input(str).lower()
             if (mounted_yn == "y") or (mounted_yn == "yes"):
                 mounted = True
@@ -80,8 +84,9 @@ class LandmarkManagerCLI(object):
                 break
 
     def _get_input(self, type_):
-        """method to get robust user input. repeats prompt until it can
-        properly transform the input.
+        """Get properly-typed robust user input.
+
+        Repeats prompt until it can properly transform the input.
 
         :param type_: desired input type
         :type type_: type
@@ -96,18 +101,18 @@ class LandmarkManagerCLI(object):
                 print("Please enter a value of {}".format(type_))
 
     def save_landmarks(self):
-        """method to call the LandmarkCollection.save() function"""
+        """Call the LandmarkCollection.save() function"""
         self.landmarks.save(self.filepath)
 
     def _print_tags(self):
-        """Formats the list of tags to highlight those with set landmarks
-        
+        """Format the list of tags to highlight those with set landmarks
+
         :return: string with formatted list of tags
         :rtype: string"""
         tags_in_collection = self.landmarks.get_valid_tags()
         tag_list = ""
         for tag in self.valid_tags:
-            tag_list += ("({}) ".format(tag) if tag in tags_in_collection 
+            tag_list += ("({}) ".format(tag) if tag in tags_in_collection
                         else "{} ".format(tag))
         return "[ " + tag_list + "]"
 
