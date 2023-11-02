@@ -90,7 +90,7 @@ static XSRegisterDescription desc_present_temperature = {
   "1 degree Celsius"
 };
 
-static std::unordered_map<std::string, XSRegisterDescription> descriptions = 
+static std::unordered_map<std::string, XSRegisterDescription> descriptions =
 {
   {desc_operating_mode.name,        desc_operating_mode},
   {desc_profile_velocity.name,      desc_profile_velocity},
@@ -104,7 +104,7 @@ static std::unordered_map<std::string, XSRegisterDescription> descriptions =
   {desc_present_current.name,       desc_present_current},
   {desc_present_temperature.name,   desc_present_temperature}
 };
-    
+
 } // namespace xs_register_descriptions
 
 #endif // XS_RVIZ_XS_REGISTER_DESCRIPTIONS
