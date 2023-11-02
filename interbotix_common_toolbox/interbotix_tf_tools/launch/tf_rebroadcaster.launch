@@ -4,6 +4,7 @@
   <arg name="topic_from"                  default=""/>
   <arg name="tf_rebroadcaster_config"     default="$(find interbotix_tf_tools)/config/tf_rebroadcaster.yaml"/>
   <arg name="use_incoming_time"           default="true"/>
+  <arg name="set_zero_z_translation"      default="false"/>
 
   <node
     name="tf_rebroadcaster"
@@ -14,6 +15,7 @@
     <param name="topic_from"              value="$(arg topic_from)"/>
     <param name="filepath_config"         value="$(arg tf_rebroadcaster_config)"/>
     <param name="use_incoming_time"       value="$(arg use_incoming_time)"/>
+    <param name="set_zero_z_translation"  value="$(arg set_zero_z_translation)"/>
   </node>
 
 </launch>

@@ -48,6 +48,10 @@ private:
   // Whether or not to use the timestamp on the incoming TF
   bool use_incoming_time_;
 
+  // Whether or not to set the outgoing TF's z translation to zero. This is useful to correct for
+  // drift in the z direction.
+  bool set_zero_z_translation_;
+
   // YAML node containing configuration info
   YAML::Node config_;
 

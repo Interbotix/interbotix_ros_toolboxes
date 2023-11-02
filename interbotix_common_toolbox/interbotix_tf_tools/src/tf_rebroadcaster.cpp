@@ -10,6 +10,7 @@ TFRebroadcaster::TFRebroadcaster(ros::NodeHandle *node_handle)
   ros::param::get("~topic_to", topic_to_);
   ros::param::get("~topic_from", topic_from_);
   ros::param::get("~use_incoming_time", use_incoming_time_);
+  ros::param::get("~set_zero_z_translation", set_zero_z_translation_);
 
   // Load configuration file
   try {
@@ -66,7 +67,6 @@ TFRebroadcaster::TFRebroadcaster(ros::NodeHandle *node_handle)
 
 void TFRebroadcaster::tf_cb(const tf2_msgs::TFMessage & msg)
 {
-  // TODO(lsinterbotix): optimize
   // Loop over each parent/child frame
   for (auto & frame : frames_) {
     // Loop over every transform in message
@@ -85,6 +85,9 @@ void TFRebroadcaster::tf_cb(const tf2_msgs::TFMessage & msg)
         }
         if (!use_incoming_time_) {
           tf_.header.stamp = ros::Time::now();
+        }
+        if (set_zero_z_translation_) {
+          tf_.transform.translation.z = 0.0;
         }
         rebroadcast_tf.transforms.push_back(tf_);
         pub_tf_.publish(rebroadcast_tf);
