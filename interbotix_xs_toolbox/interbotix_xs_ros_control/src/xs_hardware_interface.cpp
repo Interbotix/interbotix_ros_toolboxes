@@ -65,7 +65,7 @@ CallbackReturn XSHardwareInterface::on_init(const hardware_interface::HardwareIn
   using namespace std::chrono_literals;
 
   // wait for a few seconds for the xs_sdk services to load
-  if (!srv_robot_info->wait_for_service(5s)) {
+  if (!srv_robot_info->wait_for_service(10s)) {
     RCLCPP_FATAL(
       nh->get_logger(),
       "Could not get robot_info service within timeout.");
@@ -220,6 +220,7 @@ return_type XSHardwareInterface::write(const rclcpp::Time &, const rclcpp::Durat
   if (gripper_cmd_prev != gripper_msg.cmd) {
     pub_gripper->publish(gripper_msg);
     gripper_cmd_prev = gripper_msg.cmd;
+    // RCLCPP_INFO(nh->get_logger(),"Gripper_commad:%f", gripper_msg.cmd);
   }
   return return_type::OK;
 }

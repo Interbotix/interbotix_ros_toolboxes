@@ -14,21 +14,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(interbotix_moveit_interface_msgs REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(interbotix_xscobot_moveit REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
+find_package(moveit REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
-find_package(rclcpp REQUIRED)
 
 set(
   MOVEIT_INTERFACE_DEPENDENCIES
-    interbotix_moveit_interface_msgs
+    # interbotix_moveit_interface_msgs
     moveit_msgs
     geometry_msgs
     moveit_ros_planning_interface
     moveit_visual_tools
     rclcpp
+    rclpy
 )
 
 ###########
@@ -39,21 +43,20 @@ include_directories(
   include
 )
 
-add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
-ament_target_dependencies(moveit_interface ${MOVEIT_INTERFACE_DEPENDENCIES})
+# add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
+# ament_target_dependencies(moveit_interface ${MOVEIT_INTERFACE_DEPENDENCIES})
 
 #############
 ## Install ##
 #############
 
-install(
-  TARGETS
-    moveit_interface
-  DESTINATION
-    lib/${PROJECT_NAME}
-)
+# install(
+#   TARGETS
+#     moveit_interface
+#   DESTINATION
+#     lib/${PROJECT_NAME}
+# )
 
-# Install Python executables
 install(
   PROGRAMS
     scripts/moveit_interface_gui
@@ -61,6 +64,15 @@ install(
   DESTINATION
     lib/${PROJECT_NAME}
 )
+# Install Python executables
+
+
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
+
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+
+# install(PROGRAMS scripts/bartender.py DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2023 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -27,28 +27,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """
-Declutter X-Series Python launch files.
+The Interbotix X-Series Python-ROS2 API.
 
-The `xs_launch` module helps declutter Interbotix X-Series Python launch files by providing useful
-helper functions and classes.
+The `xs_robot` module contains classes and functions that make control of Interbotix X-Series
+robots possible without writing a single line of ROS code.
 """
 
-from .xs_launch import (
-    construct_interbotix_xsarm_semantic_robot_description_command,
-    construct_interbotix_xscobot_semantic_robot_description_command,
-    construct_interbotix_xslocobot_semantic_robot_description_command,
-    declare_interbotix_xsarm_robot_description_launch_arguments,
-    declare_interbotix_xscobot_robot_description_launch_arguments,
-    declare_interbotix_xslocobot_robot_description_launch_arguments,
-    determine_use_sim_time_param,
-)
+from . import move_arm
+from . import moveit_interface_core
+
 
 __all__ = [
-    'construct_interbotix_xsarm_semantic_robot_description_command',
-    'construct_interbotix_xscobot_semantic_robot_description_command',
-    'construct_interbotix_xslocobot_semantic_robot_description_command',
-    'declare_interbotix_xsarm_robot_description_launch_arguments',
-    'declare_interbotix_xscobot_robot_description_launch_arguments',
-    'declare_interbotix_xslocobot_robot_description_launch_arguments',
-    'determine_use_sim_time_param',
+    'moveit_interface_core',
+    'move_arm',
 ]
