@@ -99,6 +99,7 @@ class DeclareInterbotixXSCobotRobotDescriptionLaunchArgument(DeclareLaunchArgume
             'robot_name:=', LaunchConfiguration('robot_name'), ' ',
             'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
             'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
+            'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
             'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
             'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
             'external_urdf_loc:=', LaunchConfiguration('external_urdf_loc'), ' ',
@@ -230,7 +231,7 @@ def construct_interbotix_xscobot_semantic_robot_description_command(
         'robot_name:=', LaunchConfiguration('robot_name'), ' ',
         'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
         'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
-        # 'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
+        'show_ar_tag:=', LaunchConfiguration('show_ar_tag'), ' ',
         # 'show_gripper_bar:=', LaunchConfiguration('show_gripper_bar'), ' ',
         'show_gripper_fingers:=', LaunchConfiguration('show_gripper_fingers'), ' ',
         'use_world_frame:=', LaunchConfiguration('use_world_frame'), ' ',
@@ -383,6 +384,7 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
     *,
     base_link_frame: Text = 'base_link',
     use_gripper: Text = 'true',
+    show_ar_tag: Text = 'false',
     show_gripper_fingers: Text = 'true',
     use_world_frame: Text = 'true',
     external_urdf_loc: Text = '',
@@ -394,6 +396,7 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
     DeclareLaunchArgument objects:
         - `base_link_frame`
         - `use_gripper`
+        - `show_ar_tag`
         - `show_gripper_fingers`
         - `use_world_frame`
         - `external_urdf_loc`
@@ -428,6 +431,15 @@ def declare_interbotix_xscobot_robot_description_launch_arguments(
                 'if `true`, the gripper fingers are included in the `robot_description`; '
                 'if `false`, the gripper finger links are not loaded. Set to `false` if you have '
                 'custom gripper fingers.'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'show_ar_tag',
+            default_value=show_ar_tag,
+            choices=('true', 'false'),
+            description=(
+                'if `true`, the AR tag mount is included in the `robot_description`; if '
+                '`false`, it is left out; set to `true` if using the AR tag mount in your project.'
             ),
         ),
         DeclareLaunchArgument(
