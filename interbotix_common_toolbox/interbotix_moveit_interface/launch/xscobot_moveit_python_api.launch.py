@@ -1,14 +1,24 @@
-"""
-A launch file for running the motion planning python api tutorial
-"""
+
 import os
-import sys
-import yaml
+
 from ament_index_python.packages import get_package_share_directory
+
+from interbotix_xs_modules.xs_common import (
+    get_interbotix_xscobot_models,
+)
+from interbotix_xs_modules.xs_launch import (
+    declare_interbotix_xscobot_robot_description_launch_arguments,
+    determine_use_sim_time_param,
+)
+
 from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, TimerAction
-from launch.conditions import IfCondition, LaunchConfigurationEquals
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+    TimerAction,
+)
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
@@ -18,19 +28,15 @@ from launch.substitutions import (
 )
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.parameter_descriptions import ParameterValue
 
 from moveit_configs_utils import MoveItConfigsBuilder
 
-from interbotix_xs_modules.xs_launch import (
-    construct_interbotix_xscobot_semantic_robot_description_command,
-    declare_interbotix_xscobot_robot_description_launch_arguments,
-    determine_use_sim_time_param,
-)
+import yaml
 
-from interbotix_xs_modules.xs_common import (
-    get_interbotix_xscobot_models,
-)
+"""
+A launch file for running the motion planning python api tutorial
+"""
+
 
 def load_yaml(package_name, file_path):
     package_path = get_package_share_directory(package_name)
@@ -40,7 +46,8 @@ def load_yaml(package_name, file_path):
         with open(absolute_file_path, 'r') as file:
             return yaml.safe_load(file)
     except EnvironmentError:  # parent of IOError, OSError *and* WindowsError where available
-            return None
+        return None
+
 
 def launch_setup(context, *args, **kwargs):
 
@@ -51,10 +58,7 @@ def launch_setup(context, *args, **kwargs):
     use_world_frame_launch_arg = LaunchConfiguration('use_world_frame')
     external_urdf_loc_launch_arg = LaunchConfiguration('external_urdf_loc')
     mode_configs_launch_arg = LaunchConfiguration('mode_configs')
-    use_moveit_rviz_launch_arg = LaunchConfiguration('use_moveit_rviz')
     rviz_frame_launch_arg = LaunchConfiguration('rviz_frame')
-    rviz_config_file_launch_arg = LaunchConfiguration('rviz_config_file')
-    world_filepath_launch_arg = LaunchConfiguration('world_filepath')
     robot_description_launch_arg = LaunchConfiguration('robot_description')
     hardware_type_launch_arg = LaunchConfiguration('hardware_type')
     xs_driver_logging_level_launch_arg = LaunchConfiguration('xs_driver_logging_level')
@@ -88,44 +92,42 @@ def launch_setup(context, *args, **kwargs):
 
     moveit_config = (
         MoveItConfigsBuilder(
-            robot_name="dx400", package_name="interbotix_xscobot_moveit"
+            robot_name='dx400', package_name='interbotix_xscobot_moveit'
         )
-        .robot_description(file_path="config/dx400.urdf.xacro")
-        .robot_description_semantic(file_path="config/srdf/dx400.srdf.xacro")
-        .trajectory_execution(file_path="config/moveit_controllers.yaml")
-        .joint_limits(file_path="config/joint_limits/dx400_joint_limits.yaml")
-        .robot_description_kinematics(file_path="config/moveit_kinematics.yaml")
+        .robot_description(file_path='config/dx400.urdf.xacro')
+        .robot_description_semantic(file_path='config/srdf/dx400.srdf.xacro')
+        .trajectory_execution(file_path='config/moveit_controllers.yaml')
+        .joint_limits(file_path='config/joint_limits/dx400_joint_limits.yaml')
+        .robot_description_kinematics(file_path='config/moveit_kinematics.yaml')
         .planning_scene_monitor(planning_scene_monitor_parameters)
         # .planning_pipelines(pipelines=["ompl"])
         .moveit_cpp(
-            file_path=get_package_share_directory("interbotix_moveit_interface")
-            + "/config/planning.yaml"
+            file_path=get_package_share_directory('interbotix_moveit_interface')
+            + '/config/planning.yaml'
         )
-        .pilz_cartesian_limits(file_path="config/pilz_cartesian_limits.yaml")
+        .pilz_cartesian_limits(file_path='config/pilz_cartesian_limits.yaml')
         .to_moveit_configs()
     )
 
-
     example_file = DeclareLaunchArgument(
-        "example_file",
-        default_value="bartender.py",
-        description="Python API tutorial file name",
+        'example_file',
+        default_value='bartender.py',
+        description='Python API tutorial file name',
     )
 
     moveit_py_node = Node(
-        name="moveit_py",
-        package="interbotix_moveit_interface",
-        executable=LaunchConfiguration("example_file"),
-        output="both",
+        name='moveit_py',
+        package='interbotix_moveit_interface',
+        executable=LaunchConfiguration('example_file'),
+        output='both',
         parameters=[moveit_config.to_dict()],
     )
 
     rviz_config_file = os.path.join(
-        get_package_share_directory("interbotix_xsarm_moveit"),
-        "rviz",
-        "xsarm_moveit.rviz",
+        get_package_share_directory('interbotix_xsarm_moveit'),
+        'rviz',
+        'xsarm_moveit.rviz',
     )
-
 
     move_group_node = Node(
         package='moveit_ros_move_group',
@@ -153,12 +155,12 @@ def launch_setup(context, *args, **kwargs):
     )
 
     rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
         output={'both': 'log'},
-        arguments=["-d", rviz_config_file,
-                   "-f", rviz_frame_launch_arg,],
+        arguments=['-d', rviz_config_file,
+                   '-f', rviz_frame_launch_arg, ],
         parameters=[
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
@@ -169,15 +171,13 @@ def launch_setup(context, *args, **kwargs):
         remappings=remappings,
     )
 
-
     static_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="static_transform_publisher",
-        output="log",
-        arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "dx400/base_link"],
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        output='log',
+        arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', 'world', 'dx400/base_link'],
     )
-
 
     xscobot_ros_control_launch_include = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -191,8 +191,6 @@ def launch_setup(context, *args, **kwargs):
             'robot_model': robot_model_launch_arg,
             'robot_name': robot_name_launch_arg,
             'base_link_frame': base_link_frame_launch_arg,
-            # 'show_ar_tag': show_ar_tag_launch_arg,
-            # 'show_gripper_bar': 'true',
             'show_gripper_fingers': 'true',
             'use_world_frame': use_world_frame_launch_arg,
             'external_urdf_loc': external_urdf_loc_launch_arg,
@@ -205,11 +203,10 @@ def launch_setup(context, *args, **kwargs):
         }.items(),
         condition=IfCondition(
             PythonExpression(
-                ['"', hardware_type_launch_arg, '"', " in ('actual', 'fake')"]
+                ["'", hardware_type_launch_arg, "'", " in ('actual', 'fake')"]
             )
         ),
     )
-
 
     return [
             TimerAction(
@@ -221,9 +218,6 @@ def launch_setup(context, *args, **kwargs):
             xscobot_ros_control_launch_include,
             rviz_node,
             static_tf,
-            # moveit_py_node,
-            # robot_state_publisher,
-            # ros2_control_node,
         ]
 
 
@@ -328,7 +322,6 @@ def generate_launch_description():
     )
     declared_arguments.extend(
         declare_interbotix_xscobot_robot_description_launch_arguments(
-            # show_gripper_bar='true',
             show_gripper_fingers='true',
             hardware_type='actual',
         )
