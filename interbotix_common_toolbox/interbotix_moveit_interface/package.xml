@@ -13,7 +13,6 @@
 
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
-  <depend>interbotix_xscobot_moveit</depend>
   <depend>geometry_msgs</depend>
   <depend>moveit_msgs</depend>
   <depend>moveit_ros_planning_interface</depend>

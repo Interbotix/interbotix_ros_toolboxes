@@ -43,19 +43,19 @@ include_directories(
   include
 )
 
-add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
-ament_target_dependencies(moveit_interface ${MOVEIT_INTERFACE_DEPENDENCIES})
+# add_executable(moveit_interface src/moveit_interface.cpp src/moveit_interface_obj.cpp)
+# ament_target_dependencies(moveit_interface ${MOVEIT_INTERFACE_DEPENDENCIES})
 
 #############
 ## Install ##
 #############
 
-install(
-  TARGETS
-    moveit_interface
-  DESTINATION
-    lib/${PROJECT_NAME}
-)
+# install(
+#   TARGETS
+#     moveit_interface
+#   DESTINATION
+#     lib/${PROJECT_NAME}
+# )
 
 install(
   PROGRAMS
@@ -73,13 +73,6 @@ ament_python_install_package(${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 # install(PROGRAMS scripts/bartender.py DESTINATION share/${PROJECT_NAME})
-
-# install(
-#   PROGRAMS
-#     scripts/interface.py
-#     scripts/bartender.py
-#   DESTINATION lib/${PROJECT_NAME}
-# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

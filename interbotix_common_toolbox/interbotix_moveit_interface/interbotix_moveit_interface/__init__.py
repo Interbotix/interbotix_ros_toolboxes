@@ -33,8 +33,8 @@ The `xs_robot` module contains classes and functions that make control of Interb
 robots possible without writing a single line of ROS code.
 """
 
-from . import moveit_interface_core
 from . import move_arm
+from . import moveit_interface_core
 
 
 __all__ = [
