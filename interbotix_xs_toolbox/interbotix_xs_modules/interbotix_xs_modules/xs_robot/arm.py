@@ -453,6 +453,7 @@ class InterbotixArmXSInterface:
         :details: Note that if a moving_time or accel_time is specified, the changes affect ALL the
             arm joints, not just the specified one
         """
+        position = float(position)
         self.core.get_logger().debug(
             f'Setting joint {joint_name} to position={position}'
         )
