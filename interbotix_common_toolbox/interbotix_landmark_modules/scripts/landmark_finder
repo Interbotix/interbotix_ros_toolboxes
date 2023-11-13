@@ -48,8 +48,7 @@ class LandmarkFinder(object):
         self.apriltag.set_valid_tags(self.valid_tags)
 
         # wait a bit for other nodes to launch
-        rospy.sleep(rospy.Duration(5))
-
+        rospy.sleep(rospy.Duration(15))
         self.timer = rospy.Timer(
             period=rospy.Duration(2),
             callback=self.timer_callback)
@@ -62,7 +61,7 @@ class LandmarkFinder(object):
         # load landmarks from filepath
         if self.landmarks.load(self.lm_config_filepath):
             # set tags seen in landmark file
-            self.valid_tags = self.landmarks.get_set_tags()
+            self.valid_tags = self.landmarks.get_valid_tags()
             rospy.loginfo(f"Loaded landmarks from '{self.lm_config_filepath}'.")
 
     def _save_landmarks(self, tags=None):
