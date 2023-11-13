@@ -1,3 +1,4 @@
+from math import pi
 import yaml
 import rospy
 import tf2_ros
@@ -22,9 +23,9 @@ class Landmark(object):
         self.tf_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        self.label_         = label
-        self.id_            = id_num
-        self.landmark_ns    = landmark_ns
+        self.label_ = label
+        self.id_ = id_num
+        self.landmark_ns = landmark_ns
 
         # transforms
         self.tf_wrt_cam = TransformStamped()
@@ -32,10 +33,11 @@ class Landmark(object):
         self.tf_wrt_map = TransformStamped()
         self.tf_wrt_map.child_frame_id = self.label_
         self.mounted_offset = 0.0
+        self.rotation_offset = 0.0
 
         # flags
-        self.tf_set_    = False
-        self.mounted_   = False
+        self.tf_set_ = False
+        self.mounted_ = False
 
         self._init_markers()
 
@@ -146,6 +148,22 @@ class Landmark(object):
         else:
             return 0.0
 
+    def set_rotation_offset(self, rotation_offset):
+        """
+        Set the rotation offset for the landmark.
+
+        :param rotation_offset: The rotation offset in radians
+        """
+        self.rotation_offset = rotation_offset
+
+    def get_rotation_offset(self):
+        """
+        Get the rotation offset for the landmark.
+
+        :returns: rotation_offset in radians
+        """
+        return self.rotation_offset
+
     def set_tf_wrt_cam(self, pose):
         """
         Set transform wrt camera frame.
@@ -255,38 +273,30 @@ class Landmark(object):
         :returns: list containing x, y, and theta for move base goal
         """
         if not self.is_mounted(): # we know offset is 0
-            return [self.get_x(), self.get_y(), self.get_theta()]
+            return [self.get_x(), self.get_y(), self.get_theta() + self.get_rotation_offset()]
         else:
-            tf_goal = TransformStamped()
-            tf_goal.header.stamp = rospy.Time(0)
-            tf_goal.header.frame_id = self.get_label()
-            tf_goal.child_frame_id = "{}_goal".format(self.get_label())
+            frame = PoseStamped()
+            # # z-axis is normal to tag face, 'front of tag'
+            frame.pose.position.z = self.get_mounted_offset()
+            frame.pose.orientation.w = 1.0
+            out = tf2_geometry_msgs.do_transform_pose(frame, self.get_tf_wrt_map())
 
-            # z-axis is normal to tag face, 'front of tag'
-            tf_goal.transform.translation.z = self.get_mounted_offset()
-            tf_goal.transform.rotation.w = 1.0 # ensure valid qt
-            self.tf_buffer.set_transform(tf_goal, "default_authority")
+            yaw = euler_from_quaternion([
+                out.pose.orientation.x,
+                out.pose.orientation.y,
+                out.pose.orientation.z,
+                out.pose.orientation.w
+            ])[2] + pi/2.0 + self.get_rotation_offset()
 
-            # get tf from map to goal frame [x,y,theta]
-            tf_map_to_goal = self.tf_buffer.lookup_transform_core(
-                self.landmark_ns,
-                tf_goal.child_frame_id,
-                rospy.Time(0))
-            mb_goal = [
-                tf_map_to_goal.transform.translation.x,
-                tf_map_to_goal.transform.translation.y,
-                euler_from_quaternion([
-                    tf_map_to_goal.transform.rotation.x,
-                    tf_map_to_goal.transform.rotation.y,
-                    tf_map_to_goal.transform.rotation.z,
-                    tf_map_to_goal.transform.rotation.w
-                ])[2]
+            return [
+                out.pose.position.x,
+                out.pose.position.y,
+                yaw
             ]
-            return mb_goal
 
     def _init_markers(self):
         """Initialize constant marker paramers."""
-        # spherical marker (location)
+        # spherical marker (position)
         self.marker_sphere = Marker()
         self.marker_sphere.id = 0
         self.marker_sphere.header.frame_id = self.landmark_ns
@@ -294,18 +304,35 @@ class Landmark(object):
         self.marker_sphere.ns = self.get_label()
         self.marker_sphere.type = Marker.SPHERE
         self.marker_sphere.action = Marker.ADD
-        self.marker_sphere.scale.x = 0.025
-        self.marker_sphere.scale.y = 0.025
-        self.marker_sphere.scale.z = 0.025
-        self.marker_sphere.color.a = 1
-        self.marker_sphere.color.r = 1
-        self.marker_sphere.color.g = 0
-        self.marker_sphere.color.b = 0
-        self.marker_sphere.pose.position.z = 0
+        self.marker_sphere.scale.x = 0.050
+        self.marker_sphere.scale.y = 0.050
+        self.marker_sphere.scale.z = 0.050
+        self.marker_sphere.color.a = 1.0
+        self.marker_sphere.color.r = 1.0
+        self.marker_sphere.color.g = 0.0
+        self.marker_sphere.color.b = 0.0
+        self.marker_sphere.pose.position.z = 0.0
+
+        # arrow marker (pose)
+        self.marker_arrow = Marker()
+        self.marker_arrow.id = 1
+        self.marker_arrow.header.frame_id = self.landmark_ns
+        self.marker_arrow.header.stamp = rospy.Time(0)
+        self.marker_arrow.ns = self.get_label()
+        self.marker_arrow.type = Marker.ARROW
+        self.marker_arrow.action = Marker.ADD
+        self.marker_arrow.scale.x = 0.25
+        self.marker_arrow.scale.y = 0.025
+        self.marker_arrow.scale.z = 0.025
+        self.marker_arrow.color.a = 1.0
+        self.marker_arrow.color.r = 1.0
+        self.marker_arrow.color.g = 0.0
+        self.marker_arrow.color.b = 0.0
+        self.marker_arrow.pose.position.z = 0.0
 
         # text marker (label)
         self.marker_text = Marker()
-        self.marker_text.id = 1
+        self.marker_text.id = 2
         self.marker_text.header.frame_id = self.landmark_ns
         self.marker_text.header.stamp = rospy.Time(0)
         self.marker_text.ns = self.get_label()
@@ -473,6 +500,7 @@ class LandmarkCollection(object):
             lm_dict["set"] = lm.is_set()
             lm_dict["mounted"] = lm.is_mounted()
             lm_dict["mounted_offset"] = lm.mounted_offset
+            lm_dict["rotation_offset"] = lm.rotation_offset
             if lm.is_set():
                 lm_dict["tf"] = {}
                 lm_dict["tf"]["frame_id"] = tf_map.header.frame_id
@@ -517,7 +545,7 @@ class LandmarkCollection(object):
                     self.data[key].tf_wrt_map = TransformStamped()
                     self.data[key].tf_wrt_map.header.stamp = rospy.Time.now()
                     if lm_dict[key]["tf"]["frame_id"] == '':
-                        self.data[key].tf_wrt_map.header.frame_id       = self.obs_frame
+                        self.data[key].tf_wrt_map.header.frame_id = self.obs_frame
                     else:
                         self.data[key].tf_wrt_map.header.frame_id = lm_dict[key]["tf"]["frame_id"]
                     self.data[key].tf_wrt_map.child_frame_id = lm_dict[key]["tf"]["child_frame_id"]
@@ -541,6 +569,7 @@ class LandmarkCollection(object):
 
                 self.data[key].mounted_ = m
                 self.data[key].set_mounted_offset(mo)
+                self.data[key].set_rotation_offset(lm_dict[key]["rotation_offset"])
 
             self.update_valid_tags()
             if self.ROS:
@@ -593,14 +622,24 @@ class LandmarkCollection(object):
         """Update markers."""
         for lm in self.get_set_landmarks(): # only publish seen tags
             g = lm.get_mb_goal()
+            qt = quaternion_from_euler(0, 0, g[2])
             lm.marker_sphere.pose.position.x = g[0]
             lm.marker_sphere.pose.position.y = g[1]
             lm.marker_sphere.pose.position.z = 0.1
-            lm.marker_sphere.pose.orientation.x = 0.0
-            lm.marker_sphere.pose.orientation.y = 0.0
-            lm.marker_sphere.pose.orientation.z = 0.0
-            lm.marker_sphere.pose.orientation.w = 1.0
+            lm.marker_sphere.pose.orientation.x = qt[0]
+            lm.marker_sphere.pose.orientation.y = qt[1]
+            lm.marker_sphere.pose.orientation.z = qt[2]
+            lm.marker_sphere.pose.orientation.w = qt[3]
             lm.marker_sphere.header.stamp = rospy.Time(0)
+
+            lm.marker_arrow.pose.position.x = g[0]
+            lm.marker_arrow.pose.position.y = g[1]
+            lm.marker_arrow.pose.position.z = 0.1
+            lm.marker_arrow.pose.orientation.x = qt[0]
+            lm.marker_arrow.pose.orientation.y = qt[1]
+            lm.marker_arrow.pose.orientation.z = qt[2]
+            lm.marker_arrow.pose.orientation.w = qt[3]
+            lm.marker_arrow.header.stamp = rospy.Time(0)
 
             lm.marker_text.pose.position.x = g[0]
             lm.marker_text.pose.position.y = g[1]
@@ -627,6 +666,7 @@ class LandmarkCollection(object):
             for lm in self.get_set_landmarks():
                 if lm.get_id() in tag_ids:
                     msg.markers.append(lm.marker_sphere)
+                    msg.markers.append(lm.marker_arrow)
                     msg.markers.append(lm.marker_text)
                     self.marker_pub.publish(msg)
 

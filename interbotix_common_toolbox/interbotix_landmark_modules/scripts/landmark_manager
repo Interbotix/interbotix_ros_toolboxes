@@ -60,7 +60,7 @@ class LandmarkManagerCLI(object):
                     print("Please choose from the list of valid tags: ")
                     print(self.valid_tags)
 
-            print("Landmark label (all lowercase).")
+            print("Landmark label (all lowercase):")
             label = self._get_input(str).lower()
             self.landmarks.add_landmark(label=label, id_num=id_)
 
@@ -68,7 +68,7 @@ class LandmarkManagerCLI(object):
             mounted_yn = self._get_input(str).lower()
             if (mounted_yn == "y") or (mounted_yn == "yes"):
                 mounted = True
-                print("offset in meters: ")
+                print("Offset in meters: ")
                 mounted_offset = self._get_input(float)
             else:
                 mounted = False
@@ -76,6 +76,9 @@ class LandmarkManagerCLI(object):
             self.landmarks.data[id_].mounted_ = mounted
             self.landmarks.data[id_].set_mounted_offset(mounted_offset)
 
+            print("Goal rotation offset in radians (clockwise):")
+            rotation_offset = self._get_input(float)
+            self.landmarks.data[id_].set_rotation_offset(rotation_offset)
 
             print("Enter another landmark? Options: [y/n]")
             more = self._get_input(str).lower()
