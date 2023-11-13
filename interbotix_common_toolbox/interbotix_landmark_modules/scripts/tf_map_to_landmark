@@ -14,7 +14,6 @@ class PublishMapToLandmarkStaticTF(object):
     """
 
     def __init__(self):
-
         # publisher to static_transforms
         pub = rospy.Publisher(
             'static_transforms', 
@@ -48,11 +47,11 @@ class PublishMapToLandmarkStaticTF(object):
             "[tf_map_to_landmark] Broadcasted static transformation between " +
             "\"{}\" and \"{}\".".format(original_frame, fixed_frame))
 
-        rospy.sleep(rospy.Duration(100.0))
+        rospy.sleep(rospy.Duration(100))
 
         rospy.loginfo("[tf_map_to_landmark] Shutting down...")
         exit()
 
-if __name__=='__main__':
+if __name__ == '__main__':
     rospy.init_node('tf_map_to_landmark')
     PublishMapToLandmarkStaticTF()

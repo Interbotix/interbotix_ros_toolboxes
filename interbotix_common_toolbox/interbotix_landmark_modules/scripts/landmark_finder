@@ -5,7 +5,7 @@ import rospy
 import rospkg
 from geometry_msgs.msg import TransformStamped
 from interbotix_common_modules.angle_manipulation import quaternion_is_valid
-from interbotix_landmark_modules.landmark import Landmark, LandmarkCollection 
+from interbotix_landmark_modules.landmark import LandmarkCollection
 from interbotix_perception_modules.apriltag import InterbotixAprilTagInterface as AprilTag
 
 class LandmarkFinder(object):
@@ -18,7 +18,6 @@ class LandmarkFinder(object):
         pkg_path = r.get_path("interbotix_landmark_modules")
 
         # get parameters
-        finder_ns = rospy.get_namespace().strip("/")
         self.lm_config_filepath = rospy.get_param(
             "~landmark_config",
             "{}/landmarks/landmarks.yaml".format(pkg_path))
@@ -30,7 +29,7 @@ class LandmarkFinder(object):
             "landmarks")
 
         self.static_tf_pub = rospy.Publisher(
-            'static_transforms', 
+            'static_transforms',
             TransformStamped,
             queue_size=10,
             latch=True)
@@ -41,13 +40,13 @@ class LandmarkFinder(object):
             obs_frame=self.obs_frame,
             fixed_frame=self.fixed_frame,
             ros_on=True)
-        
+
         self._load_landmarks()
         self.apriltag = AprilTag(
             apriltag_ns=apriltag_ns,
             init_node=False)
         self.apriltag.set_valid_tags(self.valid_tags)
-        
+
         # wait a bit for other nodes to launch
         rospy.sleep(rospy.Duration(5))
 
@@ -63,8 +62,8 @@ class LandmarkFinder(object):
         # load landmarks from filepath
         if self.landmarks.load(self.lm_config_filepath):
             # set tags seen in landmark file
-            self.valid_tags = [l.get_id() for l in self.landmarks.data.values()]
-            rospy.loginfo("Loaded landmarks from " + self.lm_config_filepath)
+            self.valid_tags = self.landmarks.get_set_tags()
+            rospy.loginfo(f"Loaded landmarks from '{self.lm_config_filepath}'.")
 
     def _save_landmarks(self, tags=None):
         """saves collection of landmarks to the specified filepath"""
@@ -72,7 +71,7 @@ class LandmarkFinder(object):
 
     def timer_callback(self, timer):
         """timed callback that gets the landmark's pose if it is view of the
-            camera, transforms the pose to the world's fixed frame, and 
+            camera, transforms the pose to the world's fixed frame, and
             publishes the TF to the static transform publisher
         """
         # get pose with respect to camera frame
@@ -90,7 +89,7 @@ class LandmarkFinder(object):
                         parent_new=self.fixed_frame)
             # publish
             self.landmarks.pub_tfs(tag_ids)
-            rospy.sleep(rospy.Duration(1.0)) # wait to make sure tf is published
+            rospy.sleep(rospy.Duration(nsecs=int(5e8))) # wait to make sure tf is published
             self.landmarks.pub_markers(tag_ids)
 
 
