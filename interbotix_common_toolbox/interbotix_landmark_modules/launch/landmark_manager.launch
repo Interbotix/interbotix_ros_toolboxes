@@ -11,6 +11,7 @@
         pkg="interbotix_landmark_modules"
         type="landmark_manager"
         name="landmark_manager"
+        required="true"
         output="screen">
         <param name="landmark_config"   value="$(arg landmark_config)"/>
         <param name="fixed_frame"       value="$(arg fixed_frame)"/>
