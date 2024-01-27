@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -32,10 +32,12 @@ from .xs_common import (
     get_interbotix_xsarm_joints,
     get_interbotix_xsarm_models,
     get_interbotix_xslocobot_models,
+    get_interbotix_xsturret_models,
 )
 
 __all__ = [
     'get_interbotix_xsarm_joints',
     'get_interbotix_xsarm_models',
     'get_interbotix_xslocobot_models',
+    'get_interbotix_xsturret_models',
 ]
