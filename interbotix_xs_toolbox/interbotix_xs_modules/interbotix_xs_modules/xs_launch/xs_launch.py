@@ -495,7 +495,7 @@ def declare_interbotix_xsturret_robot_description_launch_arguments(
                 'simulated in Gazebo.'
             ),
         ),
-        DeclareInterbotixXSArmRobotDescriptionLaunchArgument(),
+        DeclareInterbotixXSTurretRobotDescriptionLaunchArgument(),
     ]
 
 
