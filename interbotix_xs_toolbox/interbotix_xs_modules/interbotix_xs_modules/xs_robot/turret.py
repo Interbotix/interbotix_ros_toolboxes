@@ -41,6 +41,8 @@ from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_msgs.msg import JointGroupCommand, JointSingleCommand
 from interbotix_xs_msgs.srv import OperatingModes, RegisterValues, RobotInfo
 import rclpy
+from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 
@@ -351,9 +353,12 @@ class InterbotixTurretXSInterface:
             self.core.pub_single.publish(JointSingleCommand(name=joint_name, cmd=position))
             self.info[joint_name]['command'] = position
             if (self.info[joint_name]['profile_type'] == 'time' and blocking):
-                self.core.get_clock().sleep_for(self.info[joint_name]['profile_velocity'])
+                print(self.info[joint_name]['profile_velocity'])
+                self.core.get_clock().sleep_for(
+                   Duration(nanoseconds=int(self.info[joint_name]['profile_velocity'] * S_TO_NS))
+                )
             else:
-                self.core.get_clock().sleep_for(delay)
+                self.core.get_clock().sleep_for(Duration(nanoseconds=int(delay * S_TO_NS)))
         else:
             self.core.get_logger().error(
                 f"Goal position is outside the '{joint_name}' joint's limits. Will not execute."
@@ -536,13 +541,15 @@ class InterbotixTurretXSInterface:
                 (blocking)
             ):
                 self.core.get_clock().sleep_for(
-                    max(
-                        self.info[self.pan_name]['profile_velocity'],
-                        self.info[self.tilt_name]['profile_velocity']
+                    Duration(
+                        nanoseconds=int(max(
+                            self.info[self.pan_name]['profile_velocity'],
+                            self.info[self.tilt_name]['profile_velocity']
+                        ) * S_TO_NS)
                     )
                 )
             else:
-                self.core.get_clock().sleep_for(delay)
+                self.core.get_clock().sleep_for(Duration(nanoseconds=int(delay * S_TO_NS)))
         else:
             self.core.get_logger().error(
                 'One or both goal positions are outside the limits. Will not execute'
