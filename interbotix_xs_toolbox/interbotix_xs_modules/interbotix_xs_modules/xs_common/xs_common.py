@@ -53,6 +53,16 @@ _XSLOCOBOT_MODELS = (
     'locobot_wx250s',
 )
 
+# Tuple of valid Interbotix Turret models
+_XSLOCOBOT_MODELS = (
+    'pxxls_cam',
+    'pxxls',
+    'vxxmd',
+    'vxxms',
+    'wxxmd',
+    'wxxms',
+)
+
 
 def get_interbotix_xsarm_models() -> Tuple[str]:
     """Get the tuple of valid Interbotix X-Series arm models."""
@@ -61,6 +71,11 @@ def get_interbotix_xsarm_models() -> Tuple[str]:
 
 def get_interbotix_xslocobot_models() -> Tuple[str]:
     """Get the tuple of valid Interbotix LoCoBot models."""
+    return _XSLOCOBOT_MODELS
+
+
+def get_interbotix_xsturret_models() -> Tuple[str]:
+    """Get the tuple of valid Interbotix Turret models."""
     return _XSLOCOBOT_MODELS
 
 
