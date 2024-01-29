@@ -214,7 +214,8 @@ class InterbotixArmXSInterface:
             )
             exit(1)
 
-        self.initial_guesses = [[0.0] * self.group_info.num_joints] * 3
+        # initialize initial IK guesses
+        self.initial_guesses = [[0.0] * self.group_info.num_joints for _ in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
         self.joint_commands = []
