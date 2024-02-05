@@ -54,7 +54,7 @@ _XSLOCOBOT_MODELS = (
 )
 
 # Tuple of valid Interbotix Turret models
-_XSLOCOBOT_MODELS = (
+_XSTURRET_MODELS = (
     'pxxls_cam',
     'pxxls',
     'vxxmd',
@@ -76,7 +76,7 @@ def get_interbotix_xslocobot_models() -> Tuple[str]:
 
 def get_interbotix_xsturret_models() -> Tuple[str]:
     """Get the tuple of valid Interbotix Turret models."""
-    return _XSLOCOBOT_MODELS
+    return _XSTURRET_MODELS
 
 
 def get_interbotix_xsarm_joints(robot_model: str) -> List[str]:
