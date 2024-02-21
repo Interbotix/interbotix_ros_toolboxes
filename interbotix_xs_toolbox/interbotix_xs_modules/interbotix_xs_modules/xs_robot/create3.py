@@ -33,14 +33,13 @@ These classes can be used to control a Create 3 mobile base for Interbotix X-Ser
 Python.
 """
 
-import time
-
 from builtin_interfaces.msg import Duration
 from geometry_msgs.msg import Pose
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.mobile_base import InterbotixMobileBaseInterface
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from irobot_create_msgs.srv import ResetPose
+from rclpy.constants import S_TO_NS
 from std_msgs.msg import Header
 
 
@@ -89,7 +88,7 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
             srv_name='mobile_base/reset_pose',
         )
 
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(Duration(nanosec=int(0.5*S_TO_NS)))
         self.core.get_logger().info('Initialized InterbotixCreate3Interface!')
 
     def reset_odom(self) -> None:

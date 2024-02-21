@@ -33,7 +33,6 @@ These classes should be used to build out mobile bases for Interbotix X-Series L
 """
 
 from abc import ABC, abstractmethod
-import time
 from typing import List
 
 from action_msgs.msg import GoalStatus
@@ -42,6 +41,7 @@ from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
 from rclpy.action import ActionClient
+from rclpy.constants import S_TO_NS
 from rclpy.duration import Duration
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
@@ -104,7 +104,7 @@ class InterbotixMobileBaseInterface(ABC):
             action_name='navigate_to_pose'
         )
 
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5 * S_TO_NS)))
         self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
 
     def command_velocity_xyaw(

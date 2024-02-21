@@ -33,11 +33,11 @@ These classes can be used to control a Kobuki mobile base for Interbotix X-Serie
 Python.
 """
 
-from time import time
-
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.mobile_base import InterbotixMobileBaseInterface
 from kobuki_ros_interfaces.msg import Sound
+from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from std_msgs.msg import Empty
 
 
@@ -87,7 +87,7 @@ class InterbotixKobukiInterface(InterbotixMobileBaseInterface):
             qos_profile=1,
         )
 
-        time.sleep(0.5)
+        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5 * S_TO_NS)))
         self.core.get_logger().info('Initialized InterbotixKobukiInterface!')
 
     def reset_odom(self) -> None:

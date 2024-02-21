@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -38,6 +38,7 @@ from .xs_launch import (
     construct_interbotix_xslocobot_semantic_robot_description_command,
     declare_interbotix_xsarm_robot_description_launch_arguments,
     declare_interbotix_xslocobot_robot_description_launch_arguments,
+    declare_interbotix_xsturret_robot_description_launch_arguments,
     determine_use_sim_time_param,
 )
 
@@ -46,5 +47,6 @@ __all__ = [
     'construct_interbotix_xslocobot_semantic_robot_description_command',
     'declare_interbotix_xsarm_robot_description_launch_arguments',
     'declare_interbotix_xslocobot_robot_description_launch_arguments',
+    'declare_interbotix_xsturret_robot_description_launch_arguments',
     'determine_use_sim_time_param',
 ]
