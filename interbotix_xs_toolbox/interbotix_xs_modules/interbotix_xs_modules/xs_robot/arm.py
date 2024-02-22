@@ -79,6 +79,8 @@ class InterbotixManipulatorXS:
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
         start_on_init: bool = True,
+        node_owner: bool = True,
+        iterative_update_fk: bool = True,
         args=None,
     ) -> None:
         """
@@ -117,6 +119,14 @@ class InterbotixManipulatorXS:
             object is built; set to `False` if intending to sub-class this. If set to `False`,
             either call the `start()` method later on, or add the core to an executor in another
             thread.
+        :param node_owner: (Used when controlling multiple robots) set to `True` to give access
+            to rclpy states like init and shutdown. For multiple robots, only one robot should
+            get the node ownership. Every other robot will use the node but cannot control init
+            or shutdown.
+        :param iterative_update_fk: (optional) decides whether or not to update forward
+            kinematics of the arm. Can be disabled to save computation time. It is possible
+            to call the arm module's capture_joint_positions or _update_Tsb directly even when
+            this flag is set to false, to update the FK.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
@@ -132,6 +142,7 @@ class InterbotixManipulatorXS:
             group_name=group_name,
             moving_time=moving_time,
             accel_time=accel_time,
+            iterative_update_fk=iterative_update_fk
         )
         if gripper_name is not None:
             self.gripper = InterbotixGripperXSInterface(
@@ -142,7 +153,9 @@ class InterbotixManipulatorXS:
                 gripper_pressure_upper_limit=gripper_pressure_upper_limit,
             )
 
-        if start_on_init:
+        self.node_owner = node_owner
+
+        if start_on_init and self.node_owner:
             self.start()
 
     def start(self) -> None:
@@ -158,10 +171,15 @@ class InterbotixManipulatorXS:
 
     def shutdown(self) -> None:
         """Destroy the node and shut down all threads and processes."""
-        self.core.destroy_node()
-        rclpy.shutdown()
-        self._execution_thread.join()
-        time.sleep(0.5)
+        if self.node_owner:
+            self.core.destroy_node()
+            rclpy.shutdown()
+            self._execution_thread.join()
+            time.sleep(0.5)
+        else:
+            self.core.get_logger().error(
+                "Cannot perform shutdown due to lack of ownership"
+            )
 
 
 class InterbotixArmXSInterface:
@@ -174,6 +192,7 @@ class InterbotixArmXSInterface:
         group_name: str,
         moving_time: float = 2.0,
         accel_time: float = 0.3,
+        iterative_update_fk: bool = True
     ) -> None:
         """
         Construct the InterbotixArmXSInterface object.
@@ -187,11 +206,16 @@ class InterbotixArmXSInterface:
             complete one move
         :param accel_time: (optional) time [s] it should take for all joints in the arm to
             accelerate/decelerate to/from max speed
+        :param iterative_update_fk: (optional) decides whether or not to update forward
+            kinematics of the arm. Can be disabled to save computation time. It is possible
+            to call the arm module's capture_joint_positions or _update_Tsb directly even
+            when this flag is set to false, to update the FK.
         """
         self.core = core
         self.robot_model = robot_model
         self.moving_time, self.accel_time = moving_time, accel_time
         self.group_name = group_name
+        self.iterative_update_fk = iterative_update_fk
 
         self.robot_des: mrd.ModernRoboticsDescription = getattr(mrd, self.robot_model)
 
@@ -271,7 +295,8 @@ class InterbotixArmXSInterface:
         self.core.pub_group.publish(joint_commands)
         if blocking:
             self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
-        self._update_Tsb()
+        if self.update_fk_iteratively:
+            self._update_Tsb()
 
     def set_trajectory_time(
         self,
@@ -465,7 +490,8 @@ class InterbotixArmXSInterface:
         self.core.pub_single.publish(single_command)
         if blocking:
             self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
-        self._update_Tsb()
+        if self.update_fk_iteratively:
+            self._update_Tsb()
         return True
 
     def set_ee_pose_matrix(
