@@ -208,8 +208,8 @@ class InterbotixArmXSInterface:
             accelerate/decelerate to/from max speed
         :param iterative_update_fk: (optional) decides whether or not to update forward
             kinematics of the arm. Can be disabled to save computation time. It is possible
-            to call the arm module's capture_joint_positions or _update_Tsb directly even when this flag is
-            set to false, to update the FK.
+            to call the arm module's capture_joint_positions or _update_Tsb directly even
+            when this flag is set to false, to update the FK.
         """
         self.core = core
         self.robot_model = robot_model
