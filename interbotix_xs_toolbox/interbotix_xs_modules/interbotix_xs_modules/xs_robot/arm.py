@@ -37,7 +37,6 @@ from threading import Thread
 import time
 from typing import Any, List, Tuple, Union
 
-from builtin_interfaces.msg import Duration
 import interbotix_common_modules.angle_manipulation as ang
 from interbotix_xs_modules.xs_robot import mr_descriptions as mrd
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
@@ -52,6 +51,7 @@ import modern_robotics as mr
 import numpy as np
 import rclpy
 from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -115,16 +115,16 @@ class InterbotixManipulatorXS:
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
+        :param start_on_init: (optional) set to `True` to start running the spin thread after the
+            object is built; set to `False` if intending to sub-class this. If set to `False`,
+            either call the `start()` method later on, or add the core to an executor in another
+            thread.
         :param node_owner: (Used when controlling multiple robots) set to `True` to give access
             to rclpy states like init and shutdown. For multiple robots, only one robot should
             get the node ownership. Every other robot will use the node but cannot control init
             or shutdown.
         :param update_kinematics: (optional) decides whether or not to update forward
             kinematics of the arm. Can be disabled to save computations.
-        :param start_on_init: (optional) set to `True` to start running the spin thread after the
-            object is built; set to `False` if intending to sub-class this. If set to `False`,
-            either call the `start()` method later on, or add the core to an executor in another
-            thread.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
@@ -154,7 +154,6 @@ class InterbotixManipulatorXS:
         self.node_owner = node_owner
 
         if start_on_init and self.node_owner:
-            self.core.get_logger().info("Starting thread for owner")
             self.start()
 
     def start(self) -> None:
@@ -206,7 +205,7 @@ class InterbotixArmXSInterface:
         :param accel_time: (optional) time [s] it should take for all joints in the arm to
             accelerate/decelerate to/from max speed
         :param update_kinematics: (optional) decides whether or not to update forward
-            kinematics of the arm. Can be disabled to save computations.
+            kinematics of the arm. Can be disabled to save computations
         """
         self.core = core
         self.robot_model = robot_model
@@ -235,7 +234,8 @@ class InterbotixArmXSInterface:
             )
             exit(1)
 
-        self.initial_guesses = [[0.0] * self.group_info.num_joints] * 3
+        # initialize initial IK guesses
+        self.initial_guesses = [[0.0] * self.group_info.num_joints for _ in range(3)]
         self.initial_guesses[1][0] = np.deg2rad(-120)
         self.initial_guesses[2][0] = np.deg2rad(120)
         self.joint_commands = []
@@ -290,9 +290,7 @@ class InterbotixArmXSInterface:
         )
         self.core.pub_group.publish(joint_commands)
         if blocking:
-            time.sleep(
-                self.moving_time
-            )  # TODO: once released, use rclpy.clock().sleep_for()
+            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
         if self.update_kinematics:
             self._update_Tsb()
 
@@ -321,10 +319,7 @@ class InterbotixArmXSInterface:
                     value=int(moving_time * 1000),
                 )
             )
-            self.core.executor.spin_once_until_future_complete(
-                future=future_moving_time,
-                timeout_sec=0.1
-            )
+            self.core.robot_spin_until_future_complete(future_moving_time)
 
         if accel_time is not None and accel_time != self.accel_time:
             self.accel_time = accel_time
@@ -336,10 +331,7 @@ class InterbotixArmXSInterface:
                     value=int(accel_time * 1000),
                 )
             )
-            self.core.executor.spin_once_until_future_complete(
-                future=future_accel_time,
-                timeout_sec=0.1
-            )
+            self.core.robot_spin_until_future_complete(future_accel_time)
 
     def _check_joint_limits(self, positions: List[float]) -> bool:
         """
@@ -493,7 +485,7 @@ class InterbotixArmXSInterface:
         single_command = JointSingleCommand(name=joint_name, cmd=position)
         self.core.pub_single.publish(single_command)
         if blocking:
-            time.sleep(self.moving_time)
+            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
         self._update_Tsb()
         return True
 
@@ -685,8 +677,8 @@ class InterbotixArmXSInterface:
             joint_traj_point = JointTrajectoryPoint()
             joint_traj_point.positions = tuple(joint_positions)
             joint_traj_point.time_from_start = Duration(
-                nanosec=int(i * wp_period * S_TO_NS)
-            )
+                nanoseconds=int(i * wp_period * S_TO_NS)
+            ).to_msg()
             joint_traj.points.append(joint_traj_point)
             if i == N:
                 break
@@ -726,7 +718,9 @@ class InterbotixArmXSInterface:
                     cmd_type='group', name=self.group_name, traj=joint_traj
                 )
             )
-            time.sleep(moving_time + wp_moving_time)
+            self.core.get_clock().sleep_for(
+                Duration(nanoseconds=int((moving_time + wp_moving_time)*S_TO_NS))
+            )
             self.T_sb = T_sd
             self.joint_commands = joint_positions
             self.set_trajectory_time(moving_time, accel_time)
