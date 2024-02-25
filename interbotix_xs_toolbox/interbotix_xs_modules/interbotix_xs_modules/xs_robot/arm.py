@@ -295,7 +295,7 @@ class InterbotixArmXSInterface:
         self.core.pub_group.publish(joint_commands)
         if blocking:
             self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
-        if self.update_fk_iteratively:
+        if self.iterative_update_fk:
             self._update_Tsb()
 
     def set_trajectory_time(
@@ -490,7 +490,7 @@ class InterbotixArmXSInterface:
         self.core.pub_single.publish(single_command)
         if blocking:
             self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
-        if self.update_fk_iteratively:
+        if self.iterative_update_fk:
             self._update_Tsb()
         return True
 
