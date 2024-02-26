@@ -29,7 +29,6 @@
 """Contains the `InterbotixRobotXSCore` class that interfaces with the interbotix_xs_sdk."""
 
 import copy
-import sys
 from threading import Lock
 from typing import Dict, List
 
@@ -130,14 +129,13 @@ class InterbotixRobotXSCore(Node):
         )
 
         # Check for xs_sdk by looking for set_operating_modes
-        if not self.srv_set_op_modes.wait_for_service(timeout_sec=10.0):
+        while not self.srv_set_op_modes.wait_for_service(timeout_sec=5.0) and rclpy.ok():
             self.get_logger().error(
                 (
                     f"Failed to find services under namespace '{self.robot_name}'. Is the xs_sdk "
-                    'running? Shutting down...'
+                    'running under that namespace?'
                 )
             )
-            sys.exit(1)
         self.srv_set_pids.wait_for_service()
         self.srv_set_reg.wait_for_service()
         self.srv_get_reg.wait_for_service()
