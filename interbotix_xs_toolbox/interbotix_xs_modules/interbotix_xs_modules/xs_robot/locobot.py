@@ -66,7 +66,7 @@ class InterbotixLocobotXS:
         arm_group_name: str = 'arm',
         gripper_name: str = 'gripper',
         turret_group_name: str = 'camera',
-        robot_name: str = '',
+        robot_name: str = 'locobot',
         topic_dxl_joint_states: str = 'dynamixel/joint_states',
         topic_base_joint_states: str = 'mobile_base/joint_states',
         use_nav: bool = False,
@@ -93,9 +93,8 @@ class InterbotixLocobotXS:
             yaml file; typically, this is 'gripper'
         :param turret_group_name: (optional) joint group name that contains the 'turret' joints as
             defined in the 'motor_config' yaml file; typically, this is 'camera'
-        :param robot_name: (optional) defaults to the value given to 'robot_model' if unspecified;
-            this can be customized if controlling two or more LoCoBots from one computer (like
-            'locobot1' and 'locobot2')
+        :param robot_name: (optional) this can be customized if controlling two or more LoCoBots
+            from one computer (like 'locobot1' and 'locobot2'); defaults to `'locobot'`
         :param topic_dxl_joint_states: (optional) name of the joint states topic that contains just
             the states of the dynamixel servos
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
