@@ -47,9 +47,9 @@ class DeclareInterbotixXSArmRobotDescriptionLaunchArgument(DeclareLaunchArgument
     def __init__(
         self,
         *,
-        robot_description_launch_config_name='robot_description',
-        robot_model_launch_config_name='robot_model',
-        robot_name_launch_config_name='robot_name',
+        robot_description_launch_config_name: Text = 'robot_description',
+        robot_model_launch_config_name: Text = 'robot_model',
+        robot_name_launch_config_name: Text = 'robot_name',
         default_value: Optional[SomeSubstitutionsType] = None,
         **kwargs
     ) -> None:
@@ -256,12 +256,12 @@ def declare_interbotix_xsarm_robot_description_launch_arguments(
     use_world_frame: Text = 'true',
     external_urdf_loc: Text = '',
     hardware_type: Text = 'actual',
-    robot_description_launch_config_name='robot_description',
-    robot_model_launch_config_name='robot_model',
-    robot_name_launch_config_name='robot_name',
+    robot_description_launch_config_name: Text = 'robot_description',
+    robot_model_launch_config_name: Text = 'robot_model',
+    robot_name_launch_config_name: Text = 'robot_name',
 ) -> List[DeclareLaunchArgument]:
     """
-    Return the `robot_description` DeclareLaunchArgument and its required children.
+    Return a robot description DeclareLaunchArgument and its required children.
 
     DeclareLaunchArgument objects:
         - `base_link_frame`
