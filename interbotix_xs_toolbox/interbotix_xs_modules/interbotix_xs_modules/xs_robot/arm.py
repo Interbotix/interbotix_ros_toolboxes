@@ -34,6 +34,7 @@ These classes can be used to control an X-Series standalone arm using Python.
 
 import math
 from threading import Thread
+import sys
 import time
 from typing import Any, List, Tuple, Union
 
@@ -227,16 +228,23 @@ class InterbotixArmXSInterface:
             rclpy.spin_once(self.core)
 
         self.group_info: RobotInfo.Response = self.future_group_info.result()
+        if self.group_info.num_joints != self.robot_des.Slist.shape[1]:
+            self.core.get_logger().fatal(
+                f"Number of joints in group '{group_name}' does not match Modern Robotics "
+                f"description for arm model '{robot_model}' ({self.group_info.num_joints} != "
+                f'{self.robot_des.Slist.shape[1]}).'
+            )
+            sys.exit(1)
         if self.group_info.profile_type != 'time':
             self.core.get_logger().error(
                 "Please set the group's 'profile_type' to 'time'."
             )
-            exit(1)
+            sys.exit(1)
         if self.group_info.mode != 'position':
             self.core.get_logger().error(
                 "Please set the group's 'operating mode' to 'position'."
             )
-            exit(1)
+            sys.exit(1)
 
         # initialize initial IK guesses
         self.initial_guesses = [[0.0] * self.group_info.num_joints for _ in range(3)]
