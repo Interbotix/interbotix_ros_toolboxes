@@ -179,7 +179,7 @@ class InterbotixManipulatorXS:
             time.sleep(0.5)
         else:
             self.core.get_logger().error(
-                "Cannot perform shutdown due to lack of ownership"
+                'Cannot perform shutdown due to lack of ownership'
             )
 
 
