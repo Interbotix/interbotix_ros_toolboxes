@@ -33,8 +33,8 @@ These classes can be used to control an X-Series standalone arm using Python.
 """
 
 import math
-from threading import Thread
 import sys
+from threading import Thread
 import time
 from typing import Any, List, Tuple, Union
 
