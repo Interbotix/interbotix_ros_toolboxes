@@ -482,7 +482,7 @@ def declare_interbotix_xsturret_robot_description_launch_arguments(
     robot_name_launch_config_name: Text = 'robot_name',
 ) -> List[DeclareLaunchArgument]:
     """
-    Return the `robot_description` DeclareLaunchArgument and its required children.
+    Return a robot description DeclareLaunchArgument and its required children.
 
     DeclareLaunchArgument objects:
         - `base_link_frame`
