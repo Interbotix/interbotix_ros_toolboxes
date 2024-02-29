@@ -33,10 +33,11 @@ These classes should be used to build out mobile bases for Interbotix X-Series L
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Twist, Vector3
+from interbotix_common_modules.common_robot import InterbotixRobotNode
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
@@ -52,7 +53,7 @@ class InterbotixMobileBaseInterface(ABC):
 
     def __init__(
         self,
-        core: InterbotixRobotXSCore,
+        core: Union[InterbotixRobotXSCore, InterbotixRobotNode],
         robot_name: str,
         topic_base_joint_states: str,
         topic_cmd_vel: str = 'cmd_vel',
@@ -60,11 +61,11 @@ class InterbotixMobileBaseInterface(ABC):
         use_nav: bool = False,
     ):
         """
-        Construct the InterbotixKobukiInterface object.
+        Construct the InterbotixMobileBaseInterface object.
 
-        :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
-            plumbing that drives the Python API
-        :param robot_name: namespace of the Kobuki node (a.k.a the name of the Interbotix LoCoBot)
+        :param core: reference to the Node class containing the internal ROS plumbing that drives
+            the Python API
+        :param robot_name: namespace of the base node (a.k.a the name of the Interbotix base)
         :param topic_base_joint_states: name of the joints states topic that contains the states of
             the base. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: name of the twist topic to which velocity commands should be
@@ -109,11 +110,11 @@ class InterbotixMobileBaseInterface(ABC):
 
     def command_velocity_xyaw(
         self,
-        x: float = 0,
-        yaw: float = 0,
+        x: float = 0.0,
+        yaw: float = 0.0,
     ) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command a single twist (velocity) by its components to move the robot.
 
         :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward). defaults
             to 0
@@ -126,9 +127,33 @@ class InterbotixMobileBaseInterface(ABC):
             ),
         )
 
+    def command_velocity_xyaw_for_duration(
+        self,
+        x: float = 0.0,
+        yaw: float = 0.0,
+        duration: float = 1.0,
+    ) -> None:
+        """
+        Command twists (velocities) by their components to move the robot for a specified duration.
+
+        :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward). defaults
+            to 0
+        :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis. defaults to 0
+        :param duration: (optional) length of time in seconds to publish velocity for. defaults to
+            1.0
+        :details: at the end of the duration, publishes an empty Twist message to halt movement
+        """
+        self.command_velocity_for_duration(
+            twist=Twist(
+                linear=Vector3(x=x),
+                angular=Vector3(z=yaw)
+            ),
+            duration=duration,
+        )
+
     def command_velocity_for_duration(self, twist: Twist = Twist(), duration: float = 1.0) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command twists (velocities) message to move the robot for a specified duration.
 
         :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
         :param duration: (optional) length of time in seconds to publish velocity for. defaults to
@@ -144,7 +169,7 @@ class InterbotixMobileBaseInterface(ABC):
 
     def command_velocity(self, twist: Twist = Twist()) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command a single twist (velocity) message to move the robot.
 
         :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
         """
