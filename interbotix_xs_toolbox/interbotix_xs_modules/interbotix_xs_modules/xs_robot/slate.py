@@ -28,67 +28,24 @@
 
 """Contains classes used to control the Interbotix Slate mobile base."""
 
-from threading import Thread
-from typing import Text
-
+from rclpy.callback_groups import ReentrantCallbackGroup
 from interbotix_slate_msgs.srv import SetString
-from interbotix_common_modules.common_robot import InterbotixRobotNode
 from interbotix_xs_modules.xs_robot.mobile_base import InterbotixMobileBaseInterface
+from interbotix_xs_modules.xs_robot.core import XSRobotNode
 import rclpy
-from rclpy.constants import S_TO_NS
-from rclpy.duration import Duration
 from std_srvs.srv import SetBool
-from rclpy.executors import MultiThreadedExecutor
-import time
 
 
 class InterbotixSlate:
     def __init__(
         self,
-        robot_name: Text = None,
-        start_on_init: bool = True,
-        node_owner: bool = True,
-        node: InterbotixRobotNode = None,
+        robot_name: str = None,
+        node: XSRobotNode = None,
     ) -> None:
-        self.node_owner = node_owner
-        if not self.node_owner and node is not None:
-            self.core = node
-        elif self.node_owner and node is None:
-            self.core = InterbotixRobotNode(
-                robot_name=robot_name,
-            )
-        else:
-            raise
         self.base = InterbotixSlateInterface(
-            core=self.core,
+            core=node,
             robot_name=robot_name,
         )
-
-        if start_on_init and self.node_owner:
-            self.start()
-
-    def start(self) -> None:
-        """Start a background thread that builds and spins an executor."""
-        self._execution_thread = Thread(target=self.run)
-        self._execution_thread.start()
-
-    def run(self) -> None:
-        """Thread target."""
-        self.ex = MultiThreadedExecutor()
-        self.ex.add_node(self.core)
-        self.ex.spin()
-
-    def shutdown(self) -> None:
-        """Destroy the node and shut down all threads and processes."""
-        if self.node_owner:
-            self.core.destroy_node()
-            rclpy.try_shutdown()
-            self._execution_thread.join()
-            time.sleep(0.5)
-        else:
-            self.core.get_logger().error(
-                'Cannot perform shutdown due to lack of ownership'
-            )
 
 
 class InterbotixSlateInterface(InterbotixMobileBaseInterface):
@@ -96,7 +53,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
 
     def __init__(
         self,
-        core: InterbotixRobotNode,
+        core: XSRobotNode,
         robot_name: str,
         topic_base_joint_states: str = 'mobile_base/joint_states',
         topic_cmd_vel: str = 'mobile_base/cmd_vel',
@@ -106,8 +63,8 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         """
         Construct the InterbotixSlateInterface object.
 
-        :param core: reference to the InterbotixRobotNode class containing the internal ROS
-            plumbing that drives the Python API
+        :param core: reference to the XSRobotNode class containing the internal ROS plumbing that
+            drives the Python API
         :param robot_name: namespace of the Slate nodes
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the Slate's two wheels. defaults to `'mobile_base/joint_states'`
@@ -118,6 +75,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         :param use_nav: (optional) whether or not to enable navigation features. requires that nav2
             be launched. defaults to `False`
         """
+        self.robot_node = core
         super().__init__(
             core=core,
             robot_name=robot_name,
@@ -127,25 +85,28 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
             use_nav=use_nav,
         )
 
-        self.client_set_text = self.core.create_client(
+        cb_group_slate = ReentrantCallbackGroup()
+
+        self.client_set_text = self.robot_node.create_client(
             srv_type=SetString,
             srv_name='mobile_base/set_text',
+            callback_group=cb_group_slate,
         )
-        self.client_set_motor_torque = self.core.create_client(
+        self.client_set_motor_torque = self.robot_node.create_client(
             srv_type=SetBool,
             srv_name='mobile_base/set_motor_torque_status',
+            callback_group=cb_group_slate,
         )
 
         while not self.client_set_motor_torque.wait_for_service(timeout_sec=5.0) and rclpy.ok():
-            self.core.get_logger().error(
+            self.robot_node.get_logger().error(
                 (
                     "Failed to find services under namespace 'mobile_base'. Is the slate "
                     'base driver node running under that namespace?'
                 )
             )
 
-        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5*S_TO_NS)))
-        self.core.get_logger().info('Initialized InterbotixSlateInterface!')
+        self.robot_node.get_logger().info('Initialized InterbotixSlateInterface!')
 
     def set_text(self, text: str) -> bool:
         """
@@ -154,10 +115,10 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         :param text: Text to set
         :return: `True` if the set_text service succeeded, `False` otherwise
         """
-        future_set_text = self.client_set_text.call_async(SetString.Request(data=text))
-        self.core.robot_spin_until_future_complete(future_set_text)
-        result: SetString.Response = future_set_text.result()
-        self.core.get_logger().info(result.message)
+        future = self.client_set_text.call_async(SetString.Request(data=text))
+        self.robot_node.robot_spin_until_future_complete(future)
+        result: SetString.Response = future.result()
+        self.robot_node.get_logger().info(result.message)
         return result.success
 
     def set_motor_torque(self, enable: bool) -> bool:
@@ -167,12 +128,12 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         :param enable: `True` to enable torque on the base's motors, `False` to disable
         :return: `True` if the set_motor_torque service succeeded, `False` otherwise
         """
-        future_set_motor_torque = self.client_set_motor_torque.call_async(
+        future = self.client_set_motor_torque.call_async(
             SetBool.Request(data=enable)
         )
-        self.core.robot_spin_until_future_complete(future_set_motor_torque)
-        result: SetBool.Response = future_set_motor_torque.result()
-        self.core.get_logger().info(result.message)
+        rclpy.spin_until_future_complete(self.robot_node, future)
+        result: SetBool.Response = future.result()
+        self.robot_node.get_logger().info(result.message)
         return result.success
 
     def play_sound(self, *args, **kwargs) -> None:

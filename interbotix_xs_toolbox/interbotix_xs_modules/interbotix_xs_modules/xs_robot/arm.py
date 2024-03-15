@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -34,13 +34,11 @@ These classes can be used to control an X-Series standalone arm using Python.
 
 import math
 import sys
-from threading import Thread
-import time
 from typing import Any, List, Tuple, Union
 
 import interbotix_common_modules.angle_manipulation as ang
 from interbotix_xs_modules.xs_robot import mr_descriptions as mrd
-from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
+from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore, XSRobotNode
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
 from interbotix_xs_msgs.msg import (
     JointGroupCommand,
@@ -53,7 +51,6 @@ import numpy as np
 import rclpy
 from rclpy.constants import S_TO_NS
 from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -79,8 +76,7 @@ class InterbotixManipulatorXS:
         topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
-        start_on_init: bool = True,
-        node_owner: bool = True,
+        node: XSRobotNode = None,
         iterative_update_fk: bool = True,
         args=None,
     ) -> None:
@@ -116,18 +112,17 @@ class InterbotixManipulatorXS:
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
+        :param node: (optional) `rclpy.Node` or derived class to base this robot's ROS-related
+            components on.  If nothing is given, this robot will create its own node. defaults to
+            `None`.
         :param start_on_init: (optional) set to `True` to start running the spin thread after the
             object is built; set to `False` if intending to sub-class this. If set to `False`,
             either call the `start()` method later on, or add the core to an executor in another
             thread.
-        :param node_owner: (Used when controlling multiple robots) set to `True` to give access
-            to rclpy states like init and shutdown. For multiple robots, only one robot should
-            get the node ownership. Every other robot will use the node but cannot control init
-            or shutdown.
-        :param iterative_update_fk: (optional) decides whether or not to update forward
-            kinematics of the arm. Can be disabled to save computation time. It is possible
-            to call the arm module's capture_joint_positions or _update_Tsb directly even when
-            this flag is set to false, to update the FK.
+        :param iterative_update_fk: (optional) decides whether or not to update forward kinematics
+            of the arm. Can be disabled to save computation time. It is possible to call the arm
+            module's capture_joint_positions or _update_Tsb directly even when this flag is set to
+            false, to update the FK.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
@@ -135,7 +130,8 @@ class InterbotixManipulatorXS:
             topic_joint_states=topic_joint_states,
             logging_level=logging_level,
             node_name=node_name,
-            args=args
+            node=node,
+            args=args,
         )
         self.arm = InterbotixArmXSInterface(
             core=self.core,
@@ -154,33 +150,11 @@ class InterbotixManipulatorXS:
                 gripper_pressure_upper_limit=gripper_pressure_upper_limit,
             )
 
-        self.node_owner = node_owner
+        self.robot_name = robot_name
 
-        if start_on_init and self.node_owner:
-            self.start()
-
-    def start(self) -> None:
-        """Start a background thread that builds and spins an executor."""
-        self._execution_thread = Thread(target=self.run)
-        self._execution_thread.start()
-
-    def run(self) -> None:
-        """Thread target."""
-        self.ex = MultiThreadedExecutor()
-        self.ex.add_node(self.core)
-        self.ex.spin()
-
-    def shutdown(self) -> None:
-        """Destroy the node and shut down all threads and processes."""
-        if self.node_owner:
-            self.core.destroy_node()
-            rclpy.shutdown()
-            self._execution_thread.join()
-            time.sleep(0.5)
-        else:
-            self.core.get_logger().error(
-                'Cannot perform shutdown due to lack of ownership'
-            )
+    def get_node(self) -> XSRobotNode:
+        """Return the core robot node for this robot."""
+        return self.core.robot_node
 
 
 class InterbotixArmXSInterface:
@@ -224,27 +198,25 @@ class InterbotixArmXSInterface:
             RobotInfo.Request(cmd_type='group', name=group_name)
         )
         while rclpy.ok() and not self.future_group_info.done():
-            rclpy.spin_until_future_complete(self.core, self.future_group_info)
-            rclpy.spin_once(self.core)
+            rclpy.spin_until_future_complete(self.core.get_node(), self.future_group_info)
+            rclpy.spin_once(self.core.get_node())
 
         self.group_info: RobotInfo.Response = self.future_group_info.result()
         if self.group_info.num_joints != self.robot_des.Slist.shape[1]:
-            self.core.get_logger().fatal(
+            self.core.get_node().get_logger().fatal(
                 f"Number of joints in group '{group_name}' does not match Modern Robotics "
                 f"description for arm model '{robot_model}' ({self.group_info.num_joints} != "
                 f'{self.robot_des.Slist.shape[1]}).'
             )
             sys.exit(1)
         if self.group_info.profile_type != 'time':
-            self.core.get_logger().error(
-                "Please set the group's 'profile_type' to 'time'."
+            self.core.get_node().get_logger().warn(
+                f"Group '{group_name}' profile_type not set to 'time'."
             )
-            sys.exit(1)
         if self.group_info.mode != 'position':
-            self.core.get_logger().error(
-                "Please set the group's 'operating mode' to 'position'."
+            self.core.get_node().get_logger().warn(
+                f"Group '{group_name}' operating mode not set to 'position'."
             )
-            sys.exit(1)
 
         # initialize initial IK guesses
         self.initial_guesses = [[0.0] * self.group_info.num_joints for _ in range(3)]
@@ -266,16 +238,14 @@ class InterbotixArmXSInterface:
             zip(self.group_info.joint_names, range(self.group_info.num_joints))
         )
 
-        self.core.get_logger().info(
-            (
-                '\n'
-                f'\tArm Group Name: {self.group_name}\n'
-                f'\tMoving Time: {self.moving_time:.2f} seconds\n'
-                f'\tAcceleration Time: {self.accel_time:.2f} seconds\n'
-                f'\tDrive Mode: Time-Based-Profile'
-            )
+        self.core.get_node().get_logger().info(
+            '\n'
+            f'\tArm Group Name: {self.group_name}\n'
+            f'\tMoving Time: {self.moving_time:.2f} seconds\n'
+            f'\tAcceleration Time: {self.accel_time:.2f} seconds\n'
+            f'\tDrive Mode: Time-Based-Profile'
         )
-        self.core.get_logger().info('Initialized InterbotixArmXSInterface!')
+        self.core.get_node().get_logger().info('Initialized InterbotixArmXSInterface!')
 
     def _publish_commands(
         self,
@@ -294,7 +264,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_logger().debug(f'Publishing {positions=}')
+        self.core.get_node().get_logger().debug(f'Publishing {positions=}')
         self.set_trajectory_time(moving_time, accel_time)
         self.joint_commands = list(positions)
         joint_commands = JointGroupCommand(
@@ -302,14 +272,16 @@ class InterbotixArmXSInterface:
         )
         self.core.pub_group.publish(joint_commands)
         if blocking:
-            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
+            self.core.get_node().get_clock().sleep_for(
+                Duration(nanoseconds=int(self.moving_time*S_TO_NS))
+            )
         if self.iterative_update_fk:
             self._update_Tsb()
 
     def set_trajectory_time(
         self,
         moving_time: float = None,
-        accel_time: float = None
+        accel_time: float = None,
     ) -> None:
         """
         Command the 'Profile_Velocity' and 'Profile_Acceleration' motor registers.
@@ -318,7 +290,7 @@ class InterbotixArmXSInterface:
         :param accel_time: (optional) duration in seconds that that robot should spend
             accelerating/decelerating (must be less than or equal to half the moving_time)
         """
-        self.core.get_logger().debug(
+        self.core.get_node().get_logger().debug(
             f'Updating timing params: {moving_time=}, {accel_time=}'
         )
         if moving_time is not None and moving_time != self.moving_time:
@@ -331,7 +303,7 @@ class InterbotixArmXSInterface:
                     value=int(moving_time * 1000),
                 )
             )
-            self.core.robot_spin_until_future_complete(future_moving_time)
+            self.core.get_node().robot_spin_until_future_complete(future_moving_time)
 
         if accel_time is not None and accel_time != self.accel_time:
             self.accel_time = accel_time
@@ -343,7 +315,7 @@ class InterbotixArmXSInterface:
                     value=int(accel_time * 1000),
                 )
             )
-            self.core.robot_spin_until_future_complete(future_accel_time)
+            self.core.get_node().robot_spin_until_future_complete(future_accel_time)
 
     def _check_joint_limits(self, positions: List[float]) -> bool:
         """
@@ -352,7 +324,7 @@ class InterbotixArmXSInterface:
         :param positions: the positions [rad] to check
         :return: `True` if all positions are within limits; `False` otherwise
         """
-        self.core.get_logger().debug(f'Checking joint limits for {positions=}')
+        self.core.get_node().get_logger().debug(f'Checking joint limits for {positions=}')
         theta_list = [int(elem * 1000) / 1000.0 for elem in positions]
         speed_list = [
             abs(goal - current) / float(self.moving_time)
@@ -378,8 +350,8 @@ class InterbotixArmXSInterface:
         :param position: desired joint position [rad]
         :return: `True` if within limits; `False` otherwise
         """
-        self.core.get_logger().debug(
-            f'Checking joint {joint_name} limits for {position=}'
+        self.core.get_node().get_logger().debug(
+            f"Checking joint '{joint_name}' limits for {position=}"
         )
         theta = int(position * 1000) / 1000.0
         speed = abs(
@@ -412,7 +384,7 @@ class InterbotixArmXSInterface:
             until the robot finishes moving
         :return: `True` if position was commanded; `False` if it wasn't due to being outside limits
         """
-        self.core.get_logger().debug(f'setting {joint_positions=}')
+        self.core.get_node().get_logger().debug(f'Setting {joint_positions=}')
         if self._check_joint_limits(joint_positions):
             self._publish_commands(joint_positions, moving_time, accel_time, blocking)
             return True
@@ -423,7 +395,7 @@ class InterbotixArmXSInterface:
         self,
         moving_time: float = None,
         accel_time: float = None,
-        blocking: bool = True
+        blocking: bool = True,
     ) -> None:
         """
         Command the arm to go to its Home pose.
@@ -434,7 +406,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_logger().debug('Going to home pose')
+        self.core.get_node().get_logger().debug('Going to home pose')
         self._publish_commands(
             positions=[0] * self.group_info.num_joints,
             moving_time=moving_time,
@@ -446,7 +418,7 @@ class InterbotixArmXSInterface:
         self,
         moving_time: float = None,
         accel_time: float = None,
-        blocking: bool = True
+        blocking: bool = True,
     ) -> None:
         """
         Command the arm to go to its Sleep pose.
@@ -457,7 +429,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_logger().debug('Going to sleep pose')
+        self.core.get_node().get_logger().debug('Going to sleep pose')
         self._publish_commands(
             positions=self.group_info.joint_sleep_positions,
             moving_time=moving_time,
@@ -487,8 +459,8 @@ class InterbotixArmXSInterface:
         :details: Note that if a moving_time or accel_time is specified, the changes affect ALL the
             arm joints, not just the specified one
         """
-        self.core.get_logger().debug(
-            f'Setting joint {joint_name} to position={position}'
+        self.core.get_node().get_logger().debug(
+            f"Setting joint '{joint_name}' to position={position}"
         )
         if not self._check_single_joint_limit(joint_name, position):
             return False
@@ -497,7 +469,9 @@ class InterbotixArmXSInterface:
         single_command = JointSingleCommand(name=joint_name, cmd=position)
         self.core.pub_single.publish(single_command)
         if blocking:
-            self.core.get_clock().sleep_for(Duration(nanoseconds=int(self.moving_time*S_TO_NS)))
+            self.core.get_node().get_clock().sleep_for(
+                Duration(nanoseconds=int(self.moving_time*S_TO_NS))
+            )
         if self.iterative_update_fk:
             self._update_Tsb()
         return True
@@ -527,7 +501,7 @@ class InterbotixArmXSInterface:
         :return: joint values needed to get the end effector to the desired pose
         :return: `True` if a valid solution was found; `False` otherwise
         """
-        self.core.get_logger().debug(f'Setting ee_pose to matrix=\n{T_sd}')
+        self.core.get_node().get_logger().debug(f'Setting ee_pose to matrix=\n{T_sd}')
         if custom_guess is None:
             initial_guesses = self.initial_guesses
         else:
@@ -559,7 +533,7 @@ class InterbotixArmXSInterface:
                     self.T_sb = T_sd
                 return theta_list, True
 
-        self.core.get_logger().warn('No valid pose could be found. Will not execute')
+        self.core.get_node().get_logger().warn('No valid pose could be found. Will not execute')
         return theta_list, False
 
     def set_ee_pose_components(
@@ -601,16 +575,14 @@ class InterbotixArmXSInterface:
             self.group_info.num_joints >= 6 and yaw is None
         ):
             yaw = math.atan2(y, x)
-        self.core.get_logger().debug(
-            (
-                f'Setting ee_pose components=\n'
-                f'\t{x=}\n'
-                f'\t{y=}\n'
-                f'\t{z=}\n'
-                f'\t{roll=}\n'
-                f'\t{pitch=}\n'
-                f'\t{yaw=}'
-            )
+        self.core.get_node().get_logger().debug(
+            f'Setting ee_pose components=\n'
+            f'\t{x=}\n'
+            f'\t{y=}\n'
+            f'\t{z=}\n'
+            f'\t{roll=}\n'
+            f'\t{pitch=}\n'
+            f'\t{yaw=}'
         )
         T_sd = np.identity(4)
         T_sd[:3, :3] = ang.euler_angles_to_rotation_matrix([roll, pitch, yaw])
@@ -655,23 +627,18 @@ class InterbotixArmXSInterface:
             effector frame (/<robot_name>/ee_gripper_link).
         :details: Note that `y` and `yaw` must equal 0 if using arms with less than 6dof.
         """
-        self.core.get_logger().debug(
-            (
-                f'Setting ee trajectory to components=\n'
-                f'\tx={x}\n'
-                f'\ty={y}\n'
-                f'\tz={z}\n'
-                f'\troll={roll}\n'
-                f'\tpitch={pitch}\n'
-                f'\tyaw={yaw}'
-            )
+        self.core.get_node().get_logger().debug(
+            f'Setting ee trajectory to components=\n'
+            f'\tx={x}\n'
+            f'\ty={y}\n'
+            f'\tz={z}\n'
+            f'\troll={roll}\n'
+            f'\tpitch={pitch}\n'
+            f'\tyaw={yaw}'
         )
         if self.group_info.num_joints < 6 and (y != 0 or yaw != 0):
-            self.core.get_logger().warn(
-                (
-                    "Please leave the 'y' and 'yaw' fields at '0' when working with arms that have"
-                    ' fewer than 6dof.'
-                )
+            self.core.get_node().get_logger().warn(
+                "'y' and 'yaw' fields must be '0' when working with arms with fewer than 6dof."
             )
             return False
         rpy = ang.rotation_matrix_to_euler_angles(self.T_sb[:3, :3])
@@ -707,11 +674,9 @@ class InterbotixArmXSInterface:
             if success:
                 joint_positions = theta_list
             else:
-                self.core.get_logger().warn(
-                    (
-                        f'{(i / float(N) * 100):.2f}% of trajectory successfully planned. '
-                        'Trajectory will not be executed.'
-                    )
+                self.core.get_node().get_logger().warn(
+                    f'Only {(i / float(N) * 100):.2f}% of trajectory successfully planned. '
+                    'Trajectory will not be executed.'
                 )
                 break
 
@@ -725,13 +690,13 @@ class InterbotixArmXSInterface:
                         self.core.joint_states.position[self.core.js_index_map[name]]
                     )
             joint_traj.points[0].positions = current_positions
-            joint_traj.header.stamp = self.core.get_clock().now().to_msg()
+            joint_traj.header.stamp = self.core.get_node().get_clock().now().to_msg()
             self.core.pub_traj.publish(
                 JointTrajectoryCommand(
                     cmd_type='group', name=self.group_name, traj=joint_traj
                 )
             )
-            self.core.get_clock().sleep_for(
+            self.core.get_node().get_clock().sleep_for(
                 Duration(nanoseconds=int((moving_time + wp_moving_time)*S_TO_NS))
             )
             self.T_sb = T_sd
@@ -746,7 +711,7 @@ class InterbotixArmXSInterface:
 
         :return: list of latest commanded joint positions [rad]
         """
-        self.core.get_logger().debug('Getting latest joint commands')
+        self.core.get_node().get_logger().debug('Getting latest joint commands')
         return list(self.joint_commands)
 
     def get_single_joint_command(self, joint_name: str) -> float:
@@ -756,7 +721,7 @@ class InterbotixArmXSInterface:
         :param joint_name: joint for which to get the position
         :return: desired position [rad]
         """
-        self.core.get_logger().debug(f'Getting latest command for joint {joint_name}')
+        self.core.get_node().get_logger().debug(f"Getting latest command for joint '{joint_name}'")
         return self.joint_commands[self.info_index_map[joint_name]]
 
     def get_ee_pose_command(self) -> np.ndarray:
@@ -765,7 +730,7 @@ class InterbotixArmXSInterface:
 
         :return <4x4 matrix> - Transformation matrix
         """
-        self.core.get_logger().debug('Getting latest ee pose command')
+        self.core.get_node().get_logger().debug('Getting latest ee pose command')
         return np.array(self.T_sb)
 
     def get_ee_pose(self) -> np.ndarray:
@@ -774,7 +739,7 @@ class InterbotixArmXSInterface:
 
         :return: Transformation matrix
         """
-        self.core.get_logger().debug('Getting actual end effector pose')
+        self.core.get_node().get_logger().debug('Getting actual end effector pose')
         joint_states = [
             self.core.joint_states.position[self.core.js_index_map[name]]
             for name in self.group_info.joint_names
@@ -788,7 +753,7 @@ class InterbotixArmXSInterface:
         :details: should be used whenever joints are torqued off, right after torquing them on
             again
         """
-        self.core.get_logger().debug('Capturing joint positions')
+        self.core.get_node().get_logger().debug('Capturing joint positions')
         self.joint_commands = []
         for name in self.group_info.joint_names:
             self.joint_commands.append(
@@ -798,7 +763,7 @@ class InterbotixArmXSInterface:
 
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
-        self.core.get_logger().debug('Updating T_sb')
+        self.core.get_node().get_logger().debug('Updating T_sb')
         self.T_sb = mr.FKinSpace(
             self.robot_des.M, self.robot_des.Slist, self.joint_commands
         )

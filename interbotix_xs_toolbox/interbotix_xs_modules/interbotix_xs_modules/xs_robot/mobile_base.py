@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -47,6 +47,7 @@ from rclpy.duration import Duration
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 class InterbotixMobileBaseInterface(ABC):
@@ -82,31 +83,36 @@ class InterbotixMobileBaseInterface(ABC):
         self.odom = Odometry()
         self.base_states = JointState()
 
+        cb_group_mobile_base = ReentrantCallbackGroup()
+
         self.pub_base_twist = self.core.create_publisher(
             msg_type=Twist,
             topic=topic_cmd_vel,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.sub_base_states = self.core.create_subscription(
             msg_type=JointState,
             topic=topic_base_joint_states,
             callback=self._base_states_cb,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.sub_base_odom = self.core.create_subscription(
             msg_type=Odometry,
-            topic='odom',
+            topic='/mobile_base/odom',
             callback=self._base_odom_cb,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.client_base_nav_to_pose = ActionClient(
             node=self.core,
             action_type=NavigateToPose,
-            action_name='navigate_to_pose'
+            action_name='navigate_to_pose',
+            callback_group=cb_group_mobile_base,
         )
 
-        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5 * S_TO_NS)))
-        self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
+        self.core.robot_node.get_logger().info('Initialized InterbotixMobileBaseInterface!')
 
     def command_velocity_xyaw(
         self,
@@ -122,8 +128,8 @@ class InterbotixMobileBaseInterface(ABC):
         """
         self.command_velocity(
             twist=Twist(
-                linear=Vector3(x=x),
-                angular=Vector3(z=yaw)
+                linear=Vector3(x=float(x)),
+                angular=Vector3(z=float(yaw))
             ),
         )
 
@@ -319,6 +325,14 @@ class InterbotixMobileBaseInterface(ABC):
                 self.odom.pose.pose.orientation.w
             ))[2]
         ]
+
+    def get_linear_velocity(self) -> Vector3:
+        """Return Vector3 of linear velocity."""
+        return self.odom.twist.twist.linear
+
+    def get_angular_velocity(self) -> Vector3:
+        """Return Vector3 of angular velocity."""
+        return self.odom.twist.twist.angular
 
     def _base_states_cb(self, msg: JointState) -> None:
         """
