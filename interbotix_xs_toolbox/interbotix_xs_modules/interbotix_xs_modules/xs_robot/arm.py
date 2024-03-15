@@ -37,8 +37,9 @@ import sys
 from typing import Any, List, Tuple, Union
 
 import interbotix_common_modules.angle_manipulation as ang
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_xs_modules.xs_robot import mr_descriptions as mrd
-from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore, XSRobotNode
+from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
 from interbotix_xs_msgs.msg import (
     JointGroupCommand,
@@ -76,7 +77,7 @@ class InterbotixManipulatorXS:
         topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'robot_manipulation',
-        node: XSRobotNode = None,
+        node: InterbotixRobotNode = None,
         iterative_update_fk: bool = True,
         args=None,
     ) -> None:
@@ -152,7 +153,7 @@ class InterbotixManipulatorXS:
 
         self.robot_name = robot_name
 
-    def get_node(self) -> XSRobotNode:
+    def get_node(self) -> InterbotixRobotNode:
         """Return the core robot node for this robot."""
         return self.core.robot_node
 
@@ -303,7 +304,7 @@ class InterbotixArmXSInterface:
                     value=int(moving_time * 1000),
                 )
             )
-            self.core.get_node().robot_spin_until_future_complete(future_moving_time)
+            self.core.get_node().wait_until_future_complete(future_moving_time)
 
         if accel_time is not None and accel_time != self.accel_time:
             self.accel_time = accel_time
@@ -315,7 +316,7 @@ class InterbotixArmXSInterface:
                     value=int(accel_time * 1000),
                 )
             )
-            self.core.get_node().robot_spin_until_future_complete(future_accel_time)
+            self.core.get_node().wait_until_future_complete(future_accel_time)
 
     def _check_joint_limits(self, positions: List[float]) -> bool:
         """

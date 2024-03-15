@@ -28,12 +28,15 @@
 
 """Contains the `InterbotixRobotXSCore` class that interfaces with the interbotix_xs_sdk."""
 
-from threading import Thread
 import copy
 
 from rclpy.callback_groups import ReentrantCallbackGroup
 from threading import Lock
-from typing import Dict, List, Optional, TypeAlias, Union
+from typing import (
+    Dict,
+    List,
+    Optional,
+)
 
 from interbotix_xs_msgs.msg import (
     JointGroupCommand,
@@ -48,60 +51,32 @@ from interbotix_xs_msgs.srv import (
     RobotInfo,
     TorqueEnable,
 )
-
+from interbotix_common_modules.common_robot.robot import (
+    InterbotixRobotNode,
+    create_interbotix_global_node,
+)
 import rclpy
 from rclpy.duration import Duration
 from rclpy.logging import LoggingSeverity, set_logger_level
-from rclpy.node import Node
-from rclpy.task import Future
-from rclpy.utilities import ok
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-class InterbotixRobotXSCore(Node):
-    pass
-
-class XSNode(Node):
-    pass
-
-XSRobotNode: TypeAlias = XSNode
-
-
-class XSNode(Node):
-    def __init__(
-        self,
-        node_name: str,
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(node_name, *args, **kwargs)
-
-    def robot_spin_until_future_complete(self, future: Future) -> None:
-        """
-        Spin the core's executor until the given future is complete.
-
-        :param future: future to complete
-        """
-        rate = self.create_rate(20.0)
-        while not future.done():
-            rate.sleep()
 
 
 class InterbotixRobotXSCore:
     """Class that interfaces with the xs_sdk node ROS interfaces."""
 
     joint_states: Optional[JointState]
-    robot_node: XSRobotNode
+    robot_node: InterbotixRobotNode
 
     def __init__(
         self,
         robot_model: str,
-        robot_name: str = None,
+        robot_name: Optional[str] = None,
         topic_joint_states: str = 'joint_states',
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
-        node_name: str = 'robot_manipulation',
-        node: XSRobotNode = None,
-        args=None
+        node_name: str = 'interbotix_robot_manipulation',
+        node: Optional[InterbotixRobotNode] = None,
+        args=None,
     ) -> None:
         """
         Construct the InterbotixRobotXSCore object.
@@ -112,10 +87,11 @@ class InterbotixRobotXSCore:
             'arm2/wx200')
         :param topic_joint_states: (optional) the specific JointState topic output by the xs_sdk
             node
-        :logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN, ERROR,
+        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN, ERROR,
             or FATAL. defaults to INFO
-        :node_name: (optional) name to give to the core started by this class, defaults to
-            'robot_manipulation'
+        :param node_name: (optional) name to give to the node started by this class, defaults to
+            'interbotix_robot_manipulation'
+        :param node: (optional) the InterbotixRobotNode to base this class's ROS components on.
         """
         self.robot_model = robot_model
         self.robot_name = robot_name
@@ -131,11 +107,10 @@ class InterbotixRobotXSCore:
         else:
             self.ns = f'/{self.robot_name}'
 
-        # Init context only if not already. This prevents multi-init errors
-        if not ok():
-            rclpy.init(args=args)
-
-        self.robot_node = node
+        if node is None:
+            self.robot_node = create_interbotix_global_node()
+        else:
+            self.robot_node = node
 
         set_logger_level(self.node_name, logging_level)
 
@@ -239,7 +214,7 @@ class InterbotixRobotXSCore:
     )
         self.robot_node.get_logger().info('Initialized InterbotixRobotXSCore!')
 
-    def get_node(self) -> XSRobotNode:
+    def get_node(self) -> InterbotixRobotNode:
         return self.robot_node
 
     def robot_set_operating_modes(
@@ -273,7 +248,6 @@ class InterbotixRobotXSCore:
                 profile_acceleration=profile_acceleration,
             )
         )
-        # rclpy.spin_until_future_complete(self.get_node(), future)
         self.get_node().robot_spin_until_future_complete(future)
 
     def robot_set_motor_pid_gains(
@@ -316,7 +290,6 @@ class InterbotixRobotXSCore:
                 ki_vel=ki_vel,
             )
         )
-        # rclpy.spin_until_future_complete(self.get_node(), future)
         self.get_node().robot_spin_until_future_complete(future)
 
     def robot_set_motor_registers(
@@ -497,28 +470,3 @@ class InterbotixRobotXSCore:
         """
         with self.js_mutex:
             self.joint_states = msg
-
-
-def __start(node: XSRobotNode) -> None:
-    """Start a background thread that builds and spins an executor."""
-    global __execution_thread
-    __execution_thread = Thread(target=rclpy.spin, args=(node,), daemon=True)
-    __execution_thread.start()
-
-def robot_startup(node: XSRobotNode) -> None:
-    __start(node)
-
-def robot_shutdown(node: XSRobotNode) -> None:
-    """Destroy the node and shut down all threads and processes."""
-    node.destroy_node()
-    rclpy.shutdown()
-    __execution_thread.join()
-
-def create_global_node(node_name: str = 'robot_manipulation', *args, **kwargs) -> XSNode:
-    rclpy.init(*args, **kwargs)
-    global __node
-    __node = XSNode(node_name, *args, **kwargs)
-    return __node
-
-def get_global_node() -> XSNode:
-    return __node
