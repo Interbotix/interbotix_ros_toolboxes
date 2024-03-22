@@ -87,8 +87,8 @@ class InterbotixRobotXSCore:
             'arm2/wx200')
         :param topic_joint_states: (optional) the specific JointState topic output by the xs_sdk
             node
-        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN, ERROR,
-            or FATAL. defaults to INFO
+        :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
+            ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the node started by this class, defaults to
             'interbotix_robot_manipulation'
         :param node: (optional) the InterbotixRobotNode to base this class's ROS components on.
@@ -211,7 +211,7 @@ class InterbotixRobotXSCore:
             '\n'
             f'\tRobot Name: {self.robot_name}\n'
             f'\tRobot Model: {self.robot_model}'
-    )
+        )
         self.robot_node.get_logger().info('Initialized InterbotixRobotXSCore!')
 
     def get_node(self) -> InterbotixRobotNode:
