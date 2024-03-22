@@ -33,28 +33,26 @@ These classes should be used to build out mobile bases for Interbotix X-Series L
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Twist, Vector3
 from interbotix_common_modules.common_robot import InterbotixRobotNode
-from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
-from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
+from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
-from rclpy.constants import S_TO_NS
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
-from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 class InterbotixMobileBaseInterface(ABC):
 
     def __init__(
         self,
-        core: Union[InterbotixRobotXSCore, InterbotixRobotNode],
+        core: InterbotixRobotNode,
         robot_name: str,
         topic_base_joint_states: str,
         topic_cmd_vel: str = 'cmd_vel',
@@ -112,7 +110,7 @@ class InterbotixMobileBaseInterface(ABC):
             callback_group=cb_group_mobile_base,
         )
 
-        self.core.robot_node.get_logger().info('Initialized InterbotixMobileBaseInterface!')
+        self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
 
     def command_velocity_xyaw(
         self,
