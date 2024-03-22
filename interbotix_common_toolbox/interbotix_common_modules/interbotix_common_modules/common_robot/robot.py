@@ -31,6 +31,8 @@
 
 from threading import Thread
 from typing import Optional
+
+from interbotix_common_modules.common_robot.exceptions import InterbotixException
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
@@ -83,11 +85,13 @@ class InterbotixRobotNode(Node):
     def logfatal(self, message: str, **kwargs):
         self.get_logger().fatal(message, **kwargs)
 
+
 def __start(node: InterbotixRobotNode, daemon: bool = True) -> None:
     """Start a background thread that spins the rclpy global executor."""
     global __interbotix_execution_thread
     __interbotix_execution_thread = Thread(target=rclpy.spin, args=(node,), daemon=daemon)
     __interbotix_execution_thread.start()
+
 
 def robot_startup(
     node: Optional[InterbotixRobotNode] = None,
@@ -112,6 +116,7 @@ def robot_startup(
             node = create_interbotix_global_node(node_name=node_name, namespace=namespace)
     __start(node)
 
+
 def robot_shutdown(node: Optional[InterbotixRobotNode] = None) -> None:
     """
     Destroy the node and shut down all threads and processes.
@@ -127,6 +132,7 @@ def robot_shutdown(node: Optional[InterbotixRobotNode] = None) -> None:
     rclpy.shutdown()
     __interbotix_execution_thread.join()
 
+
 def create_interbotix_global_node(
     node_name: str = 'interbotix_robot_manipulation',
     namespace: str = None,
@@ -140,8 +146,16 @@ def create_interbotix_global_node(
     :param namespace: The namespace the node should be created under
     :return: A configured InterbotixRobotNode
     """
+    if '__interbotix_global_node' in globals():
+        raise InterbotixException(
+            'Tried to create an Interbotix global node but one already exists.'
+        )
+
+    # Initialize the ROS context if not already
     if not rclpy.ok():
         rclpy.init(*args, **kwargs)
+
+    # Instantiate a global InterbotixRobotNode
     global __interbotix_global_node
     __interbotix_global_node = InterbotixRobotNode(
         node_name=node_name,
@@ -150,6 +164,7 @@ def create_interbotix_global_node(
         **kwargs,
     )
     return __interbotix_global_node
+
 
 def get_interbotix_global_node() -> InterbotixRobotNode:
     """Return the global Interbotix node."""
