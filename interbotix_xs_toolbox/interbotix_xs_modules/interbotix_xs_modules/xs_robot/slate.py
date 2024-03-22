@@ -28,11 +28,11 @@
 
 """Contains classes used to control the Interbotix Slate mobile base."""
 
-from rclpy.callback_groups import ReentrantCallbackGroup
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_slate_msgs.srv import SetString
 from interbotix_xs_modules.xs_robot.mobile_base import InterbotixMobileBaseInterface
-from interbotix_xs_modules.xs_robot.core import XSRobotNode
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from std_srvs.srv import SetBool
 
 
@@ -40,7 +40,7 @@ class InterbotixSlate:
     def __init__(
         self,
         robot_name: str = None,
-        node: XSRobotNode = None,
+        node: InterbotixRobotNode = None,
     ) -> None:
         self.base = InterbotixSlateInterface(
             core=node,
@@ -53,7 +53,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
 
     def __init__(
         self,
-        core: XSRobotNode,
+        core: InterbotixRobotNode,
         robot_name: str,
         topic_base_joint_states: str = 'mobile_base/joint_states',
         topic_cmd_vel: str = 'mobile_base/cmd_vel',
@@ -63,8 +63,8 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         """
         Construct the InterbotixSlateInterface object.
 
-        :param core: reference to the XSRobotNode class containing the internal ROS plumbing that
-            drives the Python API
+        :param core: reference to the InterbotixRobotNode class containing the internal ROS
+            plumbing that drives the Python API
         :param robot_name: namespace of the Slate nodes
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the Slate's two wheels. defaults to `'mobile_base/joint_states'`
@@ -98,7 +98,11 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
             callback_group=cb_group_slate,
         )
 
-        while not self.client_set_motor_torque.wait_for_service(timeout_sec=5.0) and rclpy.ok():
+        while (
+            not self.client_set_motor_torque.wait_for_service(timeout_sec=5.0)
+            and not self.client_set_text.wait_for_service(timeout_sec=5.0)
+            and rclpy.ok()
+        ):
             self.robot_node.get_logger().error(
                 (
                     "Failed to find services under namespace 'mobile_base'. Is the slate "
