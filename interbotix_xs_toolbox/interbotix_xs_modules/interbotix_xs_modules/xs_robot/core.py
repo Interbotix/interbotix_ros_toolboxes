@@ -248,7 +248,7 @@ class InterbotixRobotXSCore:
                 profile_acceleration=profile_acceleration,
             )
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
 
     def robot_set_motor_pid_gains(
         self,
@@ -290,7 +290,7 @@ class InterbotixRobotXSCore:
                 ki_vel=ki_vel,
             )
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
 
     def robot_set_motor_registers(
         self, cmd_type: str, name: str, reg: str, value: int
@@ -307,7 +307,7 @@ class InterbotixRobotXSCore:
         future = self.srv_set_reg.call_async(
             RegisterValues.Request(cmd_type=cmd_type, name=name, reg=reg, value=value)
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
 
     def robot_get_motor_registers(self, cmd_type: str, name: str, reg: str) -> List[int]:
         """
@@ -322,7 +322,7 @@ class InterbotixRobotXSCore:
         future = self.srv_get_reg.call_async(
             RegisterValues.Request(cmd_type=cmd_type, name=name, reg=reg)
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
         return future.result().values
 
     def robot_get_robot_info(self, cmd_type: str, name: str) -> RobotInfo.Response:
@@ -337,7 +337,7 @@ class InterbotixRobotXSCore:
         future = self.srv_get_info.call_async(
             RobotInfo.Request(cmd_type=cmd_type, name=name)
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
         return future.result()
 
     def robot_torque_enable(self, cmd_type: str, name: str, enable: bool) -> None:
@@ -352,7 +352,7 @@ class InterbotixRobotXSCore:
         future = self.srv_torque.call_async(
             TorqueEnable.Request(cmd_type=cmd_type, name=name, enable=enable)
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
 
     def robot_reboot_motors(
         self,
@@ -375,7 +375,7 @@ class InterbotixRobotXSCore:
         future = self.srv_reboot.call_async(
             Reboot.Request(cmd_type=cmd_type, name=name, enable=enable, smart_reboot=smart_reboot)
         )
-        self.get_node().robot_spin_until_future_complete(future)
+        self.get_node().wait_until_future_complete(future)
 
     def robot_write_commands(self, group_name: str, commands: List[float]) -> None:
         """
