@@ -265,7 +265,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_node().get_logger().debug(f'Publishing {positions=}')
+        self.core.get_node().logdebug(f'Publishing {positions=}')
         self.set_trajectory_time(moving_time, accel_time)
         self.joint_commands = list(positions)
         joint_commands = JointGroupCommand(
@@ -291,7 +291,7 @@ class InterbotixArmXSInterface:
         :param accel_time: (optional) duration in seconds that that robot should spend
             accelerating/decelerating (must be less than or equal to half the moving_time)
         """
-        self.core.get_node().get_logger().debug(
+        self.core.get_node().logdebug(
             f'Updating timing params: {moving_time=}, {accel_time=}'
         )
         if moving_time is not None and moving_time != self.moving_time:
@@ -325,7 +325,7 @@ class InterbotixArmXSInterface:
         :param positions: the positions [rad] to check
         :return: `True` if all positions are within limits; `False` otherwise
         """
-        self.core.get_node().get_logger().debug(f'Checking joint limits for {positions=}')
+        self.core.get_node().logdebug(f'Checking joint limits for {positions=}')
         theta_list = [int(elem * 1000) / 1000.0 for elem in positions]
         speed_list = [
             abs(goal - current) / float(self.moving_time)
@@ -351,7 +351,7 @@ class InterbotixArmXSInterface:
         :param position: desired joint position [rad]
         :return: `True` if within limits; `False` otherwise
         """
-        self.core.get_node().get_logger().debug(
+        self.core.get_node().logdebug(
             f"Checking joint '{joint_name}' limits for {position=}"
         )
         theta = int(position * 1000) / 1000.0
@@ -385,7 +385,7 @@ class InterbotixArmXSInterface:
             until the robot finishes moving
         :return: `True` if position was commanded; `False` if it wasn't due to being outside limits
         """
-        self.core.get_node().get_logger().debug(f'Setting {joint_positions=}')
+        self.core.get_node().logdebug(f'Setting {joint_positions=}')
         if self._check_joint_limits(joint_positions):
             self._publish_commands(joint_positions, moving_time, accel_time, blocking)
             return True
@@ -407,7 +407,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_node().get_logger().debug('Going to home pose')
+        self.core.get_node().logdebug('Going to home pose')
         self._publish_commands(
             positions=[0] * self.group_info.num_joints,
             moving_time=moving_time,
@@ -430,7 +430,7 @@ class InterbotixArmXSInterface:
         :param blocking: (optional) whether the function should wait to return control to the user
             until the robot finishes moving
         """
-        self.core.get_node().get_logger().debug('Going to sleep pose')
+        self.core.get_node().logdebug('Going to sleep pose')
         self._publish_commands(
             positions=self.group_info.joint_sleep_positions,
             moving_time=moving_time,
@@ -460,7 +460,7 @@ class InterbotixArmXSInterface:
         :details: Note that if a moving_time or accel_time is specified, the changes affect ALL the
             arm joints, not just the specified one
         """
-        self.core.get_node().get_logger().debug(
+        self.core.get_node().logdebug(
             f"Setting joint '{joint_name}' to position={position}"
         )
         if not self._check_single_joint_limit(joint_name, position):
@@ -502,7 +502,7 @@ class InterbotixArmXSInterface:
         :return: joint values needed to get the end effector to the desired pose
         :return: `True` if a valid solution was found; `False` otherwise
         """
-        self.core.get_node().get_logger().debug(f'Setting ee_pose to matrix=\n{T_sd}')
+        self.core.get_node().logdebug(f'Setting ee_pose to matrix=\n{T_sd}')
         if custom_guess is None:
             initial_guesses = self.initial_guesses
         else:
@@ -576,7 +576,7 @@ class InterbotixArmXSInterface:
             self.group_info.num_joints >= 6 and yaw is None
         ):
             yaw = math.atan2(y, x)
-        self.core.get_node().get_logger().debug(
+        self.core.get_node().logdebug(
             f'Setting ee_pose components=\n'
             f'\t{x=}\n'
             f'\t{y=}\n'
@@ -628,7 +628,7 @@ class InterbotixArmXSInterface:
             effector frame (/<robot_name>/ee_gripper_link).
         :details: Note that `y` and `yaw` must equal 0 if using arms with less than 6dof.
         """
-        self.core.get_node().get_logger().debug(
+        self.core.get_node().logdebug(
             f'Setting ee trajectory to components=\n'
             f'\tx={x}\n'
             f'\ty={y}\n'
@@ -712,7 +712,7 @@ class InterbotixArmXSInterface:
 
         :return: list of latest commanded joint positions [rad]
         """
-        self.core.get_node().get_logger().debug('Getting latest joint commands')
+        self.core.get_node().logdebug('Getting latest joint commands')
         return list(self.joint_commands)
 
     def get_single_joint_command(self, joint_name: str) -> float:
@@ -722,7 +722,7 @@ class InterbotixArmXSInterface:
         :param joint_name: joint for which to get the position
         :return: desired position [rad]
         """
-        self.core.get_node().get_logger().debug(f"Getting latest command for joint '{joint_name}'")
+        self.core.get_node().logdebug(f"Getting latest command for joint '{joint_name}'")
         return self.joint_commands[self.info_index_map[joint_name]]
 
     def get_ee_pose_command(self) -> np.ndarray:
@@ -731,7 +731,7 @@ class InterbotixArmXSInterface:
 
         :return <4x4 matrix> - Transformation matrix
         """
-        self.core.get_node().get_logger().debug('Getting latest ee pose command')
+        self.core.get_node().logdebug('Getting latest ee pose command')
         return np.array(self.T_sb)
 
     def get_ee_pose(self) -> np.ndarray:
@@ -740,7 +740,7 @@ class InterbotixArmXSInterface:
 
         :return: Transformation matrix
         """
-        self.core.get_node().get_logger().debug('Getting actual end effector pose')
+        self.core.get_node().logdebug('Getting actual end effector pose')
         joint_states = [
             self.core.joint_states.position[self.core.js_index_map[name]]
             for name in self.group_info.joint_names
@@ -754,7 +754,7 @@ class InterbotixArmXSInterface:
         :details: should be used whenever joints are torqued off, right after torquing them on
             again
         """
-        self.core.get_node().get_logger().debug('Capturing joint positions')
+        self.core.get_node().logdebug('Capturing joint positions')
         self.joint_commands = []
         for name in self.group_info.joint_names:
             self.joint_commands.append(
@@ -764,7 +764,7 @@ class InterbotixArmXSInterface:
 
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
-        self.core.get_node().get_logger().debug('Updating T_sb')
+        self.core.get_node().logdebug('Updating T_sb')
         self.T_sb = mr.FKinSpace(
             self.robot_des.M, self.robot_des.Slist, self.joint_commands
         )
