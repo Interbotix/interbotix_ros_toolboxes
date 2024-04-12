@@ -82,6 +82,9 @@ class InterbotixRobotNode(Node):
     def logwarn(self, message: str, **kwargs):
         self.get_logger().warning(message, **kwargs)
 
+    def logerror(self, message: str, **kwargs):
+        self.get_logger().error(message, **kwargs)
+
     def logfatal(self, message: str, **kwargs):
         self.get_logger().fatal(message, **kwargs)
 
