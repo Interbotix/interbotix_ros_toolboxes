@@ -120,7 +120,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         :return: `True` if the set_text service succeeded, `False` otherwise
         """
         future = self.client_set_text.call_async(SetString.Request(data=text))
-        self.robot_node.robot_spin_until_future_complete(future)
+        self.robot_node.wait_until_future_complete(future)
         result: SetString.Response = future.result()
         self.robot_node.get_logger().info(result.message)
         return result.success
@@ -135,7 +135,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         future = self.client_set_motor_torque.call_async(
             SetBool.Request(data=enable)
         )
-        rclpy.spin_until_future_complete(self.robot_node, future)
+        self.robot_node.wait_until_future_complete(future)
         result: SetBool.Response = future.result()
         self.robot_node.get_logger().info(result.message)
         return result.success
