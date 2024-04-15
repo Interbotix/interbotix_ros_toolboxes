@@ -111,14 +111,15 @@ class InterbotixAprilTagInterface:
         # wait to receive camera info (means that we are properly subscribed to the topic)
         rclpy.spin_once(self.node_inf, timeout_sec=3)  # spin once to process any callbacks
         while (self.request.camera_info == CameraInfo() and rclpy.ok()):
-            self.logwarn(
+            self.node_inf.logwarn(
                 (
                     f"No CameraInfo messages received yet on topic '{camera_info_topic}' or "
-                    'CameraInfo message is empty.'
+                    'CameraInfo message is empty. Will wait until received.'
                 ),
                 throttle_duration_sec=5,
             )
             rclpy.spin_once(self.node_inf, timeout_sec=1.0)
+        self.node_inf.loginfo('CameraInfo message received! Continuing...')
         self.node_inf.destroy_subscription(self.sub_camera_info)
 
         self.node_inf.loginfo('Initialized InterbotixAprilTagInterface!')
