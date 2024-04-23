@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,10 +28,10 @@
 
 from geometry_msgs.msg import Point, Pose, Quaternion, TransformStamped
 from interbotix_common_modules import angle_manipulation as ang
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_perception_modules.apriltag import InterbotixAprilTagInterface
 import numpy as np
 from rclpy.duration import Duration
-from rclpy.node import Node
 from rclpy.time import Time
 import tf2_ros
 
@@ -48,7 +48,7 @@ class InterbotixArmTagInterface:
         ref_frame: str = None,
         arm_tag_frame: str = None,
         arm_base_frame: str = None,
-        node_inf: Node = None,
+        node_inf: InterbotixRobotNode = None,
         args=None,
     ) -> None:
         """
@@ -59,9 +59,9 @@ class InterbotixArmTagInterface:
             InterbotixAprilTagInterface module are located
         :param ref_frame: Reference frame from which the image was taken
         :param arm_tag_frame: Frame on the robot that should serve as the arm_tag's frame
-        :param arm_base_frame: Frame on the robot that should servce as the base frame
-        :param node_inf: reference to the rclcpy.node.Node on which to build the AprilTag
-            Interface. Leave as `None` to let this object serve as its own Node
+        :param arm_base_frame: Frame on the robot that should serve as the base frame
+        :param node_inf: reference to the InterbotixRobotNode on which to build the AprilTag
+            Interface.
         """
         self.apriltag_inf = InterbotixAprilTagInterface(
             apriltag_ns=apriltag_ns,
@@ -108,7 +108,7 @@ class InterbotixArmTagInterface:
         self.tfBuffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tfBuffer, self.apriltag_inf.node_inf)
 
-        self.apriltag_inf.node_inf.get_logger().info('Initialized InterbotixArmTagInterface!')
+        self.apriltag_inf.node_inf.loginfo('Initialized InterbotixArmTagInterface!')
 
     def find_ref_to_arm_base_transform(
         self,
@@ -234,7 +234,7 @@ class InterbotixArmTagInterface:
             tf2_ros.ConnectivityException,
             tf2_ros.ExtrapolationException
         ) as e:
-            self.apriltag_inf.node_inf.get_logger().error(
+            self.apriltag_inf.node_inf.logerror(
                 f"Failed to look up the transform from '{target_frame}' to '{source_frame}'. {e}"
             )
             return np.identity(4)

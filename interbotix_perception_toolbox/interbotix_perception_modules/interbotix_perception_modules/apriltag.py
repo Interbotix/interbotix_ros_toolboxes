@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -32,14 +32,14 @@ from typing import List, Sequence, Tuple, Union
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from apriltag_ros.srv import AnalyzeSingleImage
 from geometry_msgs.msg import Pose, TransformStamped
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_perception_msgs.srv import SnapPicture
 import rclpy
-from rclpy.node import Node
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo
 
 
-class InterbotixAprilTagInterface(Node):
+class InterbotixAprilTagInterface:
     """Python API to snap the pose of an AprilTag."""
 
     valid_tags = [5, 413, 820, 875, 1050]
@@ -50,24 +50,19 @@ class InterbotixAprilTagInterface(Node):
         apriltag_ns: str = 'apriltag',
         full_img_get_path: str = '/tmp/get_image.png',
         full_img_save_path: str = '/tmp/save_image.png',
-        node_inf: Node = None,
-        args=None
+        node_inf: InterbotixRobotNode = None,
+        args=None,
     ) -> None:
         """
         Construct the InterbotixAprilTagInterface node.
 
         :param apriltag_ns: the namespace that the AprilTag node and other related parameters are
             in
-        :param node_inf: reference to the rclpy.node.Node on which to build this interface. Leave
-            as `None` to let this interface serve as its own Node
+        :param node_inf: reference to the InterbotixRobotNode on which to build this interface.
         """
         if node_inf is None:
-            # start apriltag interface node
-            rclpy.init(args=args)
-            super().__init__(f"{apriltag_ns.strip('/')}_interface")
-            self.node_inf = self
-        else:
-            self.node_inf = node_inf
+            raise NotImplementedError('Passing node_inf as None is not implemented.')
+        self.node_inf = node_inf
 
         self.image_frame_id: str = None
 
@@ -87,12 +82,12 @@ class InterbotixAprilTagInterface(Node):
             f'/{apriltag_ns}/single_image_tag_detection'
         )
         while (not self.srv_snap_picture.wait_for_service(timeout_sec=1) and rclpy.ok()):
-            self.node_inf.get_logger().warn(
+            self.node_inf.logwarn(
                 f"Service '/{apriltag_ns}/snap_picture' not yet ready.",
                 throttle_duration_sec=5,
             )
         while (not self.srv_analyze_image.wait_for_service(timeout_sec=1) and rclpy.ok()):
-            self.node_inf.get_logger().warn(
+            self.node_inf.logwarn(
                 f"Service '/{apriltag_ns}/single_image_tag_detection' not yet ready.",
                 throttle_duration_sec=5,
             )
@@ -116,17 +111,18 @@ class InterbotixAprilTagInterface(Node):
         # wait to receive camera info (means that we are properly subscribed to the topic)
         rclpy.spin_once(self.node_inf, timeout_sec=3)  # spin once to process any callbacks
         while (self.request.camera_info == CameraInfo() and rclpy.ok()):
-            self.get_logger().warn(
+            self.node_inf.logwarn(
                 (
                     f"No CameraInfo messages received yet on topic '{camera_info_topic}' or "
-                    'CameraInfo message is empty.'
+                    'CameraInfo message is empty. Will wait until received.'
                 ),
                 throttle_duration_sec=5,
             )
-            rclpy.spin_once(self.node_inf, timeout_sec=1)
+            rclpy.spin_once(self.node_inf, timeout_sec=1.0)
+        self.node_inf.loginfo('CameraInfo message received! Continuing...')
         self.node_inf.destroy_subscription(self.sub_camera_info)
 
-        self.node_inf.get_logger().info('Initialized InterbotixAprilTagInterface!')
+        self.node_inf.loginfo('Initialized InterbotixAprilTagInterface!')
 
     def camera_info_cb(self, msg: CameraInfo) -> None:
         """
@@ -159,7 +155,7 @@ class InterbotixAprilTagInterface(Node):
         if len(detections) == 0:
             pose = Pose()
             if self.v:
-                self.node_inf.get_logger().warning(
+                self.node_inf.logwarn(
                     f"Could not find '{ar_tag_name}'. Returning a 'zero' Pose..."
                 )
         else:
@@ -189,14 +185,14 @@ class InterbotixAprilTagInterface(Node):
         future_snap = self.srv_snap_picture.call_async(
             SnapPicture.Request(filename=self.request.full_path_where_to_get_image)
         )
-        rclpy.spin_until_future_complete(self.node_inf, future=future_snap)
+        self.node_inf.wait_until_future_complete(future_snap)
         # Check if the SnapPicture result was successful
         if not future_snap.result().success:
             # If it was not, return an empty detection array
             return AprilTagDetectionArray()
         # Call the AnalyzeSingleImage service on the snapped image
         future_analyze = self.srv_analyze_image.call_async(self.request)
-        rclpy.spin_until_future_complete(self.node_inf, future=future_analyze)
+        self.node_inf.wait_until_future_complete(future_analyze)
         # Return the results of the analysis - the detected tags
         return future_analyze.result().tag_detections
 
@@ -216,7 +212,7 @@ class InterbotixAprilTagInterface(Node):
         :return: poses of the tags relative to camera, corresponding ids
         """
         if self.valid_tags is None:
-            self.node_inf.get_logger().warning(
+            self.node_inf.logwarn(
                 'Tried to find pose of valid tags but valid ids are not set'
             )
         detections: Sequence[AprilTagDetection] = self._snap().detections

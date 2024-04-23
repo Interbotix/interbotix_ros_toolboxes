@@ -59,19 +59,19 @@ class InterbotixRobotNode(Node):
         :param future: future to complete
         :param timeout_sec: timeout in seconds after which this will continue. if `None` or
             negative, will wait infinitely. defaults to `None`.
-
-        :note: this function assumes that rclpy is spinning in a separate thread. if this is not
-            the case, calling this function with an infinite timeout may block forever.
         """
-        rate = self.create_rate(20.0)
-        if timeout_sec is None or timeout_sec < 0:
-            while not future.done():
-                rate.sleep()
+        if interbotix_is_up():
+            rate = self.create_rate(20.0)
+            if timeout_sec is None or timeout_sec < 0:
+                while not future.done():
+                    rate.sleep()
+            else:
+                start = self.get_clock().now()
+                timeout_duration = Duration(seconds=timeout_sec)
+                while not future.done() and self.get_clock().now() - start < timeout_duration:
+                    rate.sleep()
         else:
-            start = self.get_clock().now()
-            timeout_duration = Duration(seconds=timeout_sec)
-            while not future.done() and self.get_clock().now() - start < timeout_duration:
-                rate.sleep()
+            rclpy.spin_until_future_complete(self, future, timeout_sec=timeout_sec)
 
     def logdebug(self, message: str, **kwargs):
         self.get_logger().debug(message, **kwargs)
@@ -82,12 +82,17 @@ class InterbotixRobotNode(Node):
     def logwarn(self, message: str, **kwargs):
         self.get_logger().warning(message, **kwargs)
 
+    def logerror(self, message: str, **kwargs):
+        self.get_logger().error(message, **kwargs)
+
     def logfatal(self, message: str, **kwargs):
         self.get_logger().fatal(message, **kwargs)
 
 
 def __start(node: InterbotixRobotNode, daemon: bool = True) -> None:
     """Start a background thread that spins the rclpy global executor."""
+    global __interbotix_is_up
+    __interbotix_is_up = True
     global __interbotix_execution_thread
     __interbotix_execution_thread = Thread(target=rclpy.spin, args=(node,), daemon=daemon)
     __interbotix_execution_thread.start()
@@ -131,6 +136,8 @@ def robot_shutdown(node: Optional[InterbotixRobotNode] = None) -> None:
     node.destroy_node()
     rclpy.shutdown()
     __interbotix_execution_thread.join()
+    if '__interbotix_is_up' in globals():
+        __interbotix_is_up = False  # noqa: F841
 
 
 def create_interbotix_global_node(
@@ -169,3 +176,15 @@ def create_interbotix_global_node(
 def get_interbotix_global_node() -> InterbotixRobotNode:
     """Return the global Interbotix node."""
     return __interbotix_global_node
+
+
+def interbotix_is_up() -> bool:
+    """
+    Return the state of the Interbotix Python-ROS API.
+
+    :return: `True` if the API is up, `False` otherwise
+    """
+    if '__interbotix_is_up' in globals():
+        return __interbotix_is_up
+    else:
+        return False

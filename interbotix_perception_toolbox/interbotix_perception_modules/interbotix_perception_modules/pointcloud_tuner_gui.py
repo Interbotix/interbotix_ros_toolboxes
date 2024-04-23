@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -35,6 +35,11 @@ import sys
 from typing import Callable, Union
 
 from ament_index_python import get_package_share_directory, PackageNotFoundError
+from interbotix_common_modules.common_robot.robot import (
+    create_interbotix_global_node,
+    InterbotixRobotNode,
+    robot_startup,
+)
 from interbotix_perception_modules.pointcloud import InterbotixPointCloudInterface
 from python_qt_binding import loadUi
 from python_qt_binding.QtGui import QIcon
@@ -59,10 +64,11 @@ class GUI(QWidget):
 class PointCloudTunerGui(QWidget):
     """GUI to tune the PointCloud Filtering parameters."""
 
-    def __init__(self, ros_args, args):
+    def __init__(self, ros_args, node: InterbotixRobotNode, args=None):
         super(PointCloudTunerGui, self).__init__()
         self.pc_inf = InterbotixPointCloudInterface(
             filter_ns=ros_args.filter_ns,
+            node_inf=node,
             args=args,
         )
         try:
@@ -100,7 +106,7 @@ class PointCloudTunerGui(QWidget):
         self.create_cluster_block()
         self.create_button_block()
         self.show()
-        self.pc_inf.node_inf.get_logger().info('PointCloud Tuner GUI is up!')
+        self.pc_inf.node_inf.loginfo('PointCloud Tuner GUI is up!')
 
     def create_crop_box_block(self):
         """Create the Crop Box Filter Block."""
@@ -418,8 +424,12 @@ def main(args=None):
     command_line_args = remove_ros_args(args=sys.argv)[1:]
     ros_args = p.parse_args(command_line_args)
 
+    global_node = create_interbotix_global_node()
+
     app = QApplication(sys.argv)
-    gui = PointCloudTunerGui(ros_args, args)  # noqa: F841
+    gui = PointCloudTunerGui(ros_args, global_node, args)  # noqa: F841
+
+    robot_startup(global_node)
 
     # Only kill the program at node shutdown
     signal.signal(signal.SIGINT, signal.SIG_DFL)
