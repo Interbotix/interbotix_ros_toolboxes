@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -37,11 +37,11 @@ from typing import List
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Twist, Vector3
-from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
-from nav2_msgs.action import NavigateToPose
+from interbotix_common_modules.common_robot import InterbotixRobotNode
 from nav_msgs.msg import Odometry
+from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
-from rclpy.constants import S_TO_NS
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
@@ -52,7 +52,7 @@ class InterbotixMobileBaseInterface(ABC):
 
     def __init__(
         self,
-        core: InterbotixRobotXSCore,
+        core: InterbotixRobotNode,
         robot_name: str,
         topic_base_joint_states: str,
         topic_cmd_vel: str = 'cmd_vel',
@@ -60,11 +60,11 @@ class InterbotixMobileBaseInterface(ABC):
         use_nav: bool = False,
     ):
         """
-        Construct the InterbotixKobukiInterface object.
+        Construct the InterbotixMobileBaseInterface object.
 
-        :param core: reference to the InterbotixRobotXSCore class containing the internal ROS
-            plumbing that drives the Python API
-        :param robot_name: namespace of the Kobuki node (a.k.a the name of the Interbotix LoCoBot)
+        :param core: reference to the Node class containing the internal ROS plumbing that drives
+            the Python API
+        :param robot_name: namespace of the base node (a.k.a the name of the Interbotix base)
         :param topic_base_joint_states: name of the joints states topic that contains the states of
             the base. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: name of the twist topic to which velocity commands should be
@@ -81,39 +81,44 @@ class InterbotixMobileBaseInterface(ABC):
         self.odom = Odometry()
         self.base_states = JointState()
 
+        cb_group_mobile_base = ReentrantCallbackGroup()
+
         self.pub_base_twist = self.core.create_publisher(
             msg_type=Twist,
             topic=topic_cmd_vel,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.sub_base_states = self.core.create_subscription(
             msg_type=JointState,
             topic=topic_base_joint_states,
             callback=self._base_states_cb,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.sub_base_odom = self.core.create_subscription(
             msg_type=Odometry,
-            topic='odom',
+            topic='/mobile_base/odom',
             callback=self._base_odom_cb,
             qos_profile=1,
+            callback_group=cb_group_mobile_base,
         )
         self.client_base_nav_to_pose = ActionClient(
             node=self.core,
             action_type=NavigateToPose,
-            action_name='navigate_to_pose'
+            action_name='navigate_to_pose',
+            callback_group=cb_group_mobile_base,
         )
 
-        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5 * S_TO_NS)))
         self.core.get_logger().info('Initialized InterbotixMobileBaseInterface!')
 
     def command_velocity_xyaw(
         self,
-        x: float = 0,
-        yaw: float = 0,
+        x: float = 0.0,
+        yaw: float = 0.0,
     ) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command a single twist (velocity) by its components to move the robot.
 
         :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward). defaults
             to 0
@@ -121,14 +126,38 @@ class InterbotixMobileBaseInterface(ABC):
         """
         self.command_velocity(
             twist=Twist(
+                linear=Vector3(x=float(x)),
+                angular=Vector3(z=float(yaw))
+            ),
+        )
+
+    def command_velocity_xyaw_for_duration(
+        self,
+        x: float = 0.0,
+        yaw: float = 0.0,
+        duration: float = 1.0,
+    ) -> None:
+        """
+        Command twists (velocities) by their components to move the robot for a specified duration.
+
+        :param x: (optional) desired speed [m/s] in the 'x' direction (forward/backward). defaults
+            to 0
+        :param yaw: (optional) desired angular speed [rad/s] around the 'z' axis. defaults to 0
+        :param duration: (optional) length of time in seconds to publish velocity for. defaults to
+            1.0
+        :details: at the end of the duration, publishes an empty Twist message to halt movement
+        """
+        self.command_velocity_for_duration(
+            twist=Twist(
                 linear=Vector3(x=x),
                 angular=Vector3(z=yaw)
             ),
+            duration=duration,
         )
 
     def command_velocity_for_duration(self, twist: Twist = Twist(), duration: float = 1.0) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command twists (velocities) message to move the robot for a specified duration.
 
         :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
         :param duration: (optional) length of time in seconds to publish velocity for. defaults to
@@ -144,7 +173,7 @@ class InterbotixMobileBaseInterface(ABC):
 
     def command_velocity(self, twist: Twist = Twist()) -> None:
         """
-        Command a twist (velocity) message to move the robot.
+        Command a single twist (velocity) message to move the robot.
 
         :param twist: (optional) desired twist. defaults to empty Twist message (all zeros)
         """
@@ -294,6 +323,14 @@ class InterbotixMobileBaseInterface(ABC):
                 self.odom.pose.pose.orientation.w
             ))[2]
         ]
+
+    def get_linear_velocity(self) -> Vector3:
+        """Return Vector3 of linear velocity."""
+        return self.odom.twist.twist.linear
+
+    def get_angular_velocity(self) -> Vector3:
+        """Return Vector3 of angular velocity."""
+        return self.odom.twist.twist.angular
 
     def _base_states_cb(self, msg: JointState) -> None:
         """
