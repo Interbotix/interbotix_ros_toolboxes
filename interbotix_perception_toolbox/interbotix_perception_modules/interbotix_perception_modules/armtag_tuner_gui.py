@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -35,6 +35,7 @@ import sys
 from typing import Dict
 
 from ament_index_python import get_package_share_directory, PackageNotFoundError
+from interbotix_common_modules.common_robot.robot import create_interbotix_global_node
 from interbotix_perception_modules.armtag import InterbotixArmTagInterface
 from python_qt_binding import loadUi
 from python_qt_binding.QtGui import QIcon
@@ -59,12 +60,13 @@ class GUI(QWidget):
 class ArmTagTunerGui(QWidget):
     """GUI to snap AR tag pose on the arm and calculate the 'ref to arm base_link' transform."""
 
-    def __init__(self, ros_args, args):
+    def __init__(self, ros_args, node_inf, args):
         """Construct ArmTagTunerGUI object."""
         super(ArmTagTunerGui, self).__init__()
         self.armtag_inf = InterbotixArmTagInterface(
             armtag_ns=ros_args.armtag_ns,
             apriltag_ns=ros_args.apriltag_ns,
+            node_inf=node_inf,
             args=args,
         )
         try:
@@ -85,12 +87,12 @@ class ArmTagTunerGui(QWidget):
             {'GUI': GUI}
         )
 
-        self.armtag_inf.apriltag_inf.declare_parameter(
+        self.armtag_inf.apriltag_inf.node_inf.declare_parameter(
             'position_only',
             'false'
         )
 
-        self.position_only = self.armtag_inf.apriltag_inf.get_parameter(
+        self.position_only = self.armtag_inf.apriltag_inf.node_inf.get_parameter(
             'position_only').get_parameter_value().bool_value
 
         self.name_map: Dict[str, NameMapElement] = {}
@@ -163,8 +165,10 @@ def main(args=None):
     command_line_args = remove_ros_args(args=sys.argv)[1:]
     ros_args = p.parse_args(command_line_args)
 
+    global_node = create_interbotix_global_node()
+
     app = QApplication(sys.argv)
-    gui = ArmTagTunerGui(ros_args, args)  # noqa: F841
+    gui = ArmTagTunerGui(ros_args, global_node, args)  # noqa: F841
 
     # Only kill the program at node shutdown
     signal.signal(signal.SIGINT, signal.SIG_DFL)

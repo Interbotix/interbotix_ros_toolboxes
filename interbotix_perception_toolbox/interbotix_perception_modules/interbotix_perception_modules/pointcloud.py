@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -27,44 +27,38 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
-import time
 from typing import List, Tuple, Union
 
 from ament_index_python import get_package_share_directory
 from geometry_msgs.msg import Quaternion, TransformStamped
 from interbotix_common_modules import angle_manipulation as ang
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_common_modules.py_common import load_from_ros_params_file, save_to_ros_params_file
 from interbotix_perception_msgs.msg import ClusterInfo
 from interbotix_perception_msgs.srv import ClusterInfoArray, FilterParams
 import numpy as np
-import rclpy
 from rclpy.duration import Duration
-from rclpy.node import Node
 from rclpy.time import Time
 from std_srvs.srv import SetBool
 import tf2_ros
 from tf_transformations import euler_from_quaternion
 
 
-class InterbotixPointCloudInterface(Node):
+class InterbotixPointCloudInterface:
     """API to tune filter parameters to get position estimates of objects seen by the camera."""
 
-    def __init__(self, filter_ns='pc_filter', node_inf: Node = None, args=None):
+    def __init__(self, filter_ns='pc_filter', node_inf: InterbotixRobotNode = None, args=None):
         """
         Construct pointcloud filter parameter tuner.
 
         :param filter_ns: namespace where the ROS parameters needed by the module are located
-        :param node_inf: reference to the rclpy.node.Node on which to build this interface. Leave
-            as `None` to let this interface serve as its own Node
+        :param node: reference to the InterbotixRobotNode on which to build this interface.
         :details: Note that the default reference frame for the pointcloud is used (usually
             something like 'camera_depth_optical_frame')
         """
         if node_inf is None:
-            rclpy.init(args=args)
-            super().__init__(node_name=f"{filter_ns.strip('/')}_interface")
-            self.node_inf = self
-        else:
-            self.node_inf = node_inf
+            raise NotImplementedError('Passing node_inf as None is not implemented.')
+        self.node_inf = node_inf
 
         self.filter_params = FilterParams.Request()
         self.node_inf.declare_parameter(
@@ -91,9 +85,17 @@ class InterbotixPointCloudInterface(Node):
             ClusterInfoArray,
             f'/{filter_ns}/get_cluster_positions'
         )
-        self.srv_set_params.wait_for_service()
-        self.srv_enable_pipeline.wait_for_service()
-        self.srv_get_cluster_positions.wait_for_service()
+        while (
+            not self.srv_set_params.wait_for_service(1.0)
+            and not self.srv_enable_pipeline.wait_for_service(1.0)
+            and not self.srv_get_cluster_positions.wait_for_service(1.0)
+        ):
+            self.node_inf.loginfo(
+                f"Waiting for services '{self.srv_set_params.srv_name}', "
+                f"'{self.srv_enable_pipeline.srv_name}', "
+                f"and '{self.srv_get_cluster_positions.srv_name}' to "
+                'come up.'
+            )
         self.br = tf2_ros.TransformBroadcaster(self.node_inf)
 
         # declare and get params
@@ -179,7 +181,8 @@ class InterbotixPointCloudInterface(Node):
         :param x_filter_min: desired minimum 'x' value [m]
         """
         self.filter_params.x_filter_min = x_filter_min
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     x_filter_min = property(fget=get_x_filter_min, fset=set_x_filter_min)
 
@@ -198,7 +201,8 @@ class InterbotixPointCloudInterface(Node):
         :param x_filter_max: desired maximum 'x' value [m]
         """
         self.filter_params.x_filter_max = x_filter_max
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     x_filter_max = property(fget=get_x_filter_max, fset=set_x_filter_max)
 
@@ -217,7 +221,8 @@ class InterbotixPointCloudInterface(Node):
         :param y_filter_min: desired minimum 'y' value [m]
         """
         self.filter_params.y_filter_min = y_filter_min
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     y_filter_min = property(fget=get_y_filter_min, fset=set_y_filter_min)
 
@@ -236,7 +241,8 @@ class InterbotixPointCloudInterface(Node):
         :param y_filter_max: desired maximum 'y' value [m]
         """
         self.filter_params.y_filter_max = y_filter_max
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     y_filter_max = property(fget=get_y_filter_max, fset=set_y_filter_max)
 
@@ -255,7 +261,8 @@ class InterbotixPointCloudInterface(Node):
         :param z_filter_min: desired minimum 'z' value [m]
         """
         self.filter_params.z_filter_min = z_filter_min
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     z_filter_min = property(fget=get_z_filter_min, fset=set_z_filter_min)
 
@@ -274,7 +281,8 @@ class InterbotixPointCloudInterface(Node):
         :param z_filter_max: desired maximum 'z' value [m]
         """
         self.filter_params.z_filter_max = z_filter_max
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     z_filter_max = property(fget=get_z_filter_max, fset=set_z_filter_max)
 
@@ -293,7 +301,8 @@ class InterbotixPointCloudInterface(Node):
         :param voxel_leaf_size: desired voxel size [m] that applies to the x, y, and z dimensions
         """
         self.filter_params.voxel_leaf_size = voxel_leaf_size
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     voxel_leaf_size = property(fget=get_voxel_leaf_size, fset=set_voxel_leaf_size)
 
@@ -312,7 +321,8 @@ class InterbotixPointCloudInterface(Node):
         :param plane_max_iter: desired max iterations (default is 50)
         """
         self.filter_params.plane_max_iter = int(plane_max_iter)
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     plane_max_iter = property(fget=get_plane_max_iter, fset=set_plane_max_iter)
 
@@ -331,7 +341,8 @@ class InterbotixPointCloudInterface(Node):
         :param plane_dist_thresh: desired max distance [m] (default is about 0.01 meters)
         """
         self.filter_params.plane_dist_thresh = plane_dist_thresh
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     plane_dist_thresh = property(fget=get_plane_dist_thresh, fset=set_plane_dist_thresh)
 
@@ -350,7 +361,8 @@ class InterbotixPointCloudInterface(Node):
         :param ror_radius_search: desired radius [m] (default is about 0.01 meters)
         """
         self.filter_params.ror_radius_search = ror_radius_search
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     ror_radius_search = property(fget=get_ror_radius_search, fset=set_ror_radius_search)
 
@@ -369,7 +381,8 @@ class InterbotixPointCloudInterface(Node):
         :param ror_min_neighbors: desired min neighbors (default is 5)
         """
         self.filter_params.ror_min_neighbors = int(ror_min_neighbors)
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     ror_min_neighbors = property(fget=get_ror_min_neighbors, fset=set_ror_min_neighbors)
 
@@ -388,7 +401,8 @@ class InterbotixPointCloudInterface(Node):
         :param cluster_tol: desired cluster tolerance [m] (default is about 0.02 meters)
         """
         self.filter_params.cluster_tol = cluster_tol
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     cluster_tol = property(fget=get_cluster_tol, fset=set_cluster_tol)
 
@@ -407,7 +421,8 @@ class InterbotixPointCloudInterface(Node):
         :param cluster_min_size: desired minimum size [number of points in a cluster's pointcloud]
         """
         self.filter_params.cluster_min_size = int(cluster_min_size)
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     cluster_min_size = property(fget=get_cluster_min_size, fset=set_cluster_min_size)
 
@@ -426,7 +441,8 @@ class InterbotixPointCloudInterface(Node):
         :param cluster_max_size: desired maximum size [number of points in a cluster's pointcloud]
         """
         self.filter_params.cluster_max_size = int(cluster_max_size)
-        self.spin_until_future_complete(self.srv_set_params.call_async(self.filter_params))
+        future = self.srv_set_params.call_async(self.filter_params)
+        self.node_inf.wait_until_future_complete(future)
 
     cluster_max_size = property(fget=get_cluster_max_size, fset=set_cluster_max_size)
 
@@ -445,7 +461,8 @@ class InterbotixPointCloudInterface(Node):
         :param: enable - boolean that if `True`, enables the pipeline, and if `False`, disables the
             pipeline
         """
-        self.srv_enable_pipeline.call_async(enable)
+        future = self.srv_enable_pipeline.call_async(enable)
+        self.node_inf.wait_until_future_complete(future)
 
     def get_cluster_positions(
         self,
@@ -481,7 +498,7 @@ class InterbotixPointCloudInterface(Node):
         future_get_cluster_pos = self.srv_get_cluster_positions.call_async(
             ClusterInfoArray.Request()
         )
-        self.spin_until_future_complete(future_get_cluster_pos)
+        self.node_inf.wait_until_future_complete(future_get_cluster_pos)
         root_clusters: List[ClusterInfo] = future_get_cluster_pos.result().clusters
         num_clusters = len(root_clusters)
         if num_clusters == 0:
@@ -490,14 +507,14 @@ class InterbotixPointCloudInterface(Node):
         cluster_frame: str = root_clusters[0].frame_id
 
         # Calculate the average for each cluster based on 'num_samples' samples
-        avg_clusters = []
+        avg_clusters: List[ClusterInfo] = []
         for i in range(num_clusters):
             avg_clusters.append(ClusterInfo())
         for _ in range(num_samples):
             clusters: List[ClusterInfo] = self.srv_get_cluster_positions.call_async(
                 ClusterInfoArray.Request()
             )
-            self.spin_until_future_complete(future_get_cluster_pos)
+            self.node_inf.wait_until_future_complete(future_get_cluster_pos)
             clusters: List[ClusterInfo] = future_get_cluster_pos.result().clusters
             if len(clusters) != num_clusters:
                 self.get_logger().warning(
@@ -534,14 +551,13 @@ class InterbotixPointCloudInterface(Node):
                         valid_indices.remove(indx)
                         break
                     elif (indx == num_clusters - 1):
-                        self.node_inf.get_logger().warning((
+                        self.node_inf.logwarn((
                             'Could not match the cluster. Please tune the filter parameters such '
                             "that all spherical 'object markers' are constant in their respective "
                             'clusters and do not flicker.'
                         ))
                         return False, []
-            time.sleep(period)
-            # self.node_inf.create_rate(1.0/period).sleep()
+            self.node_inf.get_clock().sleep_for(Duration(seconds=period))
 
         # Get the transform from the 'ref_frame' to the cluster frame (i.e. the camera's depth
         # frame) - known as T_rc
@@ -557,7 +573,7 @@ class InterbotixPointCloudInterface(Node):
             tf2_ros.ConnectivityException,
             tf2_ros.ExtrapolationException
         ):
-            self.node_inf.get_logger().error(
+            self.node_inf.logerror(
                 f"Failed to look up the transform from '{ref_frame}' to '{cluster_frame}'."
             )
             return False, []
@@ -606,7 +622,7 @@ class InterbotixPointCloudInterface(Node):
             def key(cluster: ClusterInfo): return cluster.position.z
         else:
             def key(cluster: ClusterInfo): return cluster.position.y
-            self.node_inf.get_logger().warning((
+            self.node_inf.logwarn((
                 f"'{sort_axis}' is not a valid sorting axis. Set the 'sort_axis' "
                 "argument to 'x', 'y', or 'z'. Defaulting to 'y'."
             ))
@@ -704,10 +720,10 @@ class InterbotixPointCloudInterface(Node):
             filepath = self.param_filepath
         save_to_ros_params_file(self.get_params(), filepath)
 
-    def spin_until_future_complete(self, future: rclpy.Future) -> None:
-        """
-        Spin this node until the given future is complete.
+    # def spin_until_future_complete(self, future: rclpy.Future) -> None:
+    #     """
+    #     Spin this node until the given future is complete.
 
-        :param future: The future to wait for
-        """
-        rclpy.spin_until_future_complete(self.node_inf, future=future, timeout_sec=0.1)
+    #     :param future: The future to wait for
+    #     """
+    #     rclpy.spin_until_future_complete(self.node_inf, future=future, timeout_sec=0.1)
