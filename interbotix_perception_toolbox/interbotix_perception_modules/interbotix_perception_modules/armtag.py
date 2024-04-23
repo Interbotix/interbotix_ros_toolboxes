@@ -32,7 +32,6 @@ from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_perception_modules.apriltag import InterbotixAprilTagInterface
 import numpy as np
 from rclpy.duration import Duration
-from rclpy.node import Node
 from rclpy.time import Time
 import tf2_ros
 

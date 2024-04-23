@@ -88,6 +88,7 @@ class InterbotixRobotNode(Node):
     def logfatal(self, message: str, **kwargs):
         self.get_logger().fatal(message, **kwargs)
 
+
 def __start(node: InterbotixRobotNode, daemon: bool = True) -> None:
     """Start a background thread that spins the rclpy global executor."""
     global __interbotix_is_up
@@ -136,7 +137,7 @@ def robot_shutdown(node: Optional[InterbotixRobotNode] = None) -> None:
     rclpy.shutdown()
     __interbotix_execution_thread.join()
     if '__interbotix_is_up' in globals():
-        __interbotix_is_up = False
+        __interbotix_is_up = False  # noqa: F841
 
 
 def create_interbotix_global_node(
