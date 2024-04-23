@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -26,9 +26,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Simplify command and control of Interbotix X-Series Robots.
+"""This module contains exceptions to be used by the Interbotix Python API."""
 
-This library contains modules used to control and command Interbotix X-Series Robots,
-along with useful helper methods and objects specific to them.
-"""
+
+class InterbotixException(Exception):
+    """Exception to be raised when the Interbotix API is misused."""
+
+    pass

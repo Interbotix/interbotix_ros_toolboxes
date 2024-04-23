@@ -1,4 +1,4 @@
-# Copyright 2022 Trossen Robotics
+# Copyright 2024 Trossen Robotics
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,6 @@ Contains the `InterbotixGripperXS` and `InterbotixGripperXSInterface` classes.
 These two classes can be used to control an X-Series standalone gripper using Python.
 """
 
-import sys
 from threading import Thread
 import time
 
@@ -172,13 +171,13 @@ class InterbotixGripperXSInterface:
             * (gripper_pressure_upper_limit - gripper_pressure_lower_limit)
         )
 
-        self.tmr_gripper_state = self.core.create_timer(
+        self.tmr_gripper_state = self.core.get_node().create_timer(
             timer_period_sec=0.02, callback=self.gripper_state
         )
 
         while rclpy.ok() and not self.future_gripper_info.done():
-            rclpy.spin_until_future_complete(self.core, self.future_gripper_info)
-            rclpy.spin_once(self.core)
+            rclpy.spin_until_future_complete(self.core.get_node(), self.future_gripper_info)
+            rclpy.spin_once(self.core.get_node())
 
         self.gripper_info: RobotInfo.Response = self.future_gripper_info.result()
         self.left_finger_index = self.core.js_index_map[self.gripper_info.joint_names[0]]
@@ -186,20 +185,19 @@ class InterbotixGripperXSInterface:
         self.left_finger_upper_limit = self.gripper_info.joint_upper_limits[0]
 
         if self.gripper_info.mode not in ('current', 'pwm'):
-            self.core.get_logger().err(
-                "Please set the gripper's 'operating mode' to 'pwm' or 'current'."
+            self.core.get_node().get_logger().warn(
+                f"Motor '{gripper_name}' operating mode not set to 'pwm' or 'current'."
             )
-            sys.exit(1)
 
-        self.core.get_clock().sleep_for(Duration(nanoseconds=int(0.5*S_TO_NS)))
-        self.core.get_logger().info(
+        self.core.get_node().get_clock().sleep_for(Duration(nanoseconds=int(0.5*S_TO_NS)))
+        self.core.get_node().get_logger().info(
             (
                 '\n'
                 f'\tGripper Name: {self.gripper_name}\n'
                 f'\tGripper Pressure: {self.gripper_pressure*100}%'
             )
         )
-        self.core.get_logger().info('Initialized InterbotixGripperXSInterface!')
+        self.core.get_node().get_logger().info('Initialized InterbotixGripperXSInterface!')
 
     def gripper_state(self) -> None:
         """Stop the gripper moving past its limits when in PWM mode using a ROS Timer Callback."""
@@ -238,7 +236,7 @@ class InterbotixGripperXSInterface:
         ):
             self.core.pub_single.publish(self.gripper_command)
             self.gripper_moving = True
-            self.core.get_clock().sleep_for(Duration(nanoseconds=int(delay*S_TO_NS)))
+            self.core.get_node().get_clock().sleep_for(Duration(nanoseconds=int(delay*S_TO_NS)))
 
     def set_pressure(self, pressure: float) -> None:
         """
