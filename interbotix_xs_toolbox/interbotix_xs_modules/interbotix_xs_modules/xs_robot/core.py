@@ -30,7 +30,6 @@
 
 import copy
 
-from rclpy.callback_groups import ReentrantCallbackGroup
 from threading import Lock
 from typing import (
     Dict,
@@ -56,6 +55,7 @@ from interbotix_common_modules.common_robot.robot import (
     create_interbotix_global_node,
 )
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
 from rclpy.logging import LoggingSeverity, set_logger_level
 from sensor_msgs.msg import JointState
