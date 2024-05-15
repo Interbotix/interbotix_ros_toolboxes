@@ -8,13 +8,27 @@
   <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Solomon Wiznitzer</author>
 
-  <exec_depend>interbotix_xs_msgs</exec_depend>
+  <exec_depend>action_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>interbotix_common_modules</exec_depend>
+  <exec_depend>interbotix_common_modules</exec_depend>
+  <!-- <exec_depend>interbotix_slate_msgs</exec_depend> -->
+  <exec_depend>interbotix_xs_msgs</exec_depend>
   <exec_depend>interbotix_xs_sdk</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
+  <!-- <exec_depend>irobot_create_msgs</exec_depend> -->
   <!-- <exec_depend>kobuki_ros_interfaces</exec_depend> -->
-  <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
   <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
