@@ -92,6 +92,8 @@ class InterbotixRobotNode(Node):
 def __start(node: InterbotixRobotNode, daemon: bool = True) -> None:
     """Start a background thread that spins the rclpy global executor."""
     global __interbotix_is_up
+    if interbotix_is_up():
+        raise InterbotixException('Startup has already been requested.')
     __interbotix_is_up = True
     global __interbotix_execution_thread
     __interbotix_execution_thread = Thread(target=rclpy.spin, args=(node,), daemon=daemon)
