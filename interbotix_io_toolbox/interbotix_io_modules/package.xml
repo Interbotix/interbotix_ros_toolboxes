@@ -8,10 +8,8 @@
   <license>BSD-3-Clause</license>
   <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
 
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
-  <exec_depend>python-transforms3d-pip</exec_depend>
-  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>interbotix_common_modules</exec_depend>
+  <exec_depend>interbotix_footswitch_msgs</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
