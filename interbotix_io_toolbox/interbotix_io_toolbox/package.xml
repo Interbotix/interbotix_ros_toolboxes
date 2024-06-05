@@ -10,9 +10,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>interbotix_perception_modules</exec_depend>
-  <exec_depend>interbotix_perception_msgs</exec_depend>
-  <exec_depend>interbotix_perception_pipelines</exec_depend>
+  <exec_depend>interbotix_io_modules</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
