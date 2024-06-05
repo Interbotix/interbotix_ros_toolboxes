@@ -41,10 +41,21 @@ class InterbotixSlate:
         self,
         robot_name: str = None,
         node: InterbotixRobotNode = None,
+        enable_torque_on_init: bool = True,
     ) -> None:
+        """
+        Construct an InterbotixSlate object.
+
+        :param robot_name: (optional) namespace of the Slate base nodes. defaults to `None`
+        :param node: reference to the InterbotixRobotNode class containing the internal ROS
+            plumbing that drives the Python API
+        :param enable_torque_on_init: (optional) `True` to enable base torque on init, `False` to
+            disable. defaults to `True`
+        """
         self.base = InterbotixSlateInterface(
             core=node,
             robot_name=robot_name,
+            enable_torque_on_init=enable_torque_on_init,
         )
 
 
@@ -55,6 +66,7 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         self,
         core: InterbotixRobotNode,
         robot_name: str,
+        enable_torque_on_init: bool = True,
         topic_base_joint_states: str = 'mobile_base/joint_states',
         topic_cmd_vel: str = 'mobile_base/cmd_vel',
         nav_timeout_sec: float = 300.0,
@@ -66,6 +78,8 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         :param core: reference to the InterbotixRobotNode class containing the internal ROS
             plumbing that drives the Python API
         :param robot_name: namespace of the Slate nodes
+        :param enable_torque_on_init: (optional) `True` to enable base torque on init, `False` to
+            disable. defaults to `True`
         :param topic_base_joint_states: (optional) name of the joints states topic that contains
             the states of the Slate's two wheels. defaults to `'mobile_base/joint_states'`
         :param topic_cmd_vel: (optional) name of the twist topic to which velocity commands should
@@ -110,6 +124,9 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
                 )
             )
 
+        self._torque_status = enable_torque_on_init
+        self.set_motor_torque(enable=enable_torque_on_init)
+
         self.robot_node.get_logger().info('Initialized InterbotixSlateInterface!')
 
     def set_text(self, text: str) -> bool:
@@ -138,7 +155,17 @@ class InterbotixSlateInterface(InterbotixMobileBaseInterface):
         self.robot_node.wait_until_future_complete(future)
         result: SetBool.Response = future.result()
         self.robot_node.get_logger().info(result.message)
+        if result.success:
+            self._torque_status = enable
         return result.success
+
+    def get_torque_status(self) -> bool:
+        """
+        Get the Slate base's motor torque status.
+
+        :return: The Slate base's motor torque status.
+        """
+        return self._torque_status
 
     def play_sound(self, *args, **kwargs) -> None:
         raise NotImplementedError()
