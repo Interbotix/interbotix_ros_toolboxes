@@ -56,7 +56,7 @@ class FootswitchTrigger(Enum):
 class IndividualFSConfig:
     """Configuration for individual pedals on a footswitch."""
 
-    trigger: FootswitchTrigger
+    trigger: FootswitchTrigger = FootswitchTrigger.ON_PRESS
     """When callbacks should be triggered"""
 
     callback: Callable = lambda: None
