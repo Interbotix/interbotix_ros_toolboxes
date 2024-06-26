@@ -1,4 +1,4 @@
-name: build-xs-humble
+name: humble
 
 on:
   push:
@@ -14,7 +14,7 @@ defaults:
     shell: bash
 
 jobs:
-  xs-humble:
+  humble:
     strategy:
       matrix:
         env:
