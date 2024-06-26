@@ -20,6 +20,8 @@ jobs:
         env:
           - {ROS_DISTRO: humble, ROS_REPO: main}
     runs-on: ubuntu-22.04
+    container:
+      image: ubuntu:jammy
     env:
       CCACHE_DIR: "${{ github.workspace }}/.ccache"
     steps:
