@@ -39,9 +39,10 @@ jobs:
         run: python3 -m pip install modern-robotics transforms3d
       - name: Prepare Workspace
         run: |
-          rm src/interbotix_ros_core/interbotix_ros_common_drivers/COLCON_IGNORE || :
-          rm src/interbotix_ros_core/interbotix_ros_slate/COLCON_IGNORE || :
-          rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE || :
+          rm src/interbotix_ros_core/interbotix_ros_common_drivers/COLCON_IGNORE
+          rm src/interbotix_ros_core/interbotix_ros_slate/COLCON_IGNORE
+          rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE
+          rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_landmark_modules/COLCON_IGNORE
           rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_moveit_interface_msgs/COLCON_IGNORE
           rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_moveit_interface/COLCON_IGNORE
           rm src/interbotix_ros_toolboxes/interbotix_io_toolbox/COLCON_IGNORE
