@@ -74,8 +74,9 @@ class DeclareInterbotixXSArmRobotDescriptionLaunchArgument(DeclareLaunchArgument
                 PathJoinSubstitution([
                     FindPackageShare('interbotix_xsarm_descriptions'),
                     'urdf',
-                    LaunchConfiguration(robot_model_launch_config_name)
+                    'interbotix_arm',
                 ]), '.urdf.xacro ',
+                'robot_model:=', LaunchConfiguration(robot_model_launch_config_name), ' ',
                 'robot_name:=', LaunchConfiguration(robot_name_launch_config_name), ' ',
                 'base_link_frame:=', LaunchConfiguration('base_link_frame'), ' ',
                 'use_gripper:=', LaunchConfiguration('use_gripper'), ' ',
