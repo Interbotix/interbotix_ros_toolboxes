@@ -45,6 +45,14 @@ install(
     lib/${PROJECT_NAME}
 )
 
+# Misc installation
+install(
+  DIRECTORY
+    config
+  DESTINATION
+    share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
