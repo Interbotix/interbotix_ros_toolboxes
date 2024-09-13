@@ -1,4 +1,4 @@
-// Copyright 2022 Trossen Robotics
+// Copyright 2024 Trossen Robotics
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,72 +28,90 @@
 
 #include "interbotix_gravity_compensation_obj.hpp"
 
-InterbotixGravityCompensation::InterbotixGravityCompensation()
-: Node("interbotix_gravity_compensation")
+InterbotixGravityCompensation::InterbotixGravityCompensation(
+  bool & success,
+  const rclcpp::NodeOptions & options)
+: Node("gravity_compensation")
 {
   // Declare parameters
-  this->declare_parameter("robot_name", "");
   this->declare_parameter("motor_specs", "");
 
   // Get parameters
-  std::string robot_name, motor_specs;
-  this->get_parameter("robot_name", robot_name);
+  std::string motor_specs;
   this->get_parameter("motor_specs", motor_specs);
 
   // Create the Subscription for the JointState message
   joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-    "/" + robot_name + "/joint_states", 10,
+    "joint_states", 10,
     std::bind(&InterbotixGravityCompensation::joint_state_cb, this, std::placeholders::_1));
 
   // Create the Publisher for the JointGroupCommand message
   joint_group_pub_ = this->create_publisher<interbotix_xs_msgs::msg::JointGroupCommand>(
-    "/" + robot_name + "/commands/joint_group", 10);
+    "commands/joint_group", 10);
 
   // Create the Service for enabling/disabling gravity compensation
   gravity_compensation_enable_srv_ = this->create_service<std_srvs::srv::SetBool>(
-    "/" + robot_name + "/gravity_compensation_enable",
+    "gravity_compensation_enable",
     std::bind(
       &InterbotixGravityCompensation::gravity_compensation_enable_cb, this,
       std::placeholders::_1, std::placeholders::_2));
 
   // Create the client for the 'OperatingModes' service
   operating_modes_client_ = this->create_client<interbotix_xs_msgs::srv::OperatingModes>(
-    "/" + robot_name + "/set_operating_modes");
+    "set_operating_modes");
 
   // Create the client for the 'TorqueEnable' service
   torque_enable_client_ = this->create_client<interbotix_xs_msgs::srv::TorqueEnable>(
-    "/" + robot_name + "/torque_enable");
+    "torque_enable");
 
   // Wait for the 'OperatingModes' service to be available
   while (!operating_modes_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
-      RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for OperatingModes. Exiting.");
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Interrupted while waiting for %s. Exiting.",
+        operating_modes_client_->get_service_name());
+      success = false;
       return;
     }
-    RCLCPP_INFO(this->get_logger(), "OperatingModes not available, waiting again...");
+    RCLCPP_INFO(
+      this->get_logger(),
+      "%s not available, waiting again...",
+      operating_modes_client_->get_service_name());
   }
 
   // Wait for the 'TorqueEnable' service to be available
   while (!torque_enable_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
-      RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for TorqueEnable. Exiting.");
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Interrupted while waiting for %s. Exiting.",
+        torque_enable_client_->get_service_name());
+      success = false;
       return;
     }
-    RCLCPP_INFO(this->get_logger(), "TorqueEnable not available, waiting again...");
+    RCLCPP_INFO(
+      this->get_logger(),
+      "%s not available, waiting again...",
+      torque_enable_client_->get_service_name());
   }
 
   // Load the motor specs
-  load_motor_specs(motor_specs);
+  if (!load_motor_specs(motor_specs)) {
+    success = false;
+    return;
+  }
 
   // Prepare for the inverse dynamics solver
-  prepare_tree(robot_name);
+  if (!prepare_tree()) {
+    success = false;
+    return;
+  }
 
   // Prompt the user to enable gravity compensation
   RCLCPP_INFO(
     this->get_logger(),
-    "Gravity Compensation is Initialized."
-    "Please call the 'gravity_compensation_enable' service to enable it. Example: "
-    "ros2 service call /<robot_name>/gravity_compensation_enable std_srvs/srv/SetBool 'data: true'"
+    "Gravity compensation node is up."
   );
 
   // Warn the user that the joints will be turned off temporarily
@@ -113,40 +131,35 @@ void InterbotixGravityCompensation::joint_state_cb(
     return;
   }
 
-  // Construct the joint arrays for the inverse dynamics solver
-  KDL::JntArray q(tree_.getNrOfJoints());
-  KDL::JntArray q_dot(tree_.getNrOfJoints());
-  KDL::JntArray q_dotdot(tree_.getNrOfJoints());
-  KDL::JntArray torques(tree_.getNrOfJoints());
-  KDL::WrenchMap f_ext;
-
   // Construct the id solver
   KDL::TreeIdSolver_RNE idsolver(tree_, KDL::Vector(0, 0, -9.81));
 
   // Set the joint positions and velocities
   for (size_t i = 0; i < msg->position.size(); i++) {
-    q(i) = msg->position[i];
-    q_dot(i) = msg->velocity[i];
+    q_(i) = msg->position[i];
+    q_dot_(i) = msg->velocity[i];
   }
 
   // Compute the torques
-  idsolver.CartToJnt(q, q_dot, q_dotdot, f_ext, torques);
+  idsolver.CartToJnt(q_, q_dot_, q_dotdot_, f_ext_, torques_);
 
   // Create a JointGroupCommand message
   interbotix_xs_msgs::msg::JointGroupCommand command_msg;
 
   // Set the necessary fields in the message
   command_msg.name = "arm";
+  command_msg.cmd.resize(num_joints_arm_);
   for (size_t i = 0; i < num_joints_arm_; i++) {
+    // Desired current for joint i
+    command_msg.cmd[i] = torques_(i) / torque_constants_[i];
+    // Pad the no-load current towards moving direction to ease the joint friction
     if (msg->velocity[i] > 0.0) {
-      command_msg.cmd.push_back(
-        ((torques(i) / torque_constants_[i]) + no_load_currents_[i]) / current_units_[i]
-      );
+      command_msg.cmd[i] += no_load_currents_[i];
     } else {
-      command_msg.cmd.push_back(
-        ((torques(i) / torque_constants_[i]) - no_load_currents_[i]) / current_units_[i]
-      );
+      command_msg.cmd[i] -= no_load_currents_[i];
     }
+    // Convert the current to the current command unit
+    command_msg.cmd[i] /= current_units_[i];
   }
 
   // Publish the message
@@ -157,6 +170,9 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
   const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
   std::shared_ptr<std_srvs::srv::SetBool::Response> response)
 {
+  // Set false to the gravity compensation flag
+  gravity_compensation_enabled_ = false;
+
   if (request->data) {
     // Set the operating mode to 'current' if the joints support it
     set_operating_modes("group", "arm", "current");
@@ -209,7 +225,7 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
   RCLCPP_INFO(this->get_logger(), response->message.c_str());
 }
 
-void InterbotixGravityCompensation::load_motor_specs(const std::string & motor_specs)
+bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_specs)
 {
   // Load the torque constants and current units from the motor_specs file
   YAML::Node motor_specs_node;
@@ -218,9 +234,9 @@ void InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
   } catch (YAML::Exception & e) {
     RCLCPP_ERROR(
       this->get_logger(),
-      "Failed to load the motor specs file %s! Error: %s",
+      "Failed to load the motor specs file '%s'! Error: %s",
       motor_specs.c_str(), e.what());
-    return;
+    return false;
   }
 
   // Load the joint names and joint name to index mapping
@@ -269,13 +285,13 @@ void InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
     } else {
       RCLCPP_WARN(
         this->get_logger(),
-        "Motor specs not found for joint %s in %s, "
+        "Motor specs not found for joint %s in '%s', "
         "because it cannot run in the Current Control Mode. "
         "Its torque will be disabled.",
         joint_name.c_str(), motor_specs.c_str());
-      torque_constants_.push_back(0.0);
-      current_units_.push_back(0.0);
-      no_load_currents_.push_back(0.0);
+      torque_constants_.push_back(-1);
+      current_units_.push_back(-1);
+      no_load_currents_.push_back(-1);
     }
 
     // Initialize the operating mode and torque enable request/response flags
@@ -283,10 +299,12 @@ void InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
     torque_enable_requests_.push_back(false);
     set_operating_modes_responses_.push_back(false);
     torque_enable_responses_.push_back(false);
-
-    // Get the number of joints in the 'arm' group
-    num_joints_arm_ = joint_names_.size() - 1;
   }
+
+  // Get the number of joints in the 'arm' group
+  num_joints_arm_ = joint_names_.size() - 1;
+
+  return true;
 }
 
 void InterbotixGravityCompensation::set_operating_modes(
@@ -315,14 +333,14 @@ void InterbotixGravityCompensation::set_operating_modes(
       const rclcpp::Client<interbotix_xs_msgs::srv::OperatingModes>::SharedFuture
     )> callback;
   callback = std::bind(
-    &InterbotixGravityCompensation::set_operating_modes_callback,
+    &InterbotixGravityCompensation::set_operating_modes_future_done_cb,
     this,
     std::placeholders::_1,
     joint_indices);
   auto future = operating_modes_client_->async_send_request(request, callback);
 }
 
-void InterbotixGravityCompensation::set_operating_modes_callback(
+void InterbotixGravityCompensation::set_operating_modes_future_done_cb(
   const rclcpp::Client<interbotix_xs_msgs::srv::OperatingModes>::SharedFuture future,
   const std::vector<size_t> & joint_indices)
 {
@@ -378,14 +396,14 @@ void InterbotixGravityCompensation::torque_enable(
       const rclcpp::Client<interbotix_xs_msgs::srv::TorqueEnable>::SharedFuture
     )> callback;
   callback = std::bind(
-    &InterbotixGravityCompensation::torque_enable_callback,
+    &InterbotixGravityCompensation::torque_enable_future_done_cb,
     this,
     std::placeholders::_1,
     joint_indices);
   auto future = torque_enable_client_->async_send_request(request, callback);
 }
 
-void InterbotixGravityCompensation::torque_enable_callback(
+void InterbotixGravityCompensation::torque_enable_future_done_cb(
   const rclcpp::Client<interbotix_xs_msgs::srv::TorqueEnable>::SharedFuture future,
   const std::vector<size_t> & joint_indices)
 {
@@ -415,11 +433,11 @@ void InterbotixGravityCompensation::torque_enable_callback(
   }
 }
 
-void InterbotixGravityCompensation::prepare_tree(std::string robot_name)
+bool InterbotixGravityCompensation::prepare_tree()
 {
   // Create the client to get the robot description string
   auto param_client = std::make_shared<rclcpp::SyncParametersClient>(
-    this, "/" + robot_name + "/robot_state_publisher"
+    this, "robot_state_publisher"
   );
 
   // Wait for the robot description string to be available
@@ -427,11 +445,12 @@ void InterbotixGravityCompensation::prepare_tree(std::string robot_name)
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(
         this->get_logger(),
-        "Interrupted while waiting for robot description string. Exiting."
-      );
-      return;
+        "Interrupted while waiting for robot_state_publisher. Exiting.");
+      return false;
     }
-    RCLCPP_INFO(this->get_logger(), "robot description string not available, waiting again...");
+    RCLCPP_INFO(
+      this->get_logger(),
+      "robot_state_publisher not available, waiting again...");
   }
 
   // Get the robot description string
@@ -440,7 +459,17 @@ void InterbotixGravityCompensation::prepare_tree(std::string robot_name)
   // Parse the robot description string to get the KDL tree
   if (!kdl_parser::treeFromString(robot_desc_string, tree_)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to parse the robot description string!");
+    rclcpp::shutdown();
+    return false;
   } else {
     RCLCPP_INFO(this->get_logger(), "Successfully parsed the robot description string!");
   }
+
+  // Resize the joint arrays
+  q_.resize(tree_.getNrOfJoints());
+  q_dot_.resize(tree_.getNrOfJoints());
+  q_dotdot_.resize(tree_.getNrOfJoints());
+  torques_.resize(tree_.getNrOfJoints());
+
+  return true;
 }

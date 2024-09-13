@@ -1,4 +1,4 @@
-// Copyright 2022 Trossen Robotics
+// Copyright 2024 Trossen Robotics
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,17 @@
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<InterbotixGravityCompensation>());
+  bool success = true;
+  auto node = std::make_shared<InterbotixGravityCompensation>(success);
+  if (success) {
+    rclcpp::spin(node);
+  } else {
+    RCLCPP_FATAL(
+      node->get_logger(),
+      "Failed to initialize the gravity compensation node. Exiting...");
+    rclcpp::shutdown();
+    return 1;
+  }
   rclcpp::shutdown();
   return 0;
 }

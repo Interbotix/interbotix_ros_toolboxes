@@ -41,10 +41,10 @@ Please refer to the KDL doc page for its [derivations](https://link.springer.com
 
 ## Structure
 ### Publisher
-- `joint_group_pub_`: publishes the desired current commands to the `/<robot_name>/commands/joint_group` topic for the robotic arm to execute.
+- `joint_group_pub_`: publishes the desired current commands to the `/<namespace>/commands/joint_group` topic for the robotic arm to execute.
 
 ### Subscription
-- `joint_state_sub_`: subscribes to the `/<robot_name>/joint_states` topic.
+- `joint_state_sub_`: subscribes to the `/<namespace>/joint_states` topic.
 When a new message arrives, it does nothing if the `gravity_compensation_enabled_` flag is set false.
 Otherwise, it solves for the torques required to counteract the gravity, i.e., inverse dynamics.
 Then, it adds padding torques depending on the directions of joint movements to ease the joint frictions.
@@ -60,15 +60,15 @@ All aforementioned operations are done via service calls to the `xs_sdk` node.
 Finally, it stores the request flags for the service callbacks indicating whether the joint requested to be ready for gravity compensation.
 
 ### Client
-- `operating_modes_client_`: sets the operating modes of the joints via service call to the `/<robot_name>/set_operating_modes` service.
-- `torque_enable_client_`: torques on/off the joints via service call to the `/<robot_name>/torque_enable` service.
+- `operating_modes_client_`: sets the operating modes of the joints via service call to the `/<namespace>/set_operating_modes` service.
+- `torque_enable_client_`: torques on/off the joints via service call to the `/<namespace>/torque_enable` service.
 
 ### Misc
 - `load_motor_specs(...)`: loads the motor specs from `motor_specs.yaml` and initializes the motor specs vectors.
 It also initializes the operating mode and torque enable request/response flags and sets the number of joints in the 'arm' group.
 - `set_operating_modes_callback(...)` and `torque_enable_callback(...)`: when the responses from the service calls return, these callbacks set the corresponding response flags.
 If all response flags are set true, the `gravity_compensation_enabled_` will be set true and false otherwise.
-- `prepare_tree(...)`: loads the "robot_description" parameter from the `/<robot_name>/robot_state_publisher` node and parse it into a KDL [tree](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1Tree.html) object used by the inverse dynamics solver.
+- `prepare_tree(...)`: loads the "robot_description" parameter from the `/<namespace>/robot_state_publisher` node and parse it into a KDL [tree](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1Tree.html) object used by the inverse dynamics solver.
 
 ## Configuration
 The `motor_specs.yaml` hosts the motor specifications used in the node and provides knobs for motor assistance against joint frictions.
