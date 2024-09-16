@@ -71,7 +71,7 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
     std::bind(
       &InterbotixGravityCompensation::gravity_compensation_enable_cb, this,
       std::placeholders::_1, std::placeholders::_2),
-      rmw_qos_profile_services_default, reentrant_callback_group);
+    rmw_qos_profile_services_default, reentrant_callback_group);
 
   // Create the client for the 'OperatingModes' service
   operating_modes_client_ = this->create_client<interbotix_xs_msgs::srv::OperatingModes>(
