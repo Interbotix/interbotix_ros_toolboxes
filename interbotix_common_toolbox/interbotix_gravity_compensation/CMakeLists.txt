@@ -36,11 +36,11 @@ set(ROS_DEPENDENCIES
 )
 
 # C++ installation
-add_executable(interbotix_gravity_compensation src/interbotix_gravity_compensation.cpp src/interbotix_gravity_compensation_obj.cpp)
+add_executable(interbotix_gravity_compensation src/interbotix_gravity_compensation_node.cpp src/interbotix_gravity_compensation.cpp)
 ament_target_dependencies(interbotix_gravity_compensation ${ROS_DEPENDENCIES})
 install(
   TARGETS
-  interbotix_gravity_compensation
+    interbotix_gravity_compensation
   DESTINATION
     lib/${PROJECT_NAME}
 )
