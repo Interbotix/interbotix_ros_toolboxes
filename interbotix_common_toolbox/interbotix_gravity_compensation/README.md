@@ -17,7 +17,9 @@ This feature is useful when we use the arm as a teleoperation remote or when we 
 Computing the torques needed to compensate for the gravity is a special case of the [inverse dynamics](https://en.wikipedia.org/wiki/Inverse_dynamics) problem where the gravity is the only external force.
 More specifically, one is interested in finding the following mapping:
 
-$$\tau=\text{ID}(\text{model}, \mathbf{q}, \dot{\mathbf{q}}, \ddot{\mathbf{q}})$$
+```math
+\tau=\text{ID}(\text{model}, \mathbf{q}, \dot{\mathbf{q}}, \ddot{\mathbf{q}})
+```
 
 where $\text{model}$ specifies the inertia of the system and the forces applied to it, $\mathbf{q}$, $\dot{\mathbf{q}}$, and $\ddot{\mathbf{q}}\in\Bbb{R}^6$ are the joint positions, velocities, and accelerations.
 
@@ -30,21 +32,31 @@ It consists three steps:
 Step 1: the velocity and acceleration of the $i$'th link $\mathbf{v}_i, \mathbf{a}_i\in\Bbb{S}$ are given by the following recursive relations associated with the angular velocity and acceleration of the $i$'th joint $\dot{q}_i, \ddot{q}_i\in\Bbb{R}$, and the $i$'th joint axis $\mathbf{s}_i\in\Bbb{S}$, where $\Bbb{S}$ is the set of [screws](https://en.wikipedia.org/wiki/Screw_theory).
 Note that $\mathbf{s}_i$ is determined by the current joint positions $\mathbf{q}$ through [forward kinematics](https://en.wikipedia.org/wiki/Forward_kinematics).
 
-$$\mathbf{v}_{i+1}=\mathbf{v}_{i}+\mathbf{s}_i\dot{q}_i\text{ with }\mathbf{v}_0=\mathbf{0}$$
+```math
+\mathbf{v}_{i+1}=\mathbf{v}_{i}+\mathbf{s}_i\dot{q}_i\text{ with }\mathbf{v}_0=\mathbf{0}
+```
 
-$$\mathbf{a}_{i+1}=\mathbf{a}_{i}+\mathbf{s}_i\ddot{q}_i+\dot{\mathbf{s}}_i\dot{q}_i\text{ with }\mathbf{a}_0=\mathbf{0}$$
+```math
+\mathbf{a}_{i+1}=\mathbf{a}_{i}+\mathbf{s}_i\ddot{q}_i+\dot{\mathbf{s}}_i\dot{q}_i\text{ with }\mathbf{a}_0=\mathbf{0}
+```
 
 Step 2: the fictitious force $\mathbf{f}^B_i\in\Bbb{S}$ is associated with the inertia $\mathbf{I}_i\in\Bbb{R}^{6\times6}$, velocity $\mathbf{v}_i$, and accelerations $\mathbf{a}_i$ of the $i$'th link.
 
-$$\mathbf{f}^B_i=\mathbf{I}_i\cdot\mathbf{a}_i+\mathbf{v}_i\times(\mathbf{I}_i\cdot\mathbf{v}_i)$$
+```math
+\mathbf{f}^B_i=\mathbf{I}_i\cdot\mathbf{a}_i+\mathbf{v}_i\times(\mathbf{I}_i\cdot\mathbf{v}_i)
+```
 
 Step 3: the forces acting on the $i$'th link should balance. $\mathbf{f}_{i}\in\Bbb{S}$ is the force applied through the $i$'th joint to the $i+1$'th link and $\mathbf{f}^x_i\in\Bbb{S}$ is the net external force acting on the $i$'th link.
 
-$$\mathbf{f}^B_i=\mathbf{f}_{i-1}+\mathbf{f}^x_i-\mathbf{f}_{i}$$
+```math
+\mathbf{f}^B_i=\mathbf{f}_{i-1}+\mathbf{f}^x_i-\mathbf{f}_{i}
+```
 
 The resulting torque of the $i$'th joint is given by
 
-$$\tau_i=\mathbf{s}_i\cdot\mathbf{f}_{i}$$
+```math
+\tau_i=\mathbf{s}_i\cdot\mathbf{f}_{i}
+```
 
 The inverse dynamics solver used in the package is ported from the [Orocos Kinematics and Dynamics Library (KDL)](https://www.orocos.org/kdl.html).
 Please refer to the KDL doc page for its [derivations](https://link.springer.com/book/10.1007/978-1-4899-7560-7) and [implementation](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1ChainIdSolver__RNE.html) details.
