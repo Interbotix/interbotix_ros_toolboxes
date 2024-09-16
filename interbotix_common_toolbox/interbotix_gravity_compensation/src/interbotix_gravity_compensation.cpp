@@ -36,7 +36,9 @@ int main(int argc, char * argv[])
   bool success = true;
   auto node = std::make_shared<InterbotixGravityCompensation>(success);
   if (success) {
-    rclcpp::spin(node);
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
   } else {
     RCLCPP_FATAL(
       node->get_logger(),

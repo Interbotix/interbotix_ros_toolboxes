@@ -33,6 +33,7 @@
 #include <chrono>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -77,11 +78,18 @@ private:
   // Client to enable or disable torque on a joint or a group of joints
   rclcpp::Client<interbotix_xs_msgs::srv::TorqueEnable>::SharedPtr torque_enable_client_;
 
-  // Flag indicating whether gravity compensation is enabled
-  bool gravity_compensation_enabled_ = false;
+  // Mutex to protect the enable state flag
+  std::mutex flag_mutex_;
+
+  // Flag to enable or disable gravity compensation
+  bool gravity_compensation_enabled_;
 
   // Number of joints in the 'arm' group
   size_t num_joints_arm_;
+
+  // Name of the 'arm' group
+  std::string arm_group_name_;
+  std::string gripper_joint_name_;
 
   // Mapping from joint names to joint indices
   std::unordered_map<std::string, size_t> joint_name_to_index_;
@@ -98,26 +106,11 @@ private:
   // No-load currents for the joints
   std::vector<float> no_load_currents_;
 
-  // Flags indicating whether the operating modes have been requested to get ready
-  std::vector<bool> set_operating_modes_requests_;
-
-  // Flags indicating whether the torque enable have been requested to get ready
-  std::vector<bool> torque_enable_requests_;
-
-  // Flags indicating whether the operating modes are ready
-  std::vector<bool> set_operating_modes_responses_;
-
-  // Flags indicating whether the torque enable are ready
-  std::vector<bool> torque_enable_responses_;
-
   // KDL tree for the inverse dynamics solver
   KDL::Tree tree_;
 
-  // Joint arrays for the inverse dynamics solver
-  KDL::JntArray q_;
-  KDL::JntArray q_dot_;
-  KDL::JntArray q_dotdot_;
-  KDL::JntArray torques_;
+  // Read only joint arrays
+  KDL::JntArray q_ddot_;
   KDL::WrenchMap f_ext_;
 
   /**
@@ -133,18 +126,6 @@ private:
   );
 
   /**
-   * @brief Future done callback for the 'OperatingModes' service
-   * @param future the future object containing the response from the service
-   * @param joint_indices indices of the joints whose modes were set
-   * @details This function sets the 'set_operating_modes_responses_' flag to the requested value
-   *   If all flags are true, it sets the 'gravity_compensation_enabled_' flag to true
-   */
-  void set_operating_modes_future_done_cb(
-    const rclcpp::Client<interbotix_xs_msgs::srv::OperatingModes>::SharedFuture future,
-    const std::vector<size_t> & joint_indices
-  );
-
-  /**
    * @brief Enable or disable torque on a joint or a group of joints
    * @param cmd_type the type of command being sent; either 'single' or 'group'
    * @param name the name of the joint or group of joints
@@ -154,18 +135,6 @@ private:
     const std::string & cmd_type,
     const std::string & name,
     const bool & enable
-  );
-
-  /**
-   * @brief Future done callback for the 'TorqueEnable' service
-   * @param future the future object containing the response from the service
-   * @param joint_indices indices of the joints whose torque was enabled/disabled
-   * @details This function sets the 'torque_enable_responses_' flag to the requested value
-   *   If all flags are true, it sets the 'gravity_compensation_enabled_' flag to true
-   */
-  void torque_enable_future_done_cb(
-    const rclcpp::Client<interbotix_xs_msgs::srv::TorqueEnable>::SharedFuture future,
-    const std::vector<size_t> & joint_indices
   );
 
   /// @brief Callback function for the joint_state_sub_ subscriber

@@ -13,6 +13,7 @@
   <exec_depend>interbotix_common_modules</exec_depend>
   <!-- <exec_depend>interbotix_landmark_modules</exec_depend> -->
   <exec_depend>interbotix_common_sim</exec_depend>
+  <exec_depend>interbotix_gravity_compensation</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
