@@ -316,7 +316,7 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
     }
   }
 
-  // Get the number of joints in the 'arm' group
+  // Get the number of joints in the 'arm' group: all joints except the gripper joint
   num_joints_arm_ = joint_names_.size() - 1;
 
   return true;
