@@ -26,8 +26,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef INTERBOTIX_GRAVITY_COMPENSATION_OBJ_HPP_
-#define INTERBOTIX_GRAVITY_COMPENSATION_OBJ_HPP_
+#ifndef INTERBOTIX_GRAVITY_COMPENSATION_HPP_
+#define INTERBOTIX_GRAVITY_COMPENSATION_HPP_
 
 #include <algorithm>
 #include <chrono>
@@ -79,7 +79,7 @@ private:
   rclcpp::Client<interbotix_xs_msgs::srv::TorqueEnable>::SharedPtr torque_enable_client_;
 
   // Mutex to protect the enable state flag
-  std::mutex flag_mutex_;
+  std::mutex enable_mutex_;
 
   // Flag to enable or disable gravity compensation
   bool gravity_compensation_enabled_;
@@ -106,12 +106,21 @@ private:
   // No-load currents for the joints
   std::vector<float> no_load_currents_;
 
+  // Friction coefficients for the joints
+  std::vector<float> friction_coefficients_;
+
   // KDL tree for the inverse dynamics solver
   KDL::Tree tree_;
 
   // Read only joint arrays
   KDL::JntArray q_ddot_;
   KDL::WrenchMap f_ext_;
+
+  // State mutex for the joint positions
+  std::mutex state_mutex_;
+
+  // Previous joint position
+  std::vector<double> prev_position_;
 
   /**
    * @brief Set the operating mode of a joint or a group of joints
@@ -176,4 +185,4 @@ private:
   bool prepare_tree();
 };
 
-#endif  // INTERBOTIX_GRAVITY_COMPENSATION_OBJ_HPP_
+#endif  // INTERBOTIX_GRAVITY_COMPENSATION_HPP_

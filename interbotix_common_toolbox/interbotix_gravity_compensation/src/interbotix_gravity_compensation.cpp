@@ -45,9 +45,9 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
   this->get_parameter("gripper_joint_name", gripper_joint_name_);
 
   // Set false the gravity compensation flag
-  flag_mutex_.lock();
+  enable_mutex_.lock();
   gravity_compensation_enabled_ = false;
-  flag_mutex_.unlock();
+  enable_mutex_.unlock();
 
   // Create a reentrant callback group
   auto reentrant_callback_group = this->create_callback_group(
@@ -144,12 +144,12 @@ void InterbotixGravityCompensation::joint_state_cb(
   const sensor_msgs::msg::JointState::SharedPtr msg)
 {
   // Early return if gravity compensation is disabled
-  flag_mutex_.lock();
+  enable_mutex_.lock();
   if (!gravity_compensation_enabled_) {
-    flag_mutex_.unlock();
+    enable_mutex_.unlock();
     return;
   }
-  flag_mutex_.unlock();
+  enable_mutex_.unlock();
 
   // Create stuffs needing read/write access
   KDL::TreeIdSolver_RNE idsolver(tree_, KDL::Vector(0, 0, -9.81));
@@ -168,29 +168,41 @@ void InterbotixGravityCompensation::joint_state_cb(
 
   // Create a JointGroupCommand message
   interbotix_xs_msgs::msg::JointGroupCommand command_msg;
-
-  // Set the necessary fields in the message
   command_msg.name = arm_group_name_;
   command_msg.cmd.resize(num_joints_arm_);
+
+  // Current for gravity compensation
   for (size_t i = 0; i < num_joints_arm_; i++) {
-    // Desired current for joint i
     command_msg.cmd[i] = torques(i) / torque_constants_[i];
-    // Pad the no-load current towards moving direction to ease the joint friction
-    if (msg->velocity[i] > 0.0) {
+  }
+
+  // Current for friction compensation
+  state_mutex_.lock();
+  for (size_t i = 0; i < num_joints_arm_; i++) {
+    // Sign depends on the direction of the joint movement
+    if (msg->position[i] - prev_position_[i] > 0.0) {
       command_msg.cmd[i] += no_load_currents_[i];
-    } else {
+      command_msg.cmd[i] += friction_coefficients_[i] * abs(command_msg.cmd[i]);
+    } else if (msg->position[i] - prev_position_[i] < 0.0) {
       command_msg.cmd[i] -= no_load_currents_[i];
+      command_msg.cmd[i] -= friction_coefficients_[i] * abs(command_msg.cmd[i]);
     }
-    // Convert the current to the current command unit
+    // Store the current joint position
+    prev_position_[i] = msg->position[i];
+  }
+  state_mutex_.unlock();
+
+  // Convert the current to the current command unit
+  for (size_t i = 0; i < num_joints_arm_; i++) {
     command_msg.cmd[i] /= current_units_[i];
   }
 
   // Publish the JointGroupCommand message if gravity compensation is enabled
-  flag_mutex_.lock();
+  enable_mutex_.lock();
   if (gravity_compensation_enabled_) {
     joint_group_pub_->publish(command_msg);
   }
-  flag_mutex_.unlock();
+  enable_mutex_.unlock();
 }
 
 void InterbotixGravityCompensation::gravity_compensation_enable_cb(
@@ -203,9 +215,9 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
     set_operating_modes("single", gripper_joint_name_, "current");
   } else {
     // Set false the gravity compensation flag
-    flag_mutex_.lock();
+    enable_mutex_.lock();
     gravity_compensation_enabled_ = false;
-    flag_mutex_.unlock();
+    enable_mutex_.unlock();
 
     // Set the operating mode to 'position' for all joints
     set_operating_modes("group", arm_group_name_, "position");
@@ -229,9 +241,9 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
     }
 
     // Set true the gravity compensation flag
-    flag_mutex_.lock();
+    enable_mutex_.lock();
     gravity_compensation_enabled_ = true;
-    flag_mutex_.unlock();
+    enable_mutex_.unlock();
   } else {
     // Enable the torque for all joints
     for (size_t i = 0; i < joint_names_.size(); i++) {
@@ -307,17 +319,21 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
       RCLCPP_WARN(
         this->get_logger(),
         "Motor specs not found for joint %s in '%s', "
-        "because it cannot run in the Current Control Mode. "
+        "assuming it does not support current control. "
         "Its torque will be disabled.",
         joint_name.c_str(), motor_specs.c_str());
       torque_constants_.push_back(-1);
       current_units_.push_back(-1);
       no_load_currents_.push_back(-1);
+      friction_coefficients_.push_back(-1);
     }
   }
 
   // Get the number of joints in the 'arm' group: all joints except the gripper joint
   num_joints_arm_ = joint_names_.size() - 1;
+
+  // Resize the previous joint positions array
+  prev_position_.assign(num_joints_arm_, 0);
 
   return true;
 }
