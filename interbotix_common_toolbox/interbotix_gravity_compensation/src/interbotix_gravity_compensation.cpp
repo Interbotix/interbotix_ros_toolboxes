@@ -359,8 +359,8 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
           kinetic_friction_coefficients_.back() = 0;
         }
       } else if (0 <= all && all <= 1) {
-        no_load_currents_.back() *= motor_specs_node["motor_assist"]["all"].as<float>();
-        kinetic_friction_coefficients_.back() *= motor_specs_node["motor_assist"]["all"].as<float>();
+        no_load_currents_.back() *= all;
+        kinetic_friction_coefficients_.back() *= all;
       } else {
         RCLCPP_WARN(
           this->get_logger(),
@@ -396,7 +396,8 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
   return true;
 }
 
-bool InterbotixGravityCompensation::get_joint_names() {
+bool InterbotixGravityCompensation::get_joint_names()
+{
   // Create a request message for the 'RobotInfo' service
   auto request = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
   request->cmd_type = "group";
