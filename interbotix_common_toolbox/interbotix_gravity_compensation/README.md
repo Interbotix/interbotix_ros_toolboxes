@@ -15,7 +15,7 @@ This feature is useful when we use the arm as a teleoperation remote or when we 
 ### Formal Formulation
 
 Computing the torques needed to compensate for the gravity is a special case of the [inverse dynamics](https://en.wikipedia.org/wiki/Inverse_dynamics) problem where the gravity is the only external force.
-More specifically, one is interested in finding the following mapping:
+More specifically, one is interested in finding the following mapping
 
 ```math
 \tau=\text{ID}(\text{model}, \mathbf{q}, \dot{\mathbf{q}}, \ddot{\mathbf{q}})
@@ -24,7 +24,7 @@ More specifically, one is interested in finding the following mapping:
 where $\text{model}$ specifies the inertia of the system and the forces applied to it, $\mathbf{q}$, $\dot{\mathbf{q}}$, and $\ddot{\mathbf{q}}\in\Bbb{R}^6$ are the joint positions, velocities, and accelerations.
 
 One way to solve the inverse dynamics problem is the *recursive Newton-Euler algorithm*.
-It consists three steps:
+It consists three steps
 1. Compute the velocities and accelerations of the links
 2. Compute the forces required to produce such motions, i.e., fictitious forces
 3. Compute the forces acting upon the links
@@ -61,6 +61,47 @@ The resulting torque of the $i$'th joint is given by
 The inverse dynamics solver used in the package is ported from the [Orocos Kinematics and Dynamics Library (KDL)](https://www.orocos.org/kdl.html).
 Please refer to the KDL doc page for its [derivations](https://link.springer.com/book/10.1007/978-1-4899-7560-7) and [implementation](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1ChainIdSolver__RNE.html) details.
 
+## Motor Assistance
+
+The joint frictions cause two problems
+
+1. The kinetic friction resists the joint from moving.
+2. The disparity between the kinetic friction and the static friction causes [stiction](https://en.wikipedia.org/wiki/Stiction).
+
+Making things worse, the frictions at the joints are mapped to a resisting wrench at the end effector by the force Jacobian matrix. Depending on the joint positions of the arm, the resulting wrench may become infinitely large.
+
+We address this issue by using the motors to counteract the frictions proactively.
+
+### Kinetic Friction
+
+When a joint is moving, we add a assisting torque towards the direction of the motion.
+We use the coulomb friction model where the friction force is proportional to the total normal force acting on the contact surface.
+And we simplify the nominal wrench transmitted through the joint into two parts
+
+1. A torque about the joint axis.
+2. A constant wrench accounting for other forces and torques.
+
+As a result, the kinetic friction torque about the joint axis is given by
+
+```math
+\tau_k = \mu_k\tau+c
+```
+
+where $\tau_k$ is the kinetic friction torque, $\tau$ is the nominal torque transmitted through the joint, $\mu_k$ is the coefficient of kinetic friction associated with the torque (i.e., `kinetic_friction_coefficient`), $c$ accounts for the friction torque caused by other forces and torques (i.e., `no_load_current`).
+
+### Stiction
+
+We add a dither to each joint when it is moving below a specified speed (i.e., `dither_speed`) to avoid stiction. It periodically pushes the joint in alternating directions so that the joint is moving for the majority of time.
+The dithering frequency is half of the publishing rate of the `/<namespace>/joint_states` topic.
+The dithering magnitude dither matches that of the static friction torque, given by
+
+```math
+\tau_s = \mu_s\tau
+```
+
+where $\mu_s$ is the coefficient of static friction associated with the torque (i.e., `static_friction_coefficient`).
+
+**WARNING: excessive dithering WILL cause heat and wear on the joints**
 
 ## Structure
 
@@ -73,39 +114,41 @@ Please refer to the KDL doc page for its [derivations](https://link.springer.com
 - `joint_state_sub_`: subscribes to the `/<namespace>/joint_states` topic.
 When a new message arrives, it does nothing if the `gravity_compensation_enabled_` flag is set false.
 Otherwise, it solves for the torques required to counteract the gravity, i.e., inverse dynamics.
-Then, it adds padding torques depending on the directions of joint movements to ease the joint frictions.
+Then, it adds padding torques depending on the directions of joint movements to ease the kinetic frictions and dithering torques to eliminate stiction.
 Finally, it converts the resulting torques into motor current commands and publishes it via `joint_group_pub_`.
 
 ### Service
 
 - `gravity_compensation_enable_srv_`: hosts a service to conveniently enable/disable the gravity compensation feature.
 When a enable request is received, it sets the operating mode of all joints to the "current" mode.
-Then, it torques on the joints which support the "current" mode and torques off the others.
-When a disable request is received, it sets the "arm" joint group to the "position" mode and the "gripper" joint to the "current_based_position" mode.
-Then, it torques on all joints.
+Then, it torques on the joints which support the "current" mode and torques off the others. It sets the `gravity_compensation_enabled_` flag to true at the end.
+When a disable request is received, it set the `gravity_compensation_enabled_` flag to false. Then, it sets the "arm" joint group to the "position" mode and the "gripper" joint to the "current_based_position" mode.
+Finally, it torques on all joints.
 All aforementioned operations are done via service calls to the `xs_sdk` node.
-Finally, it stores the request flags for the service callbacks indicating whether the joint requested to be ready for gravity compensation.
 
 ### Client
 
-- `operating_modes_client_`: sets the operating modes of the joints via service call to the `/<namespace>/set_operating_modes` service.
-- `torque_enable_client_`: torques on/off the joints via service call to the `/<namespace>/torque_enable` service.
+- `robot_info_client_`: client of the `/<namespace>/get_robot_info` service.
+- `operating_modes_client_`: client of the `/<namespace>/set_operating_modes` service.
+- `torque_enable_client_`: client of the `/<namespace>/torque_enable` service.
 
 ### Misc
 
-- `load_motor_specs(...)`: loads the motor specs from `motor_specs.yaml` and initializes the motor specs vectors.
-It also initializes the operating mode and torque enable request/response flags and sets the number of joints in the 'arm' group.
-- `set_operating_modes_callback(...)` and `torque_enable_callback(...)`: when the responses from the service calls return, these callbacks set the corresponding response flags.
-If all response flags are set true, the `gravity_compensation_enabled_` will be set true and false otherwise.
-- `prepare_tree(...)`: loads the "robot_description" parameter from the `/<namespace>/robot_state_publisher` node and parse it into a KDL [tree](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1Tree.html) object used by the inverse dynamics solver.
+- `load_motor_specs(...)`: loads the motor specs from a `motor_specs.yaml`, sets the motor specs vectors, and scales the kinetic friction coefficients and the no-load-currents based on the motor assist settings.
+- `get_joint_names()`: gets the vector of joint names via the `robot_info_client_` and set the number of joints in the "arm" joint group.
+- `set_operating_modes(...)`: sets the operating mode of a joint or a group of joints via the `operating_modes_client_`.
+- `torque_enable(...)`: enables or disables torque on a joint or a group of joints via the `torque_enable_client_`.
+- `prepare_tree()`: loads the "robot_description" parameter from the `/<namespace>/robot_state_publisher` node and parse it into a KDL [tree](https://docs.ros.org/en/indigo/api/orocos_kdl/html/classKDL_1_1Tree.html) object used by the inverse dynamics solver.
 
 ## Configuration
 
 The `motor_specs.yaml` hosts the motor specifications used in the node and provides knobs for motor assistance against joint frictions.
-A template file is given below:
+A template file is given below
 ```yaml
 # Motor Assist: scale the no-load currents which alleviate the effects of friction
 # If the values are invalid, they default to 0
+# Joints not specified in the motor_assist or motor_specs sections
+# do not support the current control mode
 motor_assist:
   # Set 'all' to [0, 1] to scale the no load currents of all joints uniformly
   # Or to -1 and use joint specific values
@@ -118,6 +161,11 @@ motor_assist:
   wrist_angle: 0.5
   wrist_rotate: 0.5
 
+# Dither: add a oscillatory motion proportional to the load to break static friction
+# It is helpful when slow and smooth movements are needed
+# WARNING: excessive dithering WILL cause heat and wear on the joints
+dither: false
+
 motor_specs:
   waist:
     # torque constant (Nm/A): how much torque is produced per Amp of current
@@ -125,37 +173,55 @@ motor_specs:
     # current unit (A): how much current command is needed to produce 1 Amp of current
     current_unit: 0.00269
     # no load current (A): the maximum no load current applied when motor_assist == 1
-    # It should be as large as possible without the joint accelerating by itself
-    no_load_current: 0.1
+    # should be as large as possible without the joint accelerating by itself
+    no_load_current: 0.0
+    # kinetic friction (Nm/Nm): the kinetic friction coefficient
+    # should be tuned so that the friction is uniform over the entire joint range
+    kinetic_friction_coefficient: 0.0
+    # static friction coefficient (Nm/Nm): the static friction coefficient
+    # affects the amplitude of the dithering motion
+    static_friction_coefficient: 0.0
+    # dither speed (rad/s): the speed under which the joint dithers
+    dither_speed: 0.0
 
   shoulder:
     torque_constant: 1.793
     current_unit: 0.00269
     no_load_current: 0.0
+    kinetic_friction_coefficient: 0.1
+    static_friction_coefficient: 0.4
+    dither_speed: 0.5
 
   elbow:
     torque_constant: 1.793
     current_unit: 0.00269
     no_load_current: 0.0
+    kinetic_friction_coefficient: 0.1
+    static_friction_coefficient: 0.6
+    dither_speed: 0.5
 
   forearm_roll:
     torque_constant: 0.897
     current_unit: 0.00269
-    no_load_current: 0.1
+    no_load_current: 0.2
+    kinetic_friction_coefficient: 0.0
+    static_friction_coefficient: 0.0
+    dither_speed: 0.0
 
   wrist_angle:
     torque_constant: 0.897
     current_unit: 0.00269
-    no_load_current: 0.0
+    no_load_current: 0.1
+    kinetic_friction_coefficient: 0.1
+    static_friction_coefficient: 0.4
+    dither_speed: 0.5
 
   wrist_rotate:
     torque_constant: 0.897
     current_unit: 0.00269
-    no_load_current: 0.1
-
-# Joints specified here but not in motor_assist or motor_specs
-# do not support the current control mode
-joint_names:
-  [waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate, gripper]
+    no_load_current: 0.2
+    kinetic_friction_coefficient: 0.0
+    static_friction_coefficient: 0.0
+    dither_speed: 0.0
 
 ```

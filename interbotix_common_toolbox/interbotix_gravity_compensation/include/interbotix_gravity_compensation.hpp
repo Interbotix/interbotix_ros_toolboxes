@@ -29,16 +29,16 @@
 #ifndef INTERBOTIX_GRAVITY_COMPENSATION_HPP_
 #define INTERBOTIX_GRAVITY_COMPENSATION_HPP_
 
-#include <algorithm>
 #include <chrono>
 #include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "interbotix_xs_msgs/msg/joint_group_command.hpp"
+#include "interbotix_xs_msgs/srv/robot_info.hpp"
 #include "interbotix_xs_msgs/srv/operating_modes.hpp"
 #include "interbotix_xs_msgs/srv/torque_enable.hpp"
 #include "kdl_parser/kdl_parser.hpp"
@@ -72,6 +72,9 @@ private:
   // Service to enable or disable gravity compensation
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr gravity_compensation_enable_srv_;
 
+  // Client to get the robot info
+  rclcpp::Client<interbotix_xs_msgs::srv::RobotInfo>::SharedPtr robot_info_client_;
+
   // Client to set the operating mode of a joint or a group of joints
   rclcpp::Client<interbotix_xs_msgs::srv::OperatingModes>::SharedPtr operating_modes_client_;
 
@@ -91,9 +94,6 @@ private:
   std::string arm_group_name_;
   std::string gripper_joint_name_;
 
-  // Mapping from joint names to joint indices
-  std::unordered_map<std::string, size_t> joint_name_to_index_;
-
   // Joint names
   std::vector<std::string> joint_names_;
 
@@ -106,8 +106,20 @@ private:
   // No-load currents for the joints
   std::vector<float> no_load_currents_;
 
-  // Friction coefficients for the joints
-  std::vector<float> friction_coefficients_;
+  // Kinetic friction coefficients for the joints
+  std::vector<float> kinetic_friction_coefficients_;
+
+  // Dither mutex for dither switch
+  std::mutex dither_mutex_;
+
+  // Static friction coefficients for the joints
+  std::vector<float> static_friction_coefficients_;
+
+  // Dither speeds for the joints
+  std::vector<float> dither_speeds_;
+
+  // Switch for the dither
+  bool dither_switch_;
 
   // KDL tree for the inverse dynamics solver
   KDL::Tree tree_;
@@ -115,41 +127,6 @@ private:
   // Read only joint arrays
   KDL::JntArray q_ddot_;
   KDL::WrenchMap f_ext_;
-
-  // State mutex for the joint positions
-  std::mutex state_mutex_;
-
-  // Previous joint position
-  std::vector<double> prev_position_;
-
-  /**
-   * @brief Set the operating mode of a joint or a group of joints
-   * @param cmd_type the type of command being sent; either 'single' or 'group'
-   * @param name the name of the joint or group of joints
-   * @param mode the desired operating mode
-   */
-  void set_operating_modes(
-    const std::string & cmd_type,
-    const std::string & name,
-    const std::string & mode
-  );
-
-  /**
-   * @brief Enable or disable torque on a joint or a group of joints
-   * @param cmd_type the type of command being sent; either 'single' or 'group'
-   * @param name the name of the joint or group of joints
-   * @param enable true to enable torque; false to disable torque
-   */
-  void torque_enable(
-    const std::string & cmd_type,
-    const std::string & name,
-    const bool & enable
-  );
-
-  /// @brief Callback function for the joint_state_sub_ subscriber
-  /// @param msg the incoming JointState message
-  /// @details This function computes the current commands needed to compensate for gravity and
-  ///   publishes them to the <namespace>/commands/joint_group topic
 
   /**
    * @brief Callback function for the joint_state_sub_ subscriber
@@ -176,11 +153,46 @@ private:
    * @details This function loads the motor specs from the YAML file and initializes the
    *   motor specs vectors. It also initializes the operating mode and torque enable
    *   request/response flags and sets the number of joints in the 'arm' group
+   * @return true if the motor specs were loaded successfully; false otherwise
    */
   bool load_motor_specs(const std::string & motor_specs);
 
   /**
+   * @brief Get the joint names of the robot and set the number of joints in the 'arm' group
+   * @return true if the joint names were retrieved successfully; false otherwise
+   */
+  bool get_joint_names();
+
+  /**
+   * @brief Set the operating mode of a joint or a group of joints
+   * @param cmd_type the type of command being sent; either 'single' or 'group'
+   * @param name the name of the joint or group of joints
+   * @param mode the desired operating mode
+   */
+  void set_operating_modes(
+    const std::string & cmd_type,
+    const std::string & name,
+    const std::string & mode
+  );
+
+  /**
+   * @brief Enable or disable torque on a joint or a group of joints
+   * @param cmd_type the type of command being sent; either 'single' or 'group'
+   * @param name the name of the joint or group of joints
+   * @param enable true to enable torque; false to disable torque
+   */
+  void torque_enable(
+    const std::string & cmd_type,
+    const std::string & name,
+    const bool & enable
+  );
+
+  /**
    * @brief Prepare the KDL tree for the inverse dynamics solver
+   * @details This function creates a client to get the robot description string and waits
+   *   for the robot description string to be available. It then parses the robot description
+   *   string to create a KDL tree for the inverse dynamics solver
+   * @return true if the KDL tree was prepared successfully; false otherwise
    */
   bool prepare_tree();
 };

@@ -73,6 +73,10 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
       std::placeholders::_1, std::placeholders::_2),
     rmw_qos_profile_services_default, reentrant_callback_group);
 
+  // Create the client for the 'RobotInfo' service
+  robot_info_client_ = this->create_client<interbotix_xs_msgs::srv::RobotInfo>(
+    "get_robot_info", rmw_qos_profile_services_default, reentrant_callback_group);
+
   // Create the client for the 'OperatingModes' service
   operating_modes_client_ = this->create_client<interbotix_xs_msgs::srv::OperatingModes>(
     "set_operating_modes", rmw_qos_profile_services_default, reentrant_callback_group);
@@ -80,6 +84,22 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
   // Create the client for the 'TorqueEnable' service
   torque_enable_client_ = this->create_client<interbotix_xs_msgs::srv::TorqueEnable>(
     "torque_enable", rmw_qos_profile_services_default, reentrant_callback_group);
+
+  // Wait for the 'RobotInfo' service to be available
+  while (!robot_info_client_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Interrupted while waiting for %s. Exiting.",
+        robot_info_client_->get_service_name());
+      success = false;
+      return;
+    }
+    RCLCPP_INFO(
+      this->get_logger(),
+      "%s not available, waiting again...",
+      robot_info_client_->get_service_name());
+  }
 
   // Wait for the 'OperatingModes' service to be available
   while (!operating_modes_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -113,6 +133,12 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
       torque_enable_client_->get_service_name());
   }
 
+  // Get the joint names
+  if (!get_joint_names()) {
+    success = false;
+    return;
+  }
+
   // Load the motor specs
   if (!load_motor_specs(motor_specs)) {
     success = false;
@@ -134,7 +160,7 @@ InterbotixGravityCompensation::InterbotixGravityCompensation(
   // Warn the user that the joints will be turned off temporarily
   RCLCPP_WARN(
     this->get_logger(),
-    "WARNING: The joints will be turned off temporarily while enabling/disabling "
+    "WARNING: The joints WILL be turned off temporarily while enabling/disabling "
     "gravity compensation. Please make sure the robot is in a safe position or "
     "manually held before enabling gravity compensation."
   );
@@ -173,24 +199,36 @@ void InterbotixGravityCompensation::joint_state_cb(
 
   // Current for gravity compensation
   for (size_t i = 0; i < num_joints_arm_; i++) {
-    command_msg.cmd[i] = torques(i) / torque_constants_[i];
+    torques(i) /= torque_constants_[i];
+    command_msg.cmd[i] = torques(i);
   }
 
-  // Current for friction compensation
-  state_mutex_.lock();
+  // Current for kinetic friction compensation
   for (size_t i = 0; i < num_joints_arm_; i++) {
     // Sign depends on the direction of the joint movement
-    if (msg->position[i] - prev_position_[i] > 0.0) {
+    if (msg->velocity[i] > 0.0) {
       command_msg.cmd[i] += no_load_currents_[i];
-      command_msg.cmd[i] += friction_coefficients_[i] * abs(command_msg.cmd[i]);
-    } else if (msg->position[i] - prev_position_[i] < 0.0) {
+      command_msg.cmd[i] += kinetic_friction_coefficients_[i] * abs(torques(i));
+    } else if (msg->velocity[i] < 0.0) {
       command_msg.cmd[i] -= no_load_currents_[i];
-      command_msg.cmd[i] -= friction_coefficients_[i] * abs(command_msg.cmd[i]);
+      command_msg.cmd[i] -= kinetic_friction_coefficients_[i] * abs(torques(i));
     }
-    // Store the current joint position
-    prev_position_[i] = msg->position[i];
   }
-  state_mutex_.unlock();
+
+  // Current for static friction compensation
+  dither_mutex_.lock();
+  for (size_t i = 0; i < num_joints_arm_; i++) {
+    // Add dither
+    if (abs(msg->velocity[i]) < dither_speeds_[i]) {
+      if (dither_switch_) {
+        command_msg.cmd[i] += static_friction_coefficients_[i] * abs(torques(i));
+      } else {
+        command_msg.cmd[i] -= static_friction_coefficients_[i] * abs(torques(i));
+      }
+    }
+  }
+  dither_switch_ = !dither_switch_;
+  dither_mutex_.unlock();
 
   // Convert the current to the current command unit
   for (size_t i = 0; i < num_joints_arm_; i++) {
@@ -230,8 +268,10 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
       if (i < num_joints_arm_) {
         // Arm joints
         if (torque_constants_[i] == -1) {
+          // Disable if the joint does not support current control
           torque_enable("single", joint_names_[i], false);
         } else {
+          // Enable if the joint supports current control
           torque_enable("single", joint_names_[i], true);
         }
       } else {
@@ -272,13 +312,6 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
     return false;
   }
 
-  // Load the joint names and joint name to index mapping
-  for (size_t i = 0; i < motor_specs_node["joint_names"].size(); i++) {
-    std::string joint_name = motor_specs_node["joint_names"][i].as<std::string>();
-    joint_names_.push_back(joint_name);
-    joint_name_to_index_[joint_name] = i;
-  }
-
   // Load the torque constants, current units, and no load currents
   float all = motor_specs_node["motor_assist"]["all"].as<float>();
   float single = 0.0;
@@ -294,46 +327,112 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
       no_load_currents_.push_back(
         motor_specs_node["motor_specs"][joint_name]["no_load_current"].as<float>()
       );
+      kinetic_friction_coefficients_.push_back(
+        motor_specs_node["motor_specs"][joint_name]["kinetic_friction_coefficient"].as<float>()
+      );
+      static_friction_coefficients_.push_back(
+        motor_specs_node["motor_specs"][joint_name]["static_friction_coefficient"].as<float>()
+      );
+      dither_speeds_.push_back(
+        motor_specs_node["motor_specs"][joint_name]["dither_speed"].as<float>()
+      );
+
+      // Enable/disable the dither
+      if (!motor_specs_node["dither"].as<bool>()) {
+        kinetic_friction_coefficients_.back() = static_friction_coefficients_.back();
+        static_friction_coefficients_.back() = 0;
+        dither_speeds_.back() = 0;
+      }
 
       // Scale the no load current according to the motor assist setting
       if (all == -1) {
         single = motor_specs_node["motor_assist"][joint_name].as<float>();
         if (0 <= single && single <= 1) {
           no_load_currents_.back() *= single;
+          kinetic_friction_coefficients_.back() *= single;
         } else {
           RCLCPP_WARN(
             this->get_logger(),
             "Motor assist value not in the range [0, 1] for joint %s. Setting it to 0.",
             joint_name.c_str());
-          no_load_currents_.back() *= 0;
+          no_load_currents_.back() = 0;
+          kinetic_friction_coefficients_.back() = 0;
         }
       } else if (0 <= all && all <= 1) {
         no_load_currents_.back() *= motor_specs_node["motor_assist"]["all"].as<float>();
+        kinetic_friction_coefficients_.back() *= motor_specs_node["motor_assist"]["all"].as<float>();
       } else {
         RCLCPP_WARN(
           this->get_logger(),
           "Motor assist value not in the range [0, 1] or -1 for all joints. Setting it to 0.");
-        no_load_currents_.back() *= 0;
+        no_load_currents_.back() = 0;
+        kinetic_friction_coefficients_.back() = 0;
       }
+
     } else {
       RCLCPP_WARN(
         this->get_logger(),
         "Motor specs not found for joint %s in '%s', "
         "assuming it does not support current control. "
-        "Its torque will be disabled.",
+        "Setting all motor specs to -1. "
+        "Its torque will be disabled when the gravity compensation is enabled.",
         joint_name.c_str(), motor_specs.c_str());
       torque_constants_.push_back(-1);
       current_units_.push_back(-1);
       no_load_currents_.push_back(-1);
-      friction_coefficients_.push_back(-1);
+      kinetic_friction_coefficients_.push_back(-1);
+      static_friction_coefficients_.push_back(-1);
+      dither_speeds_.push_back(-1);
+    }
+  }
+
+  // Warn if dither is enabled
+  if (motor_specs_node["dither"].as<bool>()) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "Dither is enabled. Excessive dithering WILL cause heat and wear on the joints.");
+  }
+
+  return true;
+}
+
+bool InterbotixGravityCompensation::get_joint_names() {
+  // Create a request message for the 'RobotInfo' service
+  auto request = std::make_shared<interbotix_xs_msgs::srv::RobotInfo::Request>();
+  request->cmd_type = "group";
+  request->name = "all";
+
+  // Call the 'RobotInfo' service
+  auto future = robot_info_client_->async_send_request(request);
+
+  // Wait for the future to be ready
+  // Use spin_until_future_complete because it's not called in a callback
+  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "Failed to call the %s service",
+      robot_info_client_->get_service_name());
+    return false;
+  }
+
+  // Get the response message
+  auto response = future.get();
+
+  // Get the joint names
+  joint_names_ = response->joint_names;
+
+  // Replace "left_finger" with "gripper"
+  // Please refer to the note in the 'RobotInfo' service documentation for why
+  for (size_t i = 0; i < joint_names_.size(); i++) {
+    if (joint_names_[i] == "left_finger") {
+      joint_names_[i] = gripper_joint_name_;
     }
   }
 
   // Get the number of joints in the 'arm' group: all joints except the gripper joint
   num_joints_arm_ = joint_names_.size() - 1;
-
-  // Resize the previous joint positions array
-  prev_position_.assign(num_joints_arm_, 0);
 
   return true;
 }
@@ -349,20 +448,11 @@ void InterbotixGravityCompensation::set_operating_modes(
   request->name = name;
   request->mode = mode;
 
-  // Create the joint index vector
-  std::vector<size_t> joint_indices;
-  if (cmd_type == "group") {
-    for (size_t i = 0; i < num_joints_arm_; i++) {
-      joint_indices.push_back(i);
-    }
-  } else {
-    joint_indices.push_back(joint_name_to_index_[name]);
-  }
-
   // Call the 'OperatingModes' service
   auto future = operating_modes_client_->async_send_request(request);
 
   // Wait for the future to be ready
+  // Use wait_for because it's called in a callback and the node is spinning
   while (rclcpp::ok() && future.wait_for(std::chrono::seconds(1)) == std::future_status::timeout) {
     RCLCPP_INFO(
       this->get_logger(),
@@ -382,20 +472,11 @@ void InterbotixGravityCompensation::torque_enable(
   request->name = name;
   request->enable = enable;
 
-  // Create the joint index vector
-  std::vector<size_t> joint_indices;
-  if (cmd_type == "group") {
-    for (size_t i = 0; i < num_joints_arm_; i++) {
-      joint_indices.push_back(i);
-    }
-  } else {
-    joint_indices.push_back(joint_name_to_index_[name]);
-  }
-
   // Call the 'TorqueEnable' service
   auto future = torque_enable_client_->async_send_request(request);
 
   // Wait for the future to be ready
+  // Use wait_for because it's called in a callback and the node is spinning
   while (rclcpp::ok() && future.wait_for(std::chrono::seconds(1)) == std::future_status::timeout) {
     RCLCPP_INFO(
       this->get_logger(),
@@ -430,7 +511,6 @@ bool InterbotixGravityCompensation::prepare_tree()
   // Parse the robot description string to get the KDL tree
   if (!kdl_parser::treeFromString(robot_desc_string, tree_)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to parse the robot description string!");
-    rclcpp::shutdown();
     return false;
   } else {
     RCLCPP_INFO(this->get_logger(), "Successfully parsed the robot description string!");
