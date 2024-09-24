@@ -92,6 +92,8 @@ private:
 
   // Name of the 'arm' group
   std::string arm_group_name_;
+
+  // Name of the gripper joint
   std::string gripper_joint_name_;
 
   // Joint names

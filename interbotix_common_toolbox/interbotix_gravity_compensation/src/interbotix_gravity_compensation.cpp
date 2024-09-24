@@ -267,7 +267,7 @@ void InterbotixGravityCompensation::gravity_compensation_enable_cb(
     for (size_t i = 0; i < joint_names_.size(); i++) {
       if (i < num_joints_arm_) {
         // Arm joints
-        if (torque_constants_[i] == -1) {
+        if (torque_constants_[i] == -1.0) {
           // Disable if the joint does not support current control
           torque_enable("single", joint_names_[i], false);
         } else {
@@ -312,8 +312,16 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
     return false;
   }
 
+  // Warn if dither is enabled
+  bool dither = motor_specs_node["dither"].as<bool>(false);
+  if (dither) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "Dither is enabled. Excessive dithering WILL cause heat and wear on the joints.");
+  }
+
   // Load the torque constants, current units, and no load currents
-  float all = motor_specs_node["motor_assist"]["all"].as<float>();
+  float all = motor_specs_node["motor_assist"]["all"].as<float>(-1.0);
   float single = 0.0;
   for (const auto & joint_name : joint_names_) {
     if (motor_specs_node["motor_assist"][joint_name].IsDefined()) {
@@ -338,15 +346,15 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
       );
 
       // Enable/disable the dither
-      if (!motor_specs_node["dither"].as<bool>()) {
+      if (!dither) {
         kinetic_friction_coefficients_.back() = static_friction_coefficients_.back();
         static_friction_coefficients_.back() = 0;
         dither_speeds_.back() = 0;
       }
 
       // Scale the no load current according to the motor assist setting
-      if (all == -1) {
-        single = motor_specs_node["motor_assist"][joint_name].as<float>();
+      if (all == -1.0) {
+        single = motor_specs_node["motor_assist"][joint_name].as<float>(0.5);
         if (0 <= single && single <= 1) {
           no_load_currents_.back() *= single;
           kinetic_friction_coefficients_.back() *= single;
@@ -384,13 +392,6 @@ bool InterbotixGravityCompensation::load_motor_specs(const std::string & motor_s
       static_friction_coefficients_.push_back(-1);
       dither_speeds_.push_back(-1);
     }
-  }
-
-  // Warn if dither is enabled
-  if (motor_specs_node["dither"].as<bool>()) {
-    RCLCPP_WARN(
-      this->get_logger(),
-      "Dither is enabled. Excessive dithering WILL cause heat and wear on the joints.");
   }
 
   return true;
