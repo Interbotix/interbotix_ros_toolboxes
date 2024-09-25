@@ -101,7 +101,8 @@ The dithering magnitude matches that of the static friction torque, given by
 
 where $\mu_s$ is the coefficient of static friction associated with the torque (i.e., `static_friction_coefficient`).
 
-**WARNING: excessive dithering WILL cause heat and wear on the joints**
+[!WARNING]
+Excessive dithering WILL cause heat and wear on the joints
 
 ## Structure
 
