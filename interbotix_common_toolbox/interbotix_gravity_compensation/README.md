@@ -93,7 +93,7 @@ where $\tau_k$ is the kinetic friction torque, $\tau$ is the nominal torque tran
 
 We add a dither to each joint when it is moving below a specified speed (i.e., `dither_speed`) to avoid stiction. It periodically pushes the joint in alternating directions so that the joint is moving for the majority of time.
 The dithering frequency is half of the publishing rate of the `/<namespace>/joint_states` topic.
-The dithering magnitude dither matches that of the static friction torque, given by
+The dithering magnitude matches that of the static friction torque, given by
 
 ```math
 \tau_s = \mu_s\tau
