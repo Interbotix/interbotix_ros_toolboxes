@@ -10,7 +10,6 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>interbotix_xs_msgs</depend>
-  <depend>interbotix_xsarm_control</depend>
   <depend>kdl_parser</depend>
   <depend>orocos_kdl_vendor</depend>
   <depend>rclcpp</depend>
