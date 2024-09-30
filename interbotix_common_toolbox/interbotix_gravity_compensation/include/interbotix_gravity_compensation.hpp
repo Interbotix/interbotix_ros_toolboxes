@@ -38,12 +38,15 @@
 #include "interbotix_xs_msgs/srv/operating_modes.hpp"
 #include "interbotix_xs_msgs/srv/robot_info.hpp"
 #include "interbotix_xs_msgs/srv/torque_enable.hpp"
+#include "kdl_parser/kdl_parser.hpp"
+#include "kdl/frames.hpp"
 #include "kdl/jntarray.hpp"
 #include "kdl/tree.hpp"
 #include "kdl/treeidsolver_recursive_newton_euler.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_srvs/srv/set_bool.hpp"
+#include "yaml-cpp/yaml.h"
 
 class InterbotixGravityCompensation : public rclcpp::Node
 {
