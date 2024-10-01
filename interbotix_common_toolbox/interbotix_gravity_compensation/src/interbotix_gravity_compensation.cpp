@@ -32,7 +32,7 @@
 #include <memory>
 #include <string>
 
-#include "interbotix_gravity_compensation.hpp"
+#include "interbotix_gravity_compensation/interbotix_gravity_compensation.hpp"
 
 InterbotixGravityCompensation::InterbotixGravityCompensation(
   bool & success,

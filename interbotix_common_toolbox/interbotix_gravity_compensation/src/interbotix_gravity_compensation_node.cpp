@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "interbotix_gravity_compensation.hpp"
+#include "interbotix_gravity_compensation/interbotix_gravity_compensation.hpp"
 
 int main(int argc, char * argv[])
 {
