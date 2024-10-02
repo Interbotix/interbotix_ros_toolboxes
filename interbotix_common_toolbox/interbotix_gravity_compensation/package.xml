@@ -1,19 +1,21 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>interbotix_common_toolbox</name>
+  <name>interbotix_gravity_compensation</name>
   <version>0.0.0</version>
-  <description>The interbotix_common_toolbox metapackage</description>
+  <description>The interbotix_gravity_compensation package</description>
   <maintainer email="trsupport@trossenrobotics.com">Luke Schmitt</maintainer>
   <license>BSD-3-Clause</license>
-  <author email="trsupport@trossenrobotics.com">Luke Schmitt</author>
+  <author email="trsupport@trossenrobotics.com">Shiming Liang</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-
-  <exec_depend>interbotix_common_modules</exec_depend>
-  <!-- <exec_depend>interbotix_landmark_modules</exec_depend> -->
-  <exec_depend>interbotix_common_sim</exec_depend>
-  <exec_depend>interbotix_gravity_compensation</exec_depend>
+  <depend>interbotix_xs_msgs</depend>
+  <depend>kdl_parser</depend>
+  <depend>orocos_kdl_vendor</depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>yaml_cpp_vendor</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
