@@ -27,9 +27,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """
-Contains the `InterbotixGripperXS` and `InterbotixGripperXSInterface` classes.
+Contains the `InterbotixGravityCompensationInterface` class.
 
-These two classes can be used to control an X-Series standalone gripper using Python.
+It enables/disables the gravity compensation feature of an Interbotix arm using Python.
 """
 
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
