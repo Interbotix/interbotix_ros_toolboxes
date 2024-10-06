@@ -71,7 +71,10 @@ TEST_F(TestXSHardwareSystem, load_hardware_system_xs_)
 {
   // throws due to wait_for_service timeout
   rclcpp::init(0, nullptr);
+  std::string node_name = "test_node";
+  std::string ns = "/";
+  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(node_name, ns);
   auto urdf =
     ros2_control_test_assets::urdf_head + hardware_system_xs_ + ros2_control_test_assets::urdf_tail;
-  EXPECT_THROW(hardware_interface::ResourceManager rm(urdf), std::runtime_error);
+  EXPECT_THROW(hardware_interface::ResourceManager rm(urdf, node->get_node_clock_interface(), node->get_node_logging_interface()), std::runtime_error);
 }
