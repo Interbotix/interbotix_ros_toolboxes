@@ -68,7 +68,7 @@ class InterbotixManipulatorXS:
         robot_model: str,
         group_name: str = 'arm',
         gripper_name: str = 'gripper',
-        robot_name: float = None,
+        robot_name: str = None,
         moving_time: float = 2.0,
         accel_time: float = 0.3,
         gripper_pressure: float = 0.5,
