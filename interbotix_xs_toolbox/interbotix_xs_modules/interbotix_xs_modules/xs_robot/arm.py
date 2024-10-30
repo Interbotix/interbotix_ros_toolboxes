@@ -762,6 +762,42 @@ class InterbotixArmXSInterface:
             )
         self._update_Tsb()
 
+    def get_joint_positions(self) -> List[float]:
+        """
+        Get the actual joint positions.
+
+        :return: list of actual joint positions [rad]
+        """
+        self.core.get_node().logdebug('Getting actual joint states')
+        return [
+            self.core.joint_states.position[self.core.js_index_map[name]]
+            for name in self.group_info.joint_names
+        ]
+
+    def get_joint_velocities(self) -> List[float]:
+        """
+        Get the actual joint velocities.
+
+        :return: list of actual joint velocities [rad/s]
+        """
+        self.core.get_node().logdebug('Getting actual joint velocities')
+        return [
+            self.core.joint_states.velocity[self.core.js_index_map[name]]
+            for name in self.group_info.joint_names
+        ]
+
+    def get_joint_efforts(self) -> List[float]:
+        """
+        Get the actual joint efforts.
+
+        :return: list of actual joint efforts [Nm or load % depending on the motor joint]
+        """
+        self.core.get_node().logdebug('Getting actual joint efforts')
+        return [
+            self.core.joint_states.effort[self.core.js_index_map[name]]
+            for name in self.group_info.joint_names
+        ]
+
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
         self.core.get_node().logdebug('Updating T_sb')
