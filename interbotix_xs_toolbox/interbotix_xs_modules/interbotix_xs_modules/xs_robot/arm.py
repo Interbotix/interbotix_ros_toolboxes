@@ -801,6 +801,15 @@ class InterbotixArmXSInterface:
                 for name in self.group_info.joint_names
             ]
 
+    def get_number_of_joints(self) -> int:
+        """
+        Get the number of joints in the arm group.
+
+        :return: number of joints
+        """
+        self.core.get_node().logdebug('Getting number of joints')
+        return self.group_info.num_joints
+
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
         self.core.get_node().logdebug('Updating T_sb')
