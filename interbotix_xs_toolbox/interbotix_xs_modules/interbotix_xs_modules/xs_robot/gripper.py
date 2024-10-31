@@ -264,3 +264,23 @@ class InterbotixGripperXSInterface:
         :param delay: (optional) number of seconds to delay before returning control to the user
         """
         self.gripper_controller(-self.gripper_value, delay)
+
+    def get_gripper_position(self) -> float:
+        """
+        Get the gripper joint position.
+
+        :return: position of the gripper joint [rad]
+        """
+        self.core.get_node().logdebug('Getting gripper joint positions')
+        with self.core.js_mutex:
+            return self.core.joint_states.position[self.core.js_index_map[self.gripper_name]]
+
+    def get_finger_position(self) -> float:
+        """
+        Get the gripper's left finger position.
+
+        :return: position of the gripper's left finger joint [m]
+        """
+        self.core.get_node().logdebug('Getting gripper finger joint positions')
+        with self.core.js_mutex:
+            return self.core.joint_states.position[self.left_finger_index]

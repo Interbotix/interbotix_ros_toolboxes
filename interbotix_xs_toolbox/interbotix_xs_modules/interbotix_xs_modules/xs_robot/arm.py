@@ -764,39 +764,42 @@ class InterbotixArmXSInterface:
 
     def get_joint_positions(self) -> List[float]:
         """
-        Get the actual joint positions.
+        Get the joint positions.
 
-        :return: list of actual joint positions [rad]
+        :return: list of joint positions [rad]
         """
-        self.core.get_node().logdebug('Getting actual joint states')
-        return [
-            self.core.joint_states.position[self.core.js_index_map[name]]
-            for name in self.group_info.joint_names
-        ]
+        self.core.get_node().logdebug('Getting joint states')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.position[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
 
     def get_joint_velocities(self) -> List[float]:
         """
-        Get the actual joint velocities.
+        Get the joint velocities.
 
-        :return: list of actual joint velocities [rad/s]
+        :return: list of joint velocities [rad/s]
         """
-        self.core.get_node().logdebug('Getting actual joint velocities')
-        return [
-            self.core.joint_states.velocity[self.core.js_index_map[name]]
-            for name in self.group_info.joint_names
-        ]
+        self.core.get_node().logdebug('Getting joint velocities')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.velocity[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
 
     def get_joint_efforts(self) -> List[float]:
         """
-        Get the actual joint efforts.
+        Get the joint efforts.
 
-        :return: list of actual joint efforts [Nm or load % depending on the motor joint]
+        :return: list of joint efforts [Nm or load % depending on the motor joint]
         """
-        self.core.get_node().logdebug('Getting actual joint efforts')
-        return [
-            self.core.joint_states.effort[self.core.js_index_map[name]]
-            for name in self.group_info.joint_names
-        ]
+        self.core.get_node().logdebug('Getting joint efforts')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.effort[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
 
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
