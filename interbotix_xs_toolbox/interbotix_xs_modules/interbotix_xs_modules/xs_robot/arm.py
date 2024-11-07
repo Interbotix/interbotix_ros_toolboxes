@@ -762,6 +762,54 @@ class InterbotixArmXSInterface:
             )
         self._update_Tsb()
 
+    def get_joint_positions(self) -> List[float]:
+        """
+        Get the joint positions.
+
+        :return: list of joint positions [rad]
+        """
+        self.core.get_node().logdebug('Getting joint states')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.position[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
+
+    def get_joint_velocities(self) -> List[float]:
+        """
+        Get the joint velocities.
+
+        :return: list of joint velocities [rad/s]
+        """
+        self.core.get_node().logdebug('Getting joint velocities')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.velocity[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
+
+    def get_joint_efforts(self) -> List[float]:
+        """
+        Get the joint efforts.
+
+        :return: list of joint efforts [Nm or load % depending on the motor joint]
+        """
+        self.core.get_node().logdebug('Getting joint efforts')
+        with self.core.js_mutex:
+            return [
+                self.core.joint_states.effort[self.core.js_index_map[name]]
+                for name in self.group_info.joint_names
+            ]
+
+    def get_number_of_joints(self) -> int:
+        """
+        Get the number of joints in the arm group.
+
+        :return: number of joints
+        """
+        self.core.get_node().logdebug('Getting number of joints')
+        return self.group_info.num_joints
+
     def _update_Tsb(self) -> None:
         """Update transform between the space and body frame from the current joint commands."""
         self.core.get_node().logdebug('Updating T_sb')
