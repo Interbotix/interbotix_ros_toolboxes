@@ -33,13 +33,13 @@ These classes can be used to control a Create 3 mobile base for Interbotix X-Ser
 Python.
 """
 
-from builtin_interfaces.msg import Duration
 from geometry_msgs.msg import Pose
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.mobile_base import InterbotixMobileBaseInterface
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from irobot_create_msgs.srv import ResetPose
 from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from std_msgs.msg import Header
 
 
@@ -78,28 +78,28 @@ class InterbotixCreate3Interface(InterbotixMobileBaseInterface):
             nav_timeout_sec=nav_timeout_sec,
             use_nav=use_nav,
         )
-        self.pub_base_sound = self.core.create_publisher(
+        self.pub_base_sound = self.core.get_node().create_publisher(
             msg_type=AudioNoteVector,
             topic='mobile_base/cmd_audio',
             qos_profile=1
         )
-        self.client_reset_pose = self.core.create_client(
+        self.client_reset_pose = self.core.get_node().create_client(
             srv_type=ResetPose,
             srv_name='mobile_base/reset_pose',
         )
 
-        self.core.get_clock().sleep_for(Duration(nanosec=int(0.5*S_TO_NS)))
-        self.core.get_logger().info('Initialized InterbotixCreate3Interface!')
+        self.core.get_node().get_clock().sleep_for(Duration(nanoseconds=int(0.5*S_TO_NS)))
+        self.core.get_node().loginfo('Initialized InterbotixCreate3Interface!')
 
     def reset_odom(self) -> None:
         """Reset odometry to zero."""
         future_reset_odom = self.client_reset_pose.call_async(ResetPose.Request(pose=Pose()))
-        self.core.robot_spin_once_until_future_complete(future_reset_odom)
+        self.core.get_node().wait_until_future_complete(future_reset_odom)
         self.play_sound(
             sound=AudioNoteVector(
                 header=Header(
                     frame_id=f'{self.robot_name}/base_link',
-                    stamp=self.core.get_clock().now().to_msg()
+                    stamp=self.core.get_node().get_clock().now().to_msg()
                 ),
                 notes=[AudioNote(frequency=6000, max_runtime=Duration(seconds=1.0))],
                 append=False,
