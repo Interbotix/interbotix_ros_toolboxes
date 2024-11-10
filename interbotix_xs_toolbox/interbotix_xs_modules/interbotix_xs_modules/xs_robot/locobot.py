@@ -33,15 +33,13 @@ These classes can be used to control a Interbotix X-Series LoCoBots using Python
 """
 
 from enum import Enum
-from threading import Thread
-import time
 
+from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
 from interbotix_xs_modules.xs_robot.arm import InterbotixArmXSInterface
 from interbotix_xs_modules.xs_robot.core import InterbotixRobotXSCore
 from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXSInterface
 from interbotix_xs_modules.xs_robot.turret import InterbotixTurretXSInterface
 import rclpy
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.logging import LoggingSeverity
 
 
@@ -70,9 +68,9 @@ class InterbotixLocobotXS:
         topic_dxl_joint_states: str = 'dynamixel/joint_states',
         topic_base_joint_states: str = 'mobile_base/joint_states',
         use_nav: bool = False,
-        logging_level: LoggingSeverity = LoggingSeverity.INFO,
+        logging_level: LoggingSeverity = LoggingSeverity.DEBUG,
         node_name: str = 'robot_manipulation',
-        start_on_init: bool = True,
+        node: InterbotixRobotNode = None,
         args=None,
     ):
         """
@@ -105,10 +103,9 @@ class InterbotixLocobotXS:
             ERROR, or FATAL. defaults to INFO
         :param node_name: (optional) name to give to the core started by this class, defaults to
             'robot_manipulation'
-        :param start_on_init: (optional) set to `True` to start running the spin thread after the
-            object is built; set to `False` if intending to sub-class this. If set to `False`,
-            either call the `start()` method later on, or add the core to an executor in another
-            thread.
+        :param node: (optional) `rclpy.Node` or derived class to base this robot's ROS-related
+            components on.  If nothing is given, this robot will create its own node. defaults to
+            `None`.
         """
         self.core = InterbotixRobotXSCore(
             robot_model=robot_model,
@@ -116,6 +113,7 @@ class InterbotixLocobotXS:
             topic_joint_states=topic_dxl_joint_states,
             logging_level=logging_level,
             node_name=node_name,
+            node=node,
             args=args
         )
         self.camera = InterbotixTurretXSInterface(
@@ -162,23 +160,6 @@ class InterbotixLocobotXS:
                     init_node=False
                 )
 
-        if start_on_init:
-            self.start()
-
-    def start(self) -> None:
-        """Start a background thread that builds and spins an executor."""
-        self._execution_thread = Thread(target=self.run)
-        self._execution_thread.start()
-
-    def run(self) -> None:
-        """Thread target."""
-        self.ex = MultiThreadedExecutor()
-        self.ex.add_node(self.core)
-        self.ex.spin()
-
-    def shutdown(self) -> None:
-        """Destroy the node and shut down all threads and processes."""
-        self.core.destroy_node()
-        rclpy.shutdown()
-        self._execution_thread.join()
-        time.sleep(0.5)
+    def get_node(self) -> InterbotixRobotNode:
+        """Return the core robot node for this robot."""
+        return self.core.robot_node
