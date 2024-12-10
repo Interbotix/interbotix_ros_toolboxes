@@ -10,20 +10,14 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>cv_bridge</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>interbotix_perception_msgs</depend>
   <depend>pcl_conversions</depend>
   <depend>pcl_ros</depend>
   <depend>rclcpp</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>interbotix_xs_msgs</depend>
-  <depend>interbotix_perception_msgs</depend>
-  <depend>interbotix_common_modules</depend>
-  <depend>visualization_msgs</depend>
-  <depend>std_srvs</depend>
   <depend>sensor_msgs</depend>
-  <depend>rcutils</depend>
-  <depend>tf_transformations</depend>
+  <depend>std_srvs</depend>
+  <depend>visualization_msgs</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
