@@ -117,7 +117,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'cloud_topic',
-            default_value='camera/depth/color/points',
+            default_value='/camera/camera/depth/color/points',
             description='the absolute ROS topic name to subscribe to raw pointcloud data.',
         ),
     ]

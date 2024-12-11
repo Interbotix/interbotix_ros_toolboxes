@@ -106,12 +106,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'camera_color_topic',
-            default_value='camera/color/image_raw',
+            default_value='/camera/camera/color/image_raw',
             description='the absolute ROS topic name to subscribe to color images.',
         ),
         DeclareLaunchArgument(
             'camera_info_topic',
-            default_value='camera/color/camera_info',
+            default_value='/camera/camera/color/camera_info',
             description='the absolute ROS topic name to subscribe to the camera color info.',
         ),
     ]

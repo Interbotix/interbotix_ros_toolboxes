@@ -68,7 +68,7 @@ class PictureSnapper(Node):
 
         self.declare_parameter(
             'camera_color_topic',
-            '/camera/color/image_raw'
+            '/camera/camera/color/image_raw'
         )
         self.declare_parameter(
             'apriltag_ns',

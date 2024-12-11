@@ -79,8 +79,8 @@ Short descriptions for each launch file's arguments are below...
 | standalone_tags | individual AprilTags the algorithm should be looking for | refer to [tags.yaml](config/tags.yaml) |
 | camera_frame | the camera frame in which the AprilTag will be detected | camera_color_optical_frame |
 | apriltag_ns | name-space where the AprilTag related nodes and parameters are located | apriltag |
-| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_raw |
-| camera_info_topic | the absolute ROS topic name to subscribe to the camera color info | camera/color/camera_info |
+| camera_color_topic | the absolute ROS topic name to subscribe to color images | /camera/camera/color/image_raw |
+| camera_info_topic | the absolute ROS topic name to subscribe to the camera color info | /camera/camera/color/camera_info |
 
 #### armtag.launch
 
@@ -102,7 +102,7 @@ Besides for the arguments listed below, the arguments above are in this launch f
 | filter_params | file location of the parameters used to tune the perception pipeline filters | "" |
 | use_pointcloud_tuner_gui | whether to show a GUI that a user can use to tune filter parameters | false |
 | enable_pipeline | whether to enable the perception pipeline filters to run continuously; to save computer processing power, this should be set to False unless you are actively trying to tune the filter parameters; if False, the pipeline will only run if the `get_cluster_positions` ROS service is called | $(arg use_pointcloud_tuner_gui) |
-| cloud_topic | the absolute ROS topic name to subscribe to raw pointcloud data | /camera/depth/color/points |
+| cloud_topic | the absolute ROS topic name to subscribe to raw pointcloud data | /camera/camera/depth/color/points |
 
 ## Troubleshooting
 

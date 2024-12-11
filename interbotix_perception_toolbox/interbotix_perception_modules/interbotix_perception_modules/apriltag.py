@@ -69,7 +69,7 @@ class InterbotixAprilTagInterface:
         # set up subs, pubs, and services
         self.node_inf.declare_parameter(
             f'/{apriltag_ns}/camera_info_topic',
-            '/camera/color/camera_info'
+            '/camera/camera/color/camera_info'
         )
         camera_info_topic = self.node_inf.get_parameter(
             f'/{apriltag_ns}/camera_info_topic').get_parameter_value().string_value.strip('/')

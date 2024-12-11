@@ -386,7 +386,7 @@ int main(int argc, char ** argv)
 
   std::string cloud_topic;
   node_->declare_parameter<bool>("enable_pipeline", true);
-  node_->declare_parameter<std::string>("cloud_topic", "/camera/depth/color/points");
+  node_->declare_parameter<std::string>("cloud_topic", "/camera/camera/depth/color/points");
   node_->declare_parameter<float>("voxel_leaf_size", 0.004);
   node_->declare_parameter<float>("x_filter_min", -0.25);
   node_->declare_parameter<float>("y_filter_min", -0.25);
