@@ -49,15 +49,15 @@ class InterbotixGravityCompensation:
         logging_level: LoggingSeverity = LoggingSeverity.INFO,
         node_name: str = 'interbotix_robot_manipulation',
         node: InterbotixRobotNode = None,
-        args = None,
+        args=None,
     ) -> None:
         """
         Construct the Interbotix Gravity Compensation Module.
 
         :param robot_model: Interbotix Arm model (ex. 'wx250' or 'aloha_wx250s')
         :param robot_name: (optional) defaults to value given to 'robot_model'; this can be
-            customized if controlling two of the same arms from one computer (like 'arm1/wx250s' and
-            'arm2/wx250s')
+            customized if controlling two of the same arms from one computer (like 'arm1/wx250s'
+            and 'arm2/wx250s')
         :param topic_joint_states: (optional) the specific JointState topic output by the xs_sdk
             node
         :param logging_level: (optional) rclpy logging severity level. Can be DEBUG, INFO, WARN,
