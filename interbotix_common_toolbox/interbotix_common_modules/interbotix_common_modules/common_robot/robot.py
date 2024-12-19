@@ -99,10 +99,12 @@ def __start(node: InterbotixRobotNode, daemon: bool = True) -> None:
     global __interbotix_execution_thread
     global __interbotix_executor
     __interbotix_executor = MultiThreadedExecutor()
+
     def spin(node: InterbotixRobotNode) -> None:
         while rclpy.ok():
             __interbotix_executor.add_node(node=node)
             __interbotix_executor.spin()
+
     __interbotix_execution_thread = Thread(target=spin, args=(node,), daemon=daemon)
     __interbotix_execution_thread.start()
 
