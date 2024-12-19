@@ -329,7 +329,7 @@ class InterbotixArmXSInterface:
 
         # Reject any commands containing NaN values
         if any(math.isnan(elem) for elem in positions):
-            self.core.get_node().logwarn('NaN values detected in joint positions')
+            self.core.get_node().logwarn('Rejecting NaN values in position command')
             return False
 
         theta_list = [int(elem * 1000) / 1000.0 for elem in positions]
@@ -360,6 +360,12 @@ class InterbotixArmXSInterface:
         self.core.get_node().logdebug(
             f"Checking joint '{joint_name}' limits for {position=}"
         )
+
+        # Reject any commands containing NaN values
+        if math.isnan(position):
+            self.core.get_node().logwarn('Rejecting NaN value in position command')
+            return False
+
         theta = int(position * 1000) / 1000.0
         speed = abs(
             theta - self.joint_commands[self.info_index_map[joint_name]]
