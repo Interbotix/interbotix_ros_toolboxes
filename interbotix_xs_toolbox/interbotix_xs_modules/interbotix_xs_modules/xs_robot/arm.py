@@ -326,6 +326,12 @@ class InterbotixArmXSInterface:
         :return: `True` if all positions are within limits; `False` otherwise
         """
         self.core.get_node().logdebug(f'Checking joint limits for {positions=}')
+
+        # Reject any commands containing NaN values
+        if any(math.isnan(elem) for elem in positions):
+            self.core.get_node().logwarn('NaN values detected in joint positions')
+            return False
+
         theta_list = [int(elem * 1000) / 1000.0 for elem in positions]
         speed_list = [
             abs(goal - current) / float(self.moving_time)
