@@ -20,6 +20,8 @@ jobs:
         env:
           - {ROS_DISTRO: humble, ROS_REPO: main}
     runs-on: ubuntu-22.04
+    env:
+      CCACHE_DIR: "${{ github.workspace }}/.ccache"
     steps:
       - name: Checkout ROS Toolboxes
         uses: actions/checkout@v3
@@ -37,6 +39,8 @@ jobs:
         run: python3 -m pip install modern-robotics transforms3d
       - name: Prepare Workspace
         run: |
+          rm src/interbotix_ros_core/interbotix_ros_xseries/COLCON_IGNORE || echo "File not found"
+          rm src/interbotix_ros_core/interbotix_ros_common_drivers/COLCON_IGNORE || echo "File not found"
           rm src/interbotix_ros_toolboxes/interbotix_perception_toolbox/COLCON_IGNORE
           rm src/interbotix_ros_toolboxes/interbotix_io_toolbox/COLCON_IGNORE
           rm src/interbotix_ros_toolboxes/interbotix_common_toolbox/interbotix_moveit_interface/COLCON_IGNORE
