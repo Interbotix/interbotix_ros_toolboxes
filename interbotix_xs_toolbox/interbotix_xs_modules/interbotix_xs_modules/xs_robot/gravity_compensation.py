@@ -104,17 +104,13 @@ class InterbotixGravityCompensationInterface:
         self.request = SetBool.Request()
 
     def enable(self) -> None:
-        """
-        Enable gravity compensation on the robot.
-        """
+        """Enable gravity compensation on the robot."""
         self.request.data = True
         self.core.get_node().wait_until_future_complete(
             self.client.call_async(self.request))
 
     def disable(self) -> None:
-        """
-        Disable gravity compensation on the robot.
-        """
+        """Disable gravity compensation on the robot."""
         self.request.data = False
         self.core.get_node().wait_until_future_complete(
             self.client.call_async(self.request))
