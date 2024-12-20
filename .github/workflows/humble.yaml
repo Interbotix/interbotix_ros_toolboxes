@@ -36,7 +36,7 @@ jobs:
           submodules: recursive
           path: src/interbotix_ros_core
       - name: Install non-rosdep Python dependencies
-        run: python3 -m pip install modern-robotics transforms3d
+        run: pip install modern-robotics transforms3d
       - name: Prepare Workspace
         run: |
           rm src/interbotix_ros_core/interbotix_ros_common_drivers/COLCON_IGNORE
