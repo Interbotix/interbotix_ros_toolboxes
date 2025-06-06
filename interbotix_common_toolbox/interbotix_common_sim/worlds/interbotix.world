@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+    <!-- A global light source -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane
+      </uri>
+    </include>
+    <!-- A ground plane -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun
+      </uri>
+    </include>
+    <!-- Trossen Robotics Offices -->
+    <!-- <include>
+      <uri>model://TrossenRoboticsOfficeBuilding</uri>
+      <pose>0 2 0 0 0 0</pose>
+    </include> -->
+  </world>
+</sdf>
