@@ -318,14 +318,22 @@ class InterbotixArmXSInterface:
             )
             self.core.get_node().wait_until_future_complete(future_accel_time)
 
-    def _check_joint_limits(self, positions: List[float]) -> bool:
+    def _check_joint_limits(
+        self,
+        positions: List[float],
+        moving_time: Optional[float] = None,
+    ) -> bool:
         """
         Ensure the desired arm group's joint positions are within their limits.
 
         :param positions: the positions [rad] to check
+        :param moving_time: (optional) duration in seconds that the robot should move
         :return: `True` if all positions are within limits; `False` otherwise
         """
         self.core.get_node().logdebug(f'Checking joint limits for {positions=}')
+
+        if moving_time is None:
+            moving_time = self.moving_time
 
         # Reject any commands containing NaN values
         if any(math.isnan(elem) for elem in positions):
@@ -334,7 +342,7 @@ class InterbotixArmXSInterface:
 
         theta_list = [int(elem * 1000) / 1000.0 for elem in positions]
         speed_list = [
-            abs(goal - current) / float(self.moving_time)
+            abs(goal - current) / float(moving_time)
             for goal, current in zip(theta_list, self.joint_commands)
         ]
         # check position and velocity limits
@@ -398,7 +406,7 @@ class InterbotixArmXSInterface:
         :return: `True` if position was commanded; `False` if it wasn't due to being outside limits
         """
         self.core.get_node().logdebug(f'Setting {joint_positions=}')
-        if self._check_joint_limits(joint_positions):
+        if self._check_joint_limits(joint_positions, moving_time):
             self._publish_commands(joint_positions, moving_time, accel_time, blocking)
             return True
         else:
@@ -534,7 +542,7 @@ class InterbotixArmXSInterface:
             # Check to make sure a solution was found and that no joint limits were violated
             if success:
                 theta_list = self._wrap_theta_list(theta_list)
-                solution_found = self._check_joint_limits(theta_list)
+                solution_found = self._check_joint_limits(theta_list, moving_time)
             else:
                 solution_found = False
 
