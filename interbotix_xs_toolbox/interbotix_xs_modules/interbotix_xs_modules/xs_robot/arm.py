@@ -34,7 +34,7 @@ These classes can be used to control an X-Series standalone arm using Python.
 
 import math
 import sys
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import interbotix_common_modules.angle_manipulation as ang
 from interbotix_common_modules.common_robot.robot import InterbotixRobotNode
@@ -357,17 +357,26 @@ class InterbotixArmXSInterface:
                 return False
         return True
 
-    def _check_single_joint_limit(self, joint_name: str, position: float) -> bool:
+    def _check_single_joint_limit(
+        self,
+        joint_name: str,
+        position: float,
+        moving_time: Optional[float],
+    ) -> bool:
         """
         Ensure a desired position for a given joint is within its limits.
 
         :param joint_name: desired joint name
         :param position: desired joint position [rad]
+        :param moving_time: (optional) duration in seconds that the robot should move
         :return: `True` if within limits; `False` otherwise
         """
         self.core.get_node().logdebug(
             f"Checking joint '{joint_name}' limits for {position=}"
         )
+
+        if moving_time is None:
+            moving_time = self.moving_time
 
         # Reject any commands containing NaN values
         if math.isnan(position):
@@ -377,7 +386,7 @@ class InterbotixArmXSInterface:
         theta = int(position * 1000) / 1000.0
         speed = abs(
             theta - self.joint_commands[self.info_index_map[joint_name]]
-        ) / float(self.moving_time)
+        ) / float(moving_time)
         ll = self.group_info.joint_lower_limits[self.info_index_map[joint_name]]
         ul = self.group_info.joint_upper_limits[self.info_index_map[joint_name]]
         vl = self.group_info.joint_velocity_limits[self.info_index_map[joint_name]]
